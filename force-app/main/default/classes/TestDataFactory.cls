@@ -126,4 +126,60 @@ public class TestDataFactory {
   public static Map<String, Object> responseJson() {
     return (Map<String, Object>) JSON.deserializeUntyped(RestContext.response.responseBody.toString());
   }
+
+  // ---- charge engine (Prompt 5) ----
+  public static final Datetime WED_0800 = Datetime.newInstance(2026, 11, 4, 8, 0, 0); // regular Wednesday
+  public static final Datetime FRI_0600 = Datetime.newInstance(2026, 11, 6, 6, 0, 0); // regular Friday (eve)
+
+  /** Pins settings, the holiday calendar (2026, auto-detect, no manual overrides) and the engine clock. */
+  public static void chargeEngine(Datetime now) {
+    Cardcom_Setting__mdt s = settings();
+    s.Failure_Notify_Emails__c = 'staff@example.com; finance@example.com';
+    ChargeCalendar.todayOverride = Date.newInstance(2026, 11, 1);
+    ChargeCalendar.manualOverridesForTest = new List<Charge_Holiday__mdt>();
+    ChargeCalendar.nowOverride = now;
+    ChargeSettings.overrideValue = ChargeSettings.defaults();
+  }
+
+  /** n Active pledges of one donor (inserted). */
+  public static List<Opportunity> activePledges(Integer n, String frequency) {
+    Contact c = contact('Avi', 'Cohen', 'avi' + Crypto.getRandomInteger() + '@example.com', '0521111111');
+    List<Opportunity> ps = new List<Opportunity>();
+    for (Integer i = 0; i < n; i++) {
+      Opportunity o = withToken(submittedPledge('lp-' + frequency + '-' + i + '-' + Crypto.getRandomInteger(), c.Email, c.MobilePhone));
+      o.StageName = MicroPledges.STAGE_ACTIVE;
+      o.Frequency__c = frequency;
+      o.Donor_Contact__c = c.Id;
+      o.Activated_At__c = Datetime.now().addDays(-1);
+      ps.add(o);
+    }
+    insert ps;
+    return ps;
+  }
+
+  /** Pending attempt n of a logical charge (inserted). */
+  public static Charge__c pendingCharge(Opportunity p, Date scheduled, String slot, Integer attempt, String verifyKey) {
+    Charge__c c = charge(p, scheduled, slot);
+    c.Attempt_Number__c = attempt;
+    c.Attempt_Key__c = c.ExternalUniqTranId__c + '-A' + attempt;
+    c.Verify_Attempt_Key__c = verifyKey;
+    insert c;
+    return c;
+  }
+
+  public static Map<String, Object> txSuccess(Long tranzactionId, String last4) {
+    return new Map<String, Object>{
+      'ResponseCode' => 0,
+      'Description' => '',
+      'TranzactionId' => tranzactionId,
+      'ApprovalNumber' => '0654321',
+      'Last4CardDigitsString' => last4,
+      'Token' => 'tok-secret',
+      'Amount' => 3
+    };
+  }
+
+  public static Map<String, Object> txFailed(Integer code) {
+    return new Map<String, Object>{ 'ResponseCode' => code, 'Description' => 'declined ' + code, 'TranzactionId' => 0 };
+  }
 }
