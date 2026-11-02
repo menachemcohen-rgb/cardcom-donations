@@ -290,7 +290,7 @@ Security check: grep the codebase and confirm no PAN/CVV fields exist, no secret
 [v2.2] no SOQL filters on Token__c or Donor_Tax_Id__c.
 ```
 
-## Prompt 9 — Monthly receipt (T60) (scope extension; blocked on accountant + Cardcom answers Q14/Q15)
+## Prompt 9 — Monthly receipt (T60) (scope extension; Q14/Q15 decided 2026-11-02 — D28)
 
 ```
 [v2.3] MonthlyReceiptScheduler must have a public no-arg constructor (DonationSetup schedules it by name, N46).
