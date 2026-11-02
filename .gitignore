@@ -30,3 +30,4 @@ Thumbs.db
 *.key
 *.pem
 wp-config*.php
+.phpunit.cache/
