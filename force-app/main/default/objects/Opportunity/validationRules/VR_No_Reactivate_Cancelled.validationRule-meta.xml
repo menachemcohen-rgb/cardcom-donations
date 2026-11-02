@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_No_Reactivate_Cancelled</fullName>
+    <active>true</active>
+    <description>B2.2 via Part C C2.</description>
+    <errorConditionFormula>AND(
+    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISCHANGED(StageName),
+    ISPICKVAL(PRIORVALUE(StageName), 'Cancelled')
+)</errorConditionFormula>
+    <errorMessage>הוראה שבוטלה אינה ניתנת לשינוי סטטוס.</errorMessage>
+</ValidationRule>

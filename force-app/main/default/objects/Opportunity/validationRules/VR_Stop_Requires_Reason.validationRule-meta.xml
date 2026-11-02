@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Stop_Requires_Reason</fullName>
+    <active>true</active>
+    <description>B2.2 via Part C C2.</description>
+    <errorConditionFormula>AND(
+    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISPICKVAL(StageName, 'Stopped'),
+    ISBLANK(TEXT(Stop_Reason__c))
+)</errorConditionFormula>
+    <errorDisplayField>Stop_Reason__c</errorDisplayField>
+    <errorMessage>חובה לבחור סיבת הפסקה.</errorMessage>
+</ValidationRule>

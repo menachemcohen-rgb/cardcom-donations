@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Active_Requires_Token</fullName>
+    <active>true</active>
+    <description>B2.2 via Part C C2. The spec gives no message; this Hebrew text was added in Prompt 1.</description>
+    <errorConditionFormula>AND(
+    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISPICKVAL(StageName, 'Active'),
+    OR(ISBLANK(Token__c), ISBLANK(Donor_Contact__c))
+)</errorConditionFormula>
+    <errorMessage>הוראה פעילה חייבת אסימון כרטיס ותורם משויך.</errorMessage>
+</ValidationRule>

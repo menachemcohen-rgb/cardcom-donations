@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Other_Requires_Details</fullName>
+    <active>true</active>
+    <description>B2.2 via Part C C2. The spec gives no message; this Hebrew text was added in Prompt 1.</description>
+    <errorConditionFormula>AND(
+    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISPICKVAL(Stop_Reason__c, 'Other'),
+    ISBLANK(Stop_Reason_Details__c)
+)</errorConditionFormula>
+    <errorDisplayField>Stop_Reason_Details__c</errorDisplayField>
+    <errorMessage>כשסיבת ההפסקה היא "אחר" חובה למלא פירוט.</errorMessage>
+</ValidationRule>
