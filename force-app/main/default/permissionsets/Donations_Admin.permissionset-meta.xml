@@ -4,6 +4,10 @@
         <apexClass>DonationSetup</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MonthlyReceiptRetryAction</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>Cardcom_Setting__mdt</name>
@@ -28,7 +32,7 @@
         <enabled>true</enabled>
         <name>Charge_Settings__c</name>
     </customSettingAccesses>
-    <description>Data/finance manager (B2.7): stop/resume/cancel pledges, apply the charge schedule, resolve reconciliation issues. Reads the Israeli ID; no access to card tokens.</description>
+    <description>Data/finance manager (B2.7): stop/resume/cancel pledges, apply the charge schedule, retry monthly receipts, resolve reconciliation issues. Reads the Israeli ID; no access to card tokens.</description>
     <fieldPermissions>
         <editable>false</editable>
         <field>Card_Change_Request__c.Client_Ip__c</field>
@@ -610,6 +614,10 @@
     <flowAccesses>
         <enabled>true</enabled>
         <flow>Resume_Pledge_Charges</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Retry_Receipt</flow>
     </flowAccesses>
     <flowAccesses>
         <enabled>true</enabled>
