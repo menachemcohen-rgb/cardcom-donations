@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>C5119</label>
+    <protected>false</protected>
+    <values>
+        <field>Category__c</field>
+        <value xsi:type="xsd:string">Pending</value>
+    </values>
+    <values>
+        <field>Code__c</field>
+        <value xsi:type="xsd:double">5119.0</value>
+    </values>
+    <values>
+        <field>Description_He__c</field>
+        <value xsi:type="xsd:string">LP עדיין ממתין (רק ב-GetLpResult)</value>
+    </values>
+    <values>
+        <field>Source__c</field>
+        <value xsi:type="xsd:string">https://secure.cardcom.solutions/swagger/v11/swagger.json</value>
+    </values>
+</CustomMetadata>

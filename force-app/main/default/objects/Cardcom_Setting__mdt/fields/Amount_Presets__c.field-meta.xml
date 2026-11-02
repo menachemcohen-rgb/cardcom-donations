@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Amount_Presets__c</fullName>
+    <description>כפתורים</description>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Amount Presets</label>
+    <length>100</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

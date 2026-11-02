@@ -3,8 +3,52 @@
     <label>Default</label>
     <protected>false</protected>
     <values>
+        <field>Allowed_Return_Hosts__c</field>
+        <value xsi:type="xsd:string">www.ORG.org.il</value>
+    </values>
+    <values>
+        <field>Amount_Presets__c</field>
+        <value xsi:type="xsd:string">1,3,5,10</value>
+    </values>
+    <values>
+        <field>Api_Base__c</field>
+        <value xsi:type="xsd:string">callout:Cardcom/api/v11</value>
+    </values>
+    <values>
+        <field>Batch_Size__c</field>
+        <value xsi:type="xsd:double">30.0</value>
+    </values>
+    <values>
+        <field>Currency_Iso__c</field>
+        <value xsi:type="xsd:double">1.0</value>
+    </values>
+    <values>
+        <field>Default_Account_Id__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Donor_Portal_Base_Url__c</field>
+        <value xsi:type="xsd:string">https://ORG/donor</value>
+    </values>
+    <values>
+        <field>Failure_Notify_Emails__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Holiday_Auto_Detect__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
         <field>Integration_User_Id__c</field>
         <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Is_Recurring_Terminal__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>Lp_JValidate_Type__c</field>
+        <value xsi:type="xsd:double">2.0</value>
     </values>
     <values>
         <field>Max_Amount__c</field>
@@ -13,5 +57,49 @@
     <values>
         <field>Min_Amount__c</field>
         <value xsi:type="xsd:double">1.0</value>
+    </values>
+    <values>
+        <field>Optional_Verify_On_Open__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>Org_Wide_Email_Address__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Receipt_Document_Type__c</field>
+        <value xsi:type="xsd:string">DonationReceipt</value>
+    </values>
+    <values>
+        <field>Receipt_Link_Deal_Numbers__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>Receipt_Product_Description__c</field>
+        <value xsi:type="xsd:string">תרומות חודש {MONTH}</value>
+    </values>
+    <values>
+        <field>Recon_Page_Size__c</field>
+        <value xsi:type="xsd:double">1000.0</value>
+    </values>
+    <values>
+        <field>Recon_Report_Unknown__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Send_Donor_Charge_Email__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Terminal_Number__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Terms_Url__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Webhook_Url__c</field>
+        <value xsi:type="xsd:string">https://ORG.my.salesforce-sites.com/cardcom/services/apexrest/cardcom/webhook</value>
     </values>
 </CustomMetadata>

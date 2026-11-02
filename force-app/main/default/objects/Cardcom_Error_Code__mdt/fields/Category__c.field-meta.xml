@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Category__c</fullName>
+    <description>Duplicate added for code 608 (spec-consistency N26).</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Category</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Card_Declined</fullName>
+                <default>false</default>
+                <label>Card_Declined</label>
+            </value>
+            <value>
+                <fullName>Card_Dead</fullName>
+                <default>false</default>
+                <label>Card_Dead</label>
+            </value>
+            <value>
+                <fullName>Config</fullName>
+                <default>false</default>
+                <label>Config</label>
+            </value>
+            <value>
+                <fullName>Retryable</fullName>
+                <default>false</default>
+                <label>Retryable</label>
+            </value>
+            <value>
+                <fullName>Pending</fullName>
+                <default>false</default>
+                <label>Pending</label>
+            </value>
+            <value>
+                <fullName>Duplicate</fullName>
+                <default>false</default>
+                <label>Duplicate</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

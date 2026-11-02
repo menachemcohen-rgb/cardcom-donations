@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>C608</label>
+    <protected>false</protected>
+    <values>
+        <field>Category__c</field>
+        <value xsi:type="xsd:string">Duplicate</value>
+    </values>
+    <values>
+        <field>Code__c</field>
+        <value xsi:type="xsd:double">608.0</value>
+    </values>
+    <values>
+        <field>Description_He__c</field>
+        <value xsi:type="xsd:string">ExternalUniqTranId כפול (רק כש-ExternalUniqUniqTranIdResponse=false)</value>
+    </values>
+    <values>
+        <field>Source__c</field>
+        <value xsi:type="xsd:string">https://secure.cardcom.solutions/swagger/v11/swagger.json https://kb.cardcom.solutions/apijosn/he/articles/458/step-3-token-credit-card-do-transaction</value>
+    </values>
+</CustomMetadata>
