@@ -603,6 +603,22 @@
         <enabled>true</enabled>
         <flow>Apply_Charge_Schedule</flow>
     </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Cancel_Pledge</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Resume_Pledge_Charges</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Revoke_Donor_Links</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Stop_Pledge_Charges</flow>
+    </flowAccesses>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Donations Admin</label>
     <objectPermissions>
