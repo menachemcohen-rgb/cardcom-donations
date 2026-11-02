@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Terms_Url__c</fullName>
+    <description>Part C E3 (B13.0)</description>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Terms Url</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

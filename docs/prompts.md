@@ -69,7 +69,7 @@ Task: prepare the repo and learn the target org's Opportunity landscape. Read-on
 1. Create the SFDX project skeleton (sfdx-project.json, .forceignore, .gitignore, package.json with prettier-plugin-apex
    and eslint for the wordpress JS is optional), the folders under force-app/main/default and wordpress/org-donations.
 2. Add docs/README.md with: architecture summary (2 paragraphs), the Part C decisions, and a "Manual Setup steps" list
-   that you will extend in every later prompt (Connected App, Site, OWEA, Named/External Credential values, integration user TZ).
+   that you will extend in every later prompt (External Client App, Site, OWEA, Named/External Credential values, integration user TZ).
 3. Consistency check of CLAUDE.md: write docs/spec-consistency.md listing every identifier referenced but not defined, or defined
    twice with different names/signatures. Part C already resolves E1–E16; list anything NEW only, with your proposed resolution.
 4. Org discovery (only if an org alias/MCP is connected; otherwise write the exact commands for me to run). NPSP is NOT installed (D26).
@@ -166,7 +166,13 @@ Classes (each with tests):
 - PledgeActivationService/PledgeActivationJob: on activation set Donor_Contact__c, Match_Method__c, StageName='Active',
   Activated_At__c, Start_Date__c, CloseDate=activation date, AND insert an OpportunityContactRole (Donor, primary) if none exists.
 - Matching Rule + Duplicate Rule metadata (B6.4) — deployed AFTER the normalization batch; document that ordering in the README.
-- Connected App / Site / Guest profile: metadata where possible, otherwise precise manual steps in the README (B3.2, B3.3).
+- [v2.3] External Client App WP_Donations (Part C D27, replaces B3.2's Connected App: Client Credentials Flow, Run As the integration
+  user, scope api, IP restrictions) / Site / Guest profile: metadata where possible (ExternalClientApplication + its OAuth settings and
+  policies, never the consumer secret), otherwise precise manual steps in the README (B3.2, B3.3).
+
+Already in place from Prompt 2 [v2.3]: Cardcom_Lp_Event__e has only LowProfileId__c (publish without Log_Id__c, N1); the guest
+PS can create the event (N28); Donations_Integration has the Cardcom_EC principal. Add classAccesses for every class you create to
+Donations_Integration (and CardcomWebhookResource to Donations_Site_Guest).
 
 Constraints: callouts before DML in every Queueable; the webhook trusts only the LowProfileId; Named Credential merge-field
 placeholders are never replaced in Apex; no real HTTP.

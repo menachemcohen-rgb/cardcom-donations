@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SF_Amount__c</fullName>
+    <description>Canonical name per Part C E2.</description>
+    <externalId>false</externalId>
+    <label>סכום ב-Salesforce</label>
+    <precision>10</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Currency</type>
+</CustomField>

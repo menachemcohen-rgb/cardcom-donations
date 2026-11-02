@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>C3</label>
+    <protected>false</protected>
+    <values>
+        <field>Category__c</field>
+        <value xsi:type="xsd:string">Card_Declined</value>
+    </values>
+    <values>
+        <field>Code__c</field>
+        <value xsi:type="xsd:double">3.0</value>
+    </values>
+    <values>
+        <field>Description_He__c</field>
+        <value xsi:type="xsd:string">התקשר לחברת האשראי / דרוש אישור טלפוני</value>
+    </values>
+    <values>
+        <field>Source__c</field>
+        <value xsi:type="xsd:string">https://support.cardcom.solutions/hc/he/articles/360006178894</value>
+    </values>
+</CustomMetadata>

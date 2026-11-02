@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Runs_Per_Day__c</fullName>
+    <defaultValue>2</defaultValue>
+    <description>1 = רק בוקר; 2 = בוקר+ערב</description>
+    <externalId>false</externalId>
+    <label>Runs Per Day</label>
+    <precision>1</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

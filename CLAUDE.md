@@ -4284,12 +4284,13 @@ Rollback: `DonationSetup.unscheduleAll()` + השבתת shortcode (מחיקת ה�
 
 ---
 
-# Part C — Opportunity override and errata (v2.2, 2026-11-02)
+# Part C — Opportunity override and errata (v2.3, 2026-11-02)
 
 > **Precedence: Part C > Part B > Part A.**
 > It (1) replaces the custom object `Recurring_Pledge__c` with the standard **Opportunity** (+ custom fields + Record Type),
 > and (2) fixes the naming/signature inconsistencies found in Parts A/B. Where Part B says `Recurring_Pledge__c`, read it through the mapping below.
 > v2.2 adds E14–E16 and D26 (StandardValueSet safety, encrypted-field filtering, NPSP confirmed absent).
+> v2.3 adds D27 (External Client App instead of Connected App).
 
 ## C0. Decisions
 
@@ -4299,6 +4300,7 @@ Rollback: `DonationSetup.unscheduleAll()` + השבתת shortcode (מחיקת ה�
 | D24 | **All** Opportunity logic (triggers, flows, validation rules, SOQL, list views, record page) is scoped to that Record Type. Other Opportunities in the org must never be touched. |
 | D25 | Standard `Amount` = total collected so far (mirrors `Total_Collected__c`, maintained by `PledgeRollupService`). The per-charge amount lives in `Charge_Amount__c`. Reason: pipeline/won reports must show money collected, not a 3 ₪ "deal". |
 | D18 (clarified) | Still **no** monthly-summary Opportunities. The only Opportunities are one per donation instruction. |
+| D27 | **External Client App instead of Connected App** (decided 2026-11-02). B3.2's Connected App `WP_Donations` becomes the External Client App `WP_Donations` (Distribution State: Local): OAuth enabled, scope `api`, **Client Credentials Flow** with Run As = the integration user, IP restrictions to the WP server (Q11). Consumer Key/Secret are read from the app in Setup and go only into `wp-config.php`. The token endpoint (`/services/oauth2/token`, `grant_type=client_credentials`) and the WordPress side are unchanged. Wherever Parts A/B say "Connected App" (1, 9, 10, B2.7, B3, B7.14, B10 step 13, B13 T16), read "External Client App". |
 | D26 | **NPSP is not installed** in the target org (confirmed 2026-11-02). Q1 is answered for NPSP; Person Accounts and "Require Account on Opportunity" are still checked in Prompt 0 discovery. No NPSP/TDTM bypass is built. |
 
 ## C1. Opportunity configuration

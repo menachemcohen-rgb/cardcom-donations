@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Charging schedule and retry settings (B2.6). Hierarchy; the Org Default record is created by scripts/apex/init-settings.apex.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Charge Settings</label>
+    <visibility>Public</visibility>
+</CustomObject>

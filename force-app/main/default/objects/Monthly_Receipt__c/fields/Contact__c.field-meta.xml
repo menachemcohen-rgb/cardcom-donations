@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Contact__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <inlineHelpText>קבלה אחת לתורם לחודש (גם אם כמה הוראות)</inlineHelpText>
+    <label>תורם</label>
+    <referenceTo>Contact</referenceTo>
+    <relationshipLabel>קבלות חודשיות</relationshipLabel>
+    <relationshipName>Monthly_Receipts</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

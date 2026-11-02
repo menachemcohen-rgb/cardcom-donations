@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Manual override on top of the automatic Hebrew-calendar rest days (B2.6, B6.6).</description>
+    <label>Charge Holiday</label>
+    <pluralLabel>Charge Holidays</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>
