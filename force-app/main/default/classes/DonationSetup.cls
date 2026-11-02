@@ -2,6 +2,8 @@
  * Schedules the Donations jobs from Charge_Settings__c (B9, B9.1, B9.2; Part C E6/E7).
  * Jobs whose classes come in later prompts (retry, receipts, reconciliation, daily alerts, log cleanup) are scheduled by name and
  * skipped while the class doesn't exist yet (spec-consistency N46). Re-run reschedule() after deploying them.
+ * Scheduled jobs run as the user who schedules them, so admins never schedule directly: request() publishes a
+ * Donation_Setup_Command__e whose trigger runs as the integration user (N42) and calls handleCommands().
  */
 public with sharing class DonationSetup {
   static final List<String> TIMED = new List<String>{
@@ -82,12 +84,54 @@ public with sharing class DonationSetup {
       System.abortJob(ct.Id);
   }
 
+  public static final Set<String> COMMANDS = new Set<String>{ 'SCHEDULE_ALL', 'RESCHEDULE', 'UNSCHEDULE_ALL' };
+
+  /** Asks the integration user (via the platform event) to run a command. Anonymous Apex: DonationSetup.request('SCHEDULE_ALL'); */
+  public static void request(String command) {
+    if (!COMMANDS.contains(command))
+      throw new IllegalArgumentException('Unknown command ' + command + '; use ' + COMMANDS);
+    Donation_Setup_Command__e e = new Donation_Setup_Command__e(Command__c = command, Requested_By__c = UserInfo.getUserId());
+    published.add(e);
+    EventBus.publish(e);
+  }
+  @TestVisible
+  static List<Donation_Setup_Command__e> published = new List<Donation_Setup_Command__e>();
+
+  /** DonationSetupCommandTrigger (running as the integration user). Failures are reported to staff, never thrown. */
+  public static void handleCommands(List<Donation_Setup_Command__e> events) {
+    for (Donation_Setup_Command__e e : events) {
+      List<String> errs = new List<String>();
+      try {
+        if (e.Command__c == 'RESCHEDULE') {
+          errs = reschedule();
+        } else if (e.Command__c == 'SCHEDULE_ALL') {
+          if (UserInfo.getTimeZone().getID() != 'Asia/Jerusalem')
+            errs.add('אזור הזמן של המשתמש חייב להיות Asia/Jerusalem');
+          else {
+            unscheduleAll();
+            scheduleAll();
+            StaffAlertService.scheduleChanged(ChargeSettings.get());
+          }
+        } else if (e.Command__c == 'UNSCHEDULE_ALL') {
+          unscheduleAll();
+        } else {
+          errs.add('Unknown command ' + e.Command__c);
+        }
+      } catch (Exception ex) {
+        errs.add(ex.getMessage());
+      }
+      if (!errs.isEmpty())
+        StaffAlertService.scheduleFailed(e.Command__c, errs);
+    }
+  }
+
   public class Result {
     @InvocableVariable
     public Boolean ok;
     @InvocableVariable
     public String message;
   }
+  /** "Apply charge schedule" button (B9.1): checks what it can now, then hands the re-schedule to the integration user (N42). */
   @InvocableMethod(label='Apply charge schedule' description='Re-schedules Donations jobs from Charge_Settings__c')
   public static List<Result> applyScheduleInvocable() {
     Result r = new Result();
@@ -96,9 +140,16 @@ public with sharing class DonationSetup {
       r.message = 'אין הרשאה';
       return new List<Result>{ r };
     }
-    List<String> errs = reschedule();
+    List<String> errs = ChargeSettings.validate(ChargeSettings.get());
+    if (ChargeRunLock.isChainActive())
+      errs.add('חיוב פעיל כרגע — נסו שוב בעוד כמה דקות');
     r.ok = errs.isEmpty();
-    r.message = r.ok ? 'זמני החיוב עודכנו' : String.join(errs, '\n');
+    if (r.ok) {
+      request('RESCHEDULE');
+      r.message = 'הבקשה נשלחה. זמני החיוב יעודכנו תוך דקה ותישלח הודעה לצוות.';
+    } else {
+      r.message = String.join(errs, '\n');
+    }
     return new List<Result>{ r };
   }
 }

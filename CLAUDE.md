@@ -4382,3 +4382,19 @@ Standard fields: `Name` (Apex sets: `תרומה יומית – {Last} {First} �
 - Sunrise/sunset-based collection times and per-country timing (items 1 and 5): out of scope; only fixed, admin-editable times exist.
 - "Donor summary file" the client called redundant = the monthly receipt (B6.11). Keep; confirm with client.
 - Scope vs 40-hour quote: donor portal, nightly reconciliation, reports/dashboard and auto holidays exceed the quote (B12/Q20). Build in the order of the prompts; stop after Prompt 6 if scope is not approved.
+
+## C5. Decisions and errata added during implementation (v2.4, 2026-11-02)
+
+Full list with reasons: `docs/spec-consistency.md` (N1–N84, all closed). The ones that change the spec:
+
+| # | Decision / erratum |
+|---|---|
+| D28 | Monthly receipt: `DonationReceipt`; Israeli ID optional (sent when known); top-level `Cash` = total, `Receipt_Link_Deal_Numbers__c=false`. Section 46 validity is between the client and Cardcom. |
+| D29 | `Charge__c.Needs_Reconciliation__c` is system-managed (set by the charge engine, cleared by `ReconciliationJob`). Staff handle discrepancies on `Reconciliation_Issue__c` (Status, Resolution notes); `Donations_Admin` keeps Read on Charge (B2.7 wins over the B2.8 layout note). |
+| D30 | Scheduled jobs run as the user who schedules them. Nobody calls `System.schedule` directly: `DonationSetup.request('SCHEDULE_ALL' / 'RESCHEDULE' / 'UNSCHEDULE_ALL')` and the "Apply charge schedule" button publish `Donation_Setup_Command__e`; `DonationSetupCommandTrigger` runs as the integration user (subscriber config `DonationSetupSubscriber`), so every Donations job is owned by it. Failures email staff ("זמני החיוב לא עודכנו"). |
+| E17 | B10 also deploys `Charge_Settings__c` (+ Org Default), `Alert_State__c`, custom permission `Manage_Charge_Schedule` and flow `Apply_Charge_Schedule`; `Donations_Admin` holds both. Order: `docs/deployment-runbook.md`. |
+| E18 | The Opportunity Contact Role value `Donor` doesn't exist without NPSP: it is added to the `ContactRole` StandardValueSet the E14 way (retrieve, append, never a partial set). |
+| E19 | B4: `/donations/pledge` never returns `LP_UNKNOWN`; an unknown LowProfileId creates a pending pledge and verification decides (B6.2). |
+| E20 | Part A 7.1 (`CardcomCred`, `Cardcom_Integration`, Named Credential URL with `/api/v11`), the section 1 frequency values and the 2.6 diagram (receipt key/status) are superseded by B3.1, B2.2 and B2.4. |
+| E21 | Staff alerts are sent in one `Messaging.sendEmail` call per transaction and skip when the 10-call limit is reached (an uncatchable LimitException would roll back a charge batch). The Org-Wide address lookup is cached per transaction. |
+| E22 | Every SOQL on Opportunity, including by-Id re-reads, carries `RecordTypeId = :MicroPledges.recordTypeId()` (D24). |

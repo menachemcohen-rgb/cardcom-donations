@@ -144,8 +144,9 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
 19. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
     `Needs_Review__c`, `Review_Reason__c`, `Donor_Tax_Id__c`, and the related list "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand
     because deploying the Contact layout would overwrite the org's existing one.
-20. **Platform event subscribers** (B6.3, B6.9.2). `CardcomLpEventTrigger` and `ChargeSuccessTrigger` must run as the integration
-    user: the first so its job can use the Cardcom credential, the second so donor emails go out from the org-wide address. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
+20. **Platform event subscribers** (B6.3, B6.9.2, N42). `CardcomLpEventTrigger`, `ChargeSuccessTrigger` and
+    `DonationSetupCommandTrigger` must run as the integration user: the first so its job can use the Cardcom credential, the second so
+    donor emails go out from the org-wide address, the third so scheduled jobs belong to that user. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
     `force-app`. Deploy it once per org (a real deploy, after the trigger is deployed):
 
 ```bash
@@ -161,30 +162,27 @@ sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex
 
     Then Setup → Matching Rules → `Donor Contact Match` → Activate (wait for the activation email), then Setup → Duplicate Rules →
     `Donor Contact Duplicate` → Activate.
-22. **LP sweeper** (B5.3), only if the full schedule (step 23) isn't set up yet: schedule it every 15 minutes. Scheduled jobs run as the user who schedules them, and the sweeper's job calls
-    Cardcom, so schedule it as the integration user. That user is API-only, so authorize the CLI as it (for example with the JWT
-    bearer flow) and run (see spec-consistency N42):
-
-```bash
-sf apex run --target-org <alias> --file scripts/apex/schedule-lp-sweeper.apex
-```
-
+22. **Scheduling runs as the integration user** (spec-consistency N42). Scheduled jobs run as the user who schedules them, and the
+    jobs call Cardcom, which only the integration user may. Nobody schedules directly: `DonationSetup.request(...)` publishes a
+    `Donation_Setup_Command__e` whose trigger runs as the integration user (subscriber config `DonationSetupSubscriber`, step 20).
+    Check after step 20: Setup → Platform Events → Donation Setup Command → Subscriptions shows `DonationSetupCommandTrigger` running as
+    the integration user, and that user's TZ is Asia/Jerusalem (step "Integration user").
 23. **Charge schedule** (B9). Before the first run, allow deploys while jobs are scheduled: Setup → Deployment Settings → "Allow
     deployments of components when corresponding Apex jobs are pending or in progress". Otherwise every later deploy of a class used by
-    a scheduled job fails. Then, as the integration user (same JWT session as step 22, TZ Asia/Jerusalem):
+    a scheduled job fails. Then, as any admin:
 
 ```bash
 sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
 ```
 
-    It schedules the 4 charge runs (AM, PM, Eve AM, Eve PM on SUN-FRI; `ChargeCalendar.shouldRun` decides), the LP sweepers, and every
-    later job whose class is already deployed; it prints the ones it skipped. Don't run step 22 as well — `scheduleAll()` includes the
-    sweepers. After later prompts add the retry, receipt, reconciliation, alert and cleanup classes, run
-    `DonationSetup.unscheduleAll(); DonationSetup.scheduleAll();` again.
+    It asks the integration user to schedule all 13 jobs: the 4 charge runs (AM, PM, Eve AM, Eve PM on SUN-FRI;
+    `ChargeCalendar.shouldRun` decides), retries, the 4 LP sweepers, receipts, reconciliation, daily alerts and log clean-up. Staff get
+    "זמני חיוב עודכנו", or "זמני החיוב לא עודכנו" with the reason. Check in Setup → Scheduled Jobs that the jobs are submitted by the
+    integration user. (`scripts/apex/schedule-lp-sweeper.apex` is only for a partial set-up and must run as the integration user.)
 24. **"Apply charge schedule" button** (B9.1). Times in `Charge_Settings__c` only take effect after re-scheduling. Add the screen flow
     `Apply_Charge_Schedule` ("החלת זמני חיוב") where admins work, for example: App Manager → the app → Utility Items → Add → Flow →
-    `Apply_Charge_Schedule`. It runs only for users with `Manage_Charge_Schedule` (in `Donations_Admin`) and TZ Asia/Jerusalem.
-    Note: jobs re-scheduled from the button run as that admin (see spec-consistency N42).
+    `Apply_Charge_Schedule`. It runs only for users with `Manage_Charge_Schedule` (in `Donations_Admin`). It checks the settings at once
+    and hands the re-schedule to the integration user (same event as step 23); the result arrives by email within a minute.
 
 25. **Reports and dashboard** (Prompt 11, folder `Donations`). Deployed as metadata: 13 reports, 4 custom report types, and the
     dashboard "תרומות מיקרו". Then by hand:

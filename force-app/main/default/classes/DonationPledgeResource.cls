@@ -42,7 +42,7 @@ global without sharing class DonationPledgeResource {
           p.Client_Ip__c = s(q, 'clientIp') == null ? null : s(q, 'clientIp').left(45);
           if (ex.isEmpty()) {
             insert p;
-            String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id].Pledge_Number__c;
+            String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Pledge_Number__c;
             update new Opportunity(Id = p.Id, Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, num));
           } else {
             p.Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, ex[0].Pledge_Number__c);
@@ -51,7 +51,11 @@ global without sharing class DonationPledgeResource {
           if (!ex.isEmpty() && ex[0].Lp_Processed__c)
             System.enqueueJob(new PledgeActivationJob(p.Id)); // webhook came first
           res.statusCode = 200;
-          out = new Map<String, Object>{ 'pledgeId' => p.Id, 'status' => [SELECT StageName FROM Opportunity WHERE Id = :p.Id].StageName };
+          out = new Map<String, Object>{
+            'pledgeId' => p.Id,
+            'status' => [SELECT StageName FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt]
+            .StageName
+          };
         }
       }
     } catch (Exception e) {

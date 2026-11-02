@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Schedule commands (SCHEDULE_ALL, RESCHEDULE, UNSCHEDULE_ALL) handled by DonationSetupCommandTrigger, which runs as the integration user (subscriber config DonationSetupSubscriber), so every Donations job is owned by that user (spec-consistency N42).</description>
+    <eventType>HighVolume</eventType>
+    <label>Donation Setup Command</label>
+    <pluralLabel>Donation Setup Commands</pluralLabel>
+    <publishBehavior>PublishAfterCommit</publishBehavior>
+</CustomObject>

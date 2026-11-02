@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template (spec-consistency N42): runs DonationSetupCommandTrigger as the integration user, so the Donations jobs that
+     the "Apply charge schedule" button or scripts/apex/schedule-donations.apex request are owned by that user. -->
+<PlatformEventSubscriberConfig xmlns="http://soap.sforce.com/2006/04/metadata">
+    <batchSize>1</batchSize>
+    <masterLabel>DonationSetupSubscriber</masterLabel>
+    <platformEventConsumer>DonationSetupCommandTrigger</platformEventConsumer>
+    <user>INTEGRATION_USERNAME</user>
+</PlatformEventSubscriberConfig>

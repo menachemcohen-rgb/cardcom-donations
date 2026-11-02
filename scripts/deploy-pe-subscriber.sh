@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys the PlatformEventSubscriberConfigs (CardcomLpSubscriber B6.3, ChargeSuccessSubscriber B6.9.2) with the integration username.
+# Deploys the PlatformEventSubscriberConfigs (CardcomLpSubscriber B6.3, ChargeSuccessSubscriber B6.9.2, DonationSetupSubscriber N42) with the integration username.
 # This is a real deploy: run it only when you mean to. Usage: scripts/deploy-pe-subscriber.sh <org-alias> <integration-username>
 set -euo pipefail
 ORG="${1:?org alias}"; USERNAME="${2:?integration username}"

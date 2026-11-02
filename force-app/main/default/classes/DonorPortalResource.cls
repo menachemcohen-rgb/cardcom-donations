@@ -166,7 +166,8 @@ global without sharing class DonorPortalResource {
       if (code == 0 || !(code >= 5117 && code <= 5119))
         st = CardChangeService.complete(lpId, r);
     }
-    String last4 = [SELECT Last4__c FROM Opportunity WHERE Id = :p.Id].Last4__c;
+    Id rt = MicroPledges.recordTypeId();
+    String last4 = [SELECT Last4__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Last4__c;
     return new Map<String, Object>{ 'status' => st, 'last4' => st == 'Completed' ? last4 : null };
   }
 }

@@ -14,6 +14,7 @@ public without sharing class StaffAlertService {
   // ---------------------------------------------------------------- B6.9.4: consecutive failures
   public static void failureStreak(Set<Id> pledgeIds) {
     Id rt = MicroPledges.recordTypeId();
+    List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
     for (Opportunity p : [
       SELECT
         Id,
@@ -45,8 +46,14 @@ public without sharing class StaffAlertService {
             ' ' +
             (p.Donor_Last_Name__c == null ? '' : p.Donor_Last_Name__c))
             .trim();
-      send('כישלונות חוזרים בהוראת תרומה – ' + donor + ' (' + p.Pledge_Number__c + ')', failureStreakBody(p, donor));
+      Messaging.SingleEmailMessage m = message(
+        'כישלונות חוזרים בהוראת תרומה – ' + donor + ' (' + p.Pledge_Number__c + ')',
+        failureStreakBody(p, donor)
+      );
+      if (m != null)
+        mails.add(m);
     }
+    sendAll(mails); // one sendEmail call for all pledges: at most 10 calls per transaction
   }
 
   @TestVisible
@@ -290,6 +297,17 @@ public without sharing class StaffAlertService {
   }
 
   /** B6.9.5: the org's daily single-email budget is almost used up — donor thank-you emails are being skipped. Once a day. */
+  /** The integration user could not apply a schedule command (N42). Sent every time: it answers an admin's request. */
+  public static void scheduleFailed(String command, List<String> errs) {
+    String items = '';
+    for (String x : errs)
+      items += '<li>' + EmailUtil.esc(x) + '</li>';
+    send(
+      'זמני החיוב לא עודכנו',
+      wrap('<p>הבקשה (' + EmailUtil.esc(command) + ') לא בוצעה. ריצות החיוב הקיימות לא השתנו.</p><ul>' + items + '</ul>')
+    );
+  }
+
   public static Boolean emailLimit(Integer left) {
     if (sentToday('Email_Limit_Sent_On__c'))
       return false;
@@ -356,10 +374,17 @@ public without sharing class StaffAlertService {
   }
 
   static void send(String subject, String html) {
+    Messaging.SingleEmailMessage m = message(subject, html);
+    if (m != null)
+      sendAll(new List<Messaging.SingleEmailMessage>{ m });
+  }
+
+  /** null when no recipients are configured. */
+  static Messaging.SingleEmailMessage message(String subject, String html) {
     List<String> to = recipients();
     if (to.isEmpty()) {
       System.debug(LoggingLevel.WARN, 'Staff alert not sent, no Failure_Notify_Emails__c: ' + subject);
-      return;
+      return null;
     }
     Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
     m.setToAddresses(to);
@@ -369,9 +394,20 @@ public without sharing class StaffAlertService {
     m.setSubject(subject);
     m.setHtmlBody(html);
     m.setSaveAsActivity(false);
-    sentCount++;
+    return m;
+  }
+
+  static void sendAll(List<Messaging.SingleEmailMessage> mails) {
+    if (mails.isEmpty())
+      return;
+    // The email-invocation limit throws an uncatchable LimitException; never let an alert hit it (it would roll back charges).
+    if (Limits.getEmailInvocations() >= Limits.getLimitEmailInvocations()) {
+      System.debug(LoggingLevel.ERROR, 'Staff alert skipped, email invocation limit reached: ' + mails.size());
+      return;
+    }
+    sentCount += mails.size();
     try {
-      Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ m }, false);
+      Messaging.sendEmail(mails, false);
     } catch (Exception e) {
       // An alert must never roll back charge processing (e.g. Email Deliverability set to "System email only").
       System.debug(LoggingLevel.ERROR, 'Staff alert email failed: ' + e.getMessage());
