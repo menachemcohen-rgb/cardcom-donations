@@ -4281,3 +4281,101 @@ Rollback: `DonationSetup.unscheduleAll()` + השבתת shortcode (מחיקת ה�
 **הערת הקמה (לא חוסם):** הטרמינל של הלקוח תומך בחיובי Token (זה ייעוד הטוקן — חיוב חוזר בלי הכרטיס); בהקמה לוודא שמודול Tokens פעיל ושאין חובת CVV לחיובי Token.
 
 **הוסרו (הוכרעו):** טרמינל בדיקות (B5.0א), גוף Webhook (B5.2 — טריגר בלבד), סוג הטרמינל לחיוב חוזר (הנחה: נתמך), 4 ספרות אחרונות (תצוגה בלבד), תוקף קישורים (D15 — ללא תוקף), השעיה אוטומטית (D9), כרטיס פג תוקף (D11), סכום חדש (D16), Opportunity חודשי (D18).
+
+---
+
+# Part C — Opportunity override and errata (v2.2, 2026-11-02)
+
+> **Precedence: Part C > Part B > Part A.**
+> It (1) replaces the custom object `Recurring_Pledge__c` with the standard **Opportunity** (+ custom fields + Record Type),
+> and (2) fixes the naming/signature inconsistencies found in Parts A/B. Where Part B says `Recurring_Pledge__c`, read it through the mapping below.
+> v2.2 adds E14–E16 and D26 (StandardValueSet safety, encrypted-field filtering, NPSP confirmed absent).
+
+## C0. Decisions
+
+| # | Decision |
+|---|---|
+| D23 | The "pledge" (donation instruction) is an **Opportunity** with Record Type `Micro_Donation_Pledge`. No custom `Recurring_Pledge__c` object is created. |
+| D24 | **All** Opportunity logic (triggers, flows, validation rules, SOQL, list views, record page) is scoped to that Record Type. Other Opportunities in the org must never be touched. |
+| D25 | Standard `Amount` = total collected so far (mirrors `Total_Collected__c`, maintained by `PledgeRollupService`). The per-charge amount lives in `Charge_Amount__c`. Reason: pipeline/won reports must show money collected, not a 3 ₪ "deal". |
+| D18 (clarified) | Still **no** monthly-summary Opportunities. The only Opportunities are one per donation instruction. |
+| D26 | **NPSP is not installed** in the target org (confirmed 2026-11-02). Q1 is answered for NPSP; Person Accounts and "Require Account on Opportunity" are still checked in Prompt 0 discovery. No NPSP/TDTM bypass is built. |
+
+## C1. Opportunity configuration
+
+**Record Type** `Micro_Donation_Pledge` (label "הוראת תרומה יומית") + its own **Sales Process** `Micro_Donation_Process` containing only these stages (stored values in English; Hebrew labels via Translation Workbench):
+
+| StageName (value) | Hebrew label | Probability | IsClosed | IsWon | Notes |
+|---|---|---|---|---|---|
+| `Pending_Verification` | ממתינה לאימות | 10 | no | no | created at submit/webhook |
+| `Active` | פעילה | 100 | yes | yes | charging happens only here |
+| `Stopped` | חיובים הופסקו | 100 | yes | yes | manual stop only; resumable → Active |
+| `Cancelled` | בוטלה | 0 | yes | no | terminal (VR blocks reopening) |
+| `Verification_Failed` | הכרטיס לא אומת | 0 | yes | no | terminal |
+
+**Deploying the stages (E14):** the 5 values are added to the org-wide `OpportunityStage` StandardValueSet. Retrieve the org's
+existing set first and add the 5 values to it; **never deploy a partial set** (values missing from the file can be deactivated/removed
+org-wide). Before adding, check that none of the 5 values already exists (case-insensitive); if one does, stop and report it.
+
+Standard fields: `Name` (Apex sets: `תרומה יומית – {Last} {First} – {Pledge_Number__c}` left 120; on insert use `תרומה יומית – {LowProfileId left 8}` and update after the Auto Number exists), `CloseDate` (= created date while pending; = `Activated_At__c` date on activation), `AccountId` (= `Cardcom_Setting__mdt.Default_Account_Id__c`, else blank), `Amount` (D25).
+
+## C2. Field mapping (Part B2.2 → Opportunity)
+
+| Part B2.2 `Recurring_Pledge__c` | Opportunity |
+|---|---|
+| Name (Auto `PLG-{000000}`) | new **`Pledge_Number__c`** Auto Number `PLG-{000000}`; standard `Name` per C1 |
+| `Contact__c` | **`Donor_Contact__c`** Lookup(Contact), delete=Restrict, relationship name `Donor_Pledges`; on activation also create `OpportunityContactRole` (Role=`Donor`, IsPrimary=true) |
+| `Status__c` | **`StageName`** (C1). All `Status__c = 'X'` → `StageName = 'X'` |
+| `Type__c` | removed → Record Type |
+| `Amount__c` | **`Charge_Amount__c`** Currency(8,2) — amount per single charge (this is what VR_Amount_Range, the portal and `Charge__c.Amount__c` snapshot use) |
+| `Total_Collected__c`, `Successful_Charge_Count__c`, `Last_Successful_Charge_Date__c`, `Consecutive_Failures__c`, `Failure_Alert_Sent_At__c` | same API names on Opportunity; `Amount` mirrors `Total_Collected__c` |
+| all other B2.2 fields (`Donor_*`, `Donor_Submitted__c`, `Terms_Accepted_At__c`, `Client_Ip__c`, `Match_Method__c`, `Frequency__c`, `LowProfileId__c`, `Token__c`, `CardExpirationMMYY__c`, `Card_Expiry_Date__c`, `Last4__c`, `Token_Expiry_Date__c`, `Lp_Check_Count__c`, `Lp_Processed__c`, `Verified_At__c`, `Activated_At__c`, `Stop_*`, `Stopped_*`, `Resumed_*`, `Link_Version__c`, `Start_Date__c`, `End_Date__c`) | **same API names, created on Opportunity** (same types, lengths, help text, encryption, uniqueness). `LowProfileId__c` stays Unique External Id. |
+| `Charge__c.Pledge__c` and every other `Pledge__c` lookup (Charge, Card_Change_Request, Pledge_Card_History, Pledge_Change_Log, Donor_Link_Use) | **keep the API name `Pledge__c`**, but target = **Opportunity**. Child relationship name on Opportunity: `Charges` (→ `Charges__r`). |
+| Object name in Apex `Recurring_Pledge__c` | `Opportunity` |
+| `Contact__r.Name/Email/FirstName/MobilePhone` via pledge | `Donor_Contact__r.…` |
+| Field History | `StageName`, `Charge_Amount__c`, `Frequency__c`, `Stop_Reason__c`, `Link_Version__c`, `Last4__c` (≤20 fields limit — counts fields the org already tracks on Opportunity) |
+
+**Validation rules (all prefixed with `RecordType.DeveloperName = 'Micro_Donation_Pledge'` AND …):**
+`VR_Amount_Range` (on `Charge_Amount__c`), `VR_Stop_Requires_Reason` (`ISPICKVAL(StageName,'Stopped')`), `VR_Other_Requires_Details`, `VR_Status_Change_Permission` (`ISCHANGED(StageName)` + `PRIORVALUE(StageName)`), `VR_No_Reactivate_Cancelled`, `VR_Active_Requires_Token` (`ISPICKVAL(StageName,'Active')`).
+
+**Opportunity-specific code rules**
+1. Every SOQL/DML/trigger/flow on Opportunity filters or guards by Record Type (`RecordType.DeveloperName`; cache the Id via `Schema.SObjectType.Opportunity.getRecordTypeInfosByDeveloperName()`).
+2. `ChargePlanner` SOQL selects: `RecordType = Micro_Donation_Pledge AND StageName = 'Active' AND (End_Date__c = null OR End_Date__c >= :runDate)`.
+   **No `Token__c` condition in the SOQL (E15).** After the query, skip in Apex any row with `String.isBlank(Token__c)` (log it; it should never
+   happen because `VR_Active_Requires_Token` guarantees a token on Active pledges). `ChargeQueueable` keeps its existing in-Apex `noToken` check.
+3. `PledgeTrigger` → `OpportunityTrigger` + `OpportunityTriggerHandler` (record-type guarded; same behavior as B6.8).
+4. Existing org automation on Opportunity (flows, triggers, required fields, validation rules, duplicate rules) must not break the integration user's inserts: discover first (Prompt 0), then either scope them away from this record type or give the integration user a bypass (Custom Permission).
+5. Sharing: Opportunity OWD is an existing org setting. Sensitive fields (`Token__c`, `Donor_Tax_Id__c`) are protected by **FLS only** (Permission Sets in B2.7). Document the current OWD in the README; do not change it.
+6. Lightning Record Page, Quick Actions (Flows Stop/Resume/Cancel/Revoke), List Views and the Dashboard are assigned/filtered to the Record Type only.
+7. Permission Sets (B2.7) add Opportunity object CRUD, the Record Type assignment, and FLS for the new fields.
+8. **Encrypted fields are never in SOQL `WHERE`/`ORDER BY`/`GROUP BY`, report filters, list-view filters, matching rules or duplicate rules (E15, E16).**
+   This applies to `Token__c` (Opportunity, `Pledge_Card_History__c`) and `Donor_Tax_Id__c` (Contact and Opportunity). Selecting them is fine.
+   Donor matching by Israeli ID uses only `Contact.Tax_Id_Hash__c`. `MetadataSmokeTest` asserts `isFilterable()` for `Token__c` and
+   `Donor_Tax_Id__c` and records the result, so the encryption choice (Classic vs Shield probabilistic/deterministic) is visible.
+
+## C3. Errata — canonical names (apply everywhere, in code and metadata)
+
+| # | Problem in Parts A/B | Canonical decision |
+|---|---|---|
+| E1 | `Failure_Notify_Email__c` vs `Failure_Notify_Emails__c` | **`Failure_Notify_Emails__c`** (Text 255). Parse with `split('[;,]')`, trim, drop blanks. |
+| E2 | `Salesforce_Amount__c` (code) vs `SF_Amount__c` (B2.5) | **`SF_Amount__c`** on `Reconciliation_Issue__c`; fix `ReconciliationJob`. |
+| E3 | `Terms_Url__c` used in B13.0, missing from CMDT | add `Terms_Url__c` Text(255) to `Cardcom_Setting__mdt`. |
+| E4 | `DonationPledgeResource` calls `validIsraeliId`, matcher defines `validIlId` | public `ContactMatcher.validIsraeliId(String)`; private helper may stay. |
+| E5 | `ChargeCalendar.shouldRun` and `nextWorkingMorning` referenced, never defined | implement: `shouldRun(String kind, Date d)` — kinds `AM`,`PM`,`EveAM`,`EvePM`; rest day → false; `isEve(d)` → only `Eve*`; else only `AM`/`PM`. `nextWorkingMorning(Datetime t)` → first non-rest day (strictly after `t` if `t` is in a closed window, else `t`) at `AM_Time__c`. Kind→slot: `AM`/`EveAM` → slot `AM`, `PM`/`EvePM` → slot `PM`. |
+| E6 | Part A `DonationChargeScheduler(slot, eveRun)` and `scheduleAll()` vs B9 `DonationSetup` | **Only B9**: `DonationChargeScheduler(String kind)`, scheduled by `DonationSetup.scheduleAll()`. Delete Part A's version. Cron days are `SUN-FRI`; `shouldRun` decides. |
+| E7 | Retry cron `0 15` (B6.7) vs `0 30` (B9) | minute = `Charge_Settings__c.Retry_Minute__c` (default 30). |
+| E8 | B8 class-table signatures (`createLowProfile`, `chargeToken(..., Id)`, `listTransactions(Date,Integer)`) differ from B5.9 | **B5.9 code is authoritative.** B8 table is for coverage targets only. |
+| E9 | `Max_Retries__c`, `Max_Consecutive_Failures__c`, `Friday_Cutoff_Hour__c` described as CMDT in Part A/checklist | they live in **`Charge_Settings__c`** (B2.6); read through `ChargeSettings.get()`. |
+| E10 | Part A `ChargeCalendar.holidays()` (CMDT only) | use B6.6 version (auto-detect + override). |
+| E11 | `StaffAlertService` methods referenced but not written (`configErrorOncePerDay`, `receiptFailures`, `reconciliationOpen`, `scheduleChanged`, `Daily`) | implement all, templates per B6.9.4; each alert de-duplicated per day via a small `Alert_State__c` Custom Setting (or Platform Cache) keyed by alert type. |
+| E12 | `Charge_Run_Lock__c.acquire/release` signature differs in B8 | use Part A 7.7א version (no args). |
+| E13 | Quote text says "auto-freeze" after repeated failures | not built (D9). Only alert + manual stop. |
+| E14 | Deploying `OpportunityStage` with only the new values would deactivate/remove the org's existing stages | Retrieve the existing `OpportunityStage` StandardValueSet first and add the 5 values to it; never deploy a partial set. Check that none of the new values already exists. (C1) |
+| E15 | B6.5 step 2 / C2 rule 2 filter `Token__c != null` in SOQL; Classic-encrypted fields are not filterable, so the query fails | Remove the `Token__c` condition from `ChargePlanner`'s SOQL; check `String.isBlank(Token__c)` in Apex after the query (`VR_Active_Requires_Token` already guarantees it). `MetadataSmokeTest` asserts `Opportunity.Token__c` `isFilterable()` (records the encryption choice). |
+| E16 | `MonthlyReceiptService` (B6.11.1) queries the pledge with `WHERE … Donor_Tax_Id__c != null`; any matching/duplicate rule on the ID | Same rule as E15 for `Donor_Tax_Id__c`: never filter or match on it in SOQL or matching rules. The receipt fallback selects the donor's pledges (record-type guarded, `Donor_Contact__c = :id`, `ORDER BY Activated_At__c DESC`) and picks the first non-blank `Donor_Tax_Id__c` in Apex. Matching by ID uses `Contact.Tax_Id_Hash__c` only. |
+
+## C4. Gaps vs. the client conversation (do NOT build unless Yosef approves)
+- Optional different amount on Friday/eve (client item 4 — "possible"): not in the model. Needs `Friday_Amount__c`-style fields + planner change. Parked as a change request.
+- Sunrise/sunset-based collection times and per-country timing (items 1 and 5): out of scope; only fixed, admin-editable times exist.
+- "Donor summary file" the client called redundant = the monthly receipt (B6.11). Keep; confirm with client.
+- Scope vs 40-hour quote: donor portal, nightly reconciliation, reports/dashboard and auto holidays exceed the quote (B12/Q20). Build in the order of the prompts; stop after Prompt 6 if scope is not approved.
