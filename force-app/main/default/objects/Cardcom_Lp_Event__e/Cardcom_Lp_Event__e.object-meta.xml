@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Published by the guest webhook with the LowProfileId only; the subscriber runs as the integration user (B6.3).</description>
+    <eventType>HighVolume</eventType>
+    <label>Cardcom LP Event</label>
+    <pluralLabel>Cardcom LP Events</pluralLabel>
+    <publishBehavior>PublishImmediately</publishBehavior>
+</CustomObject>
