@@ -95,6 +95,12 @@ public without sharing class DonorChargeEmailService {
       for (Integer j = i; j < Math.min(i + PER_SEND_CALL, msgs.size()); j++)
         chunk.add(msgs[j]);
       List<Messaging.SendEmailResult> rs;
+      if (Limits.getEmailInvocations() >= Limits.getLimitEmailInvocations()) {
+        // sendEmail over the per-transaction limit is an uncatchable LimitException
+        for (Integer j = 0; j < chunk.size(); j++)
+          failed.addAll(msgCharges[i + j]);
+        continue;
+      }
       try {
         rs = (Test.isRunningTest() && simulateSendForTests) ? null : Messaging.sendEmail(chunk, false);
       } catch (Exception e) {

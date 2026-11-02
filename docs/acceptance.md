@@ -4,6 +4,54 @@ Mapping of the B11 sandbox scenarios to automated Apex tests or manual steps. Pr
 TC01–TC40. "Automated" tests use `CardcomMock` (no real Cardcom call). Manual steps run in the sandbox against Cardcom's public test
 terminal (`CLAUDE.md` B5.0א) with the WordPress staging site (Prompt 10).
 
+## Summary — B11 TC01–TC40
+
+"Manual" points to the section below with the sandbox steps. "Blocked" names the open question (`docs/open-questions.md`) that must
+be answered before the manual check can be done for real; "—" = can run now in the sandbox with the test terminal.
+
+| ID | Scenario | Automated (Apex test) | Manual | Blocked |
+|---|---|---|---|---|
+| TC01 | New donor signs up | `CardcomLpResultJobTest.submitThenWebhookActivatesExactlyOnce`, `DonationPledgeResourceTest.createsPendingPledgeOpportunity`, `ContactMatcherTest.createsNewDonorWhenNothingMatches` | Intake | Q11 (WP staging), Q22 on production |
+| TC02 | Existing donor by email | `ContactMatcherTest.matchesByEmailAndFillsOtherPhone` | Intake | — |
+| TC03 | Existing donor by phone only | `ContactMatcherTest.matchesByPhoneAndFlagsDifferentEmail` | Intake | — |
+| TC04 | Conflicting keys | `ContactMatcherTest.conflictingKeysPickEmailAndFlagReview` | Intake | — |
+| TC05 | Invalid Israeli ID | `DonationPledgeResourceTest.validationListsBadFields` (server side) | Intake | — |
+| TC06 | Missing field after the card is saved | — | Intake | Q11 |
+| TC07 | iframe expires | — | Intake | Q11, Q18 (LP lifetime) |
+| TC08 | Duplicate webhook | `CardcomLpResultJobTest.repeatedWebhooksCallCardcomOnce`, `CardcomWebhookResourceTest.webhookLogsPublishesAndCreatesVerifiedPledge` | Intake | — |
+| TC09 | Webhook blocked | `PendingVerificationSweeperTest.rechecksOldPendingPledges`, `PendingVerificationSweeperTest.activatesVerifiedSubmittedPledgesLeftPending` | Intake | — |
+| TC10 | Submit replay | `DonationPledgeResourceTest.replayIsRejected` | Intake | Q11 |
+| TC11 | Regular day | `ChargePlannerTest.regularMorningPlansOneAttemptPerPledge`, `ChargeQueueableTest.successfulChargeUpdatesChargeAndPledgeLast4` | Charging | Q8 (email text, not the test) |
+| TC12 | Friday | `ChargePlannerTest.fridayChargesFridayAndShabbat`, `ChargeCalendarTest.multiplicityTableFromB66` | Charging | — |
+| TC13 | Erev Rosh Hashana 5787 | `ChargePlannerTest.erevRoshHashanaChargesThreeDays` | Charging | Q3 |
+| TC14 | Shabbat / holiday | `DonationChargeSchedulerTest.runsOnlyOnItsDays`, `ChargePlannerTest.restDayPlansNothingAndRerunIsIdempotent` | Charging | Q3 |
+| TC15 | Temporary failure | `ChargeOutcomeHandlerTest.retryableGoesA1A2A3ThenFinal` | Charging | — |
+| TC16 | Blocked card | `ChargeOutcomeHandlerTest.cardDeadIsFinalForThisLogicalChargeOnly`, `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | Charging | Q18 (no public blocked card: mock only) |
+| TC17 | Expired card | `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | Charging | Q18 (mock only) |
+| TC18 | 3 consecutive failures | `PledgeRollupServiceTest.threeFailuresAlertOnceAndTheFourthDoesNot` | Charging | Q7 (alert addresses) |
+| TC19 | Success after a streak | `PledgeRollupServiceTest.successResetsTheStreakAndReArmsTheAlert` | Charging | — |
+| TC20 | Retry after an unknown success | `ChargeQueueableTest.verifiedPreviousSuccessIsNotChargedAgain`, `ChargeQueueableTest.verifiedPreviousFailureIsChargedNormally` | Charging | — |
+| TC21 | Timeout | `ChargeOutcomeHandlerTest.unknownOutcomeVerifiesTheKeyNextTime`, `ChargeQueueableTest.timeoutLeadsToAVerifiedRetry` | Charging | — |
+| TC22 | Stop charges | `PledgeTriggerHandlerTest.stopSkipsPendingChargesAndLogs` | Stop/resume | — |
+| TC23 | Stop without permission | `PledgeTriggerHandlerTest.userWithoutPermissionIsBlocked`, `PledgeValidationRulesTest.stoppingWithoutPermissionIsBlocked` | Stop/resume | — |
+| TC24 | Resume | `PledgeTriggerHandlerTest.resumeAndCancelAreLoggedAndCancelIsFinal` | Stop/resume | — |
+| TC25 | Change amount | `DonorPortalResourceTest.amountChangeAppliesFromTheNextChargeOnly` | Donor email and page | — |
+| TC26 | Amount out of range | `DonorPortalResourceTest.amountOutOfRangeOrWrongLinkIsRefused` | Donor email and page | — |
+| TC27 | Replace card | `DonorPortalResourceTest.cardReplacementStartsALowProfile`, `DonorPortalResourceTest.cardStatusWaitsThenPullsTheResult`, `CardChangeServiceTest.successfulReplacementKeepsHistory` | Donor email and page | — |
+| TC28 | Replacement fails | `CardChangeServiceTest.failedReplacementKeepsTheOldCard` | Donor email and page | — |
+| TC29 | Revoke links | `DonorLinkTokenTest.wrongActionVersionSignatureAndStatusAreInvalid` | Donor email and page | — |
+| TC30 | Months-old link | `DonorLinkTokenTest.issueAndVerifyWithoutExpiry` (no expiry claim), `DonorLinkTokenTest.previousSecretStillWorksAfterRotation` | Donor email and page | — |
+| TC31 | Monthly receipt | `MonthlyReceiptTest.issuesReceiptWithCashByDefault`, `dealNumbersReplaceCashWhenTheFlagIsOn`, `taxIdAndEmailFallBackToThePledge` | Monthly receipt | Q16 + checklist 1 on production |
+| TC32 | No duplicate receipt | `MonthlyReceiptTest.issuedReceiptIsNeverReplanned`, `schedulerWindowAndRestDays` ("retried") | Monthly receipt | — |
+| TC33 | Month without charges | `MonthlyReceiptTest.donorWithoutChargesGetsNoReceipt` | Monthly receipt | — |
+| TC34 | Two pledges of one donor | `MonthlyReceiptTest.twoPledgesOfOneDonorGiveOneReceipt` | Monthly receipt | — |
+| TC35 | Receipt fails | `MonthlyReceiptTest.validationErrorIsFinal`, `noEmailAnywhereFailsWithoutCallingCardcom`, `timeoutIsRetryableButNotWithin12Hours`, `maxAttemptsReachedMeansNoSendAndAnAlert`, `configErrorStopsTheBatch` | Monthly receipt | Q7 |
+| TC36 | Reconciliation issue, re-run without duplicates | `ReconciliationJobTest.eachIssueTypeIsReported`, `ReconciliationJobTest.reRunUpdatesIssuesInPlaceAndKeepsStaffResolution` | Reconciliation | — |
+| TC37 | Volume: 2,500 pledges | `ChargePlannerTest.largeVolumesPlanInABatch`, `ChargeQueueableTest.calloutBudgetLeavesTheRestPending` — mock only | Volume, security, Cardcom (below) | — |
+| TC38 | Security | `CardcomWebhookResourceTest.invalidOrMissingIdIsLoggedButNotPublished`, `CardcomServiceTest.redactRemovesSecrets` | Volume, security, Cardcom (below) | Q11 (IP restriction) |
+| TC39 | No donor email on failure | By design: only `Charge_Success__e` sends donor email (`DonorChargeEmailServiceTest`) | Volume, security, Cardcom (below) | — |
+| TC40 | No document per charge | `CardcomServiceTest` (charge body: no `Document`, `SendNote=false`) | Volume, security, Cardcom (below) | Q18 |
+
 ## Intake — TC01–TC10 (Prompt 3)
 
 | ID | Scenario | Automated | Manual (sandbox + test terminal) |
@@ -135,8 +183,35 @@ Before the first real run go through `docs/receipt-go-live-checklist.md`.
 | Collected this month | Equals the sum of `Amount__c` of Success charges with this month's `Run_Date__c`. |
 | No encrypted fields | No report or list view filters on `Token__c` or `Donor_Tax_Id__c` (E15/E16): `grep -rl "Token__c\|Donor_Tax_Id__c" force-app/main/default/reports force-app/main/default/objects/*/listViews` returns nothing. |
 
-## Running the tests (sandbox, check-only)
+## Volume, security and Cardcom checks — TC37–TC40 (Prompt 12)
+
+| ID | Manual (sandbox) | Expected |
+|---|---|---|
+| TC37 | Create 2,500 Active pledges (Data Loader, test token from TC01; Charge_Amount__c 1) with `Holiday_Auto_Detect__c` on, then on a Friday `ChargePlanner.plan(<that Friday>, 'AM')`. Use the test terminal or switch the Named Credential to a mock endpoint first. | 5,000 charges planned by `ChargePlannerBatch`; the chain finishes well before 11:00; Setup → Apex Jobs shows no limit errors. |
+| TC38 | View source of the form and donor pages; DevTools → Network; as the Site guest call `/services/data/vXX.X/query?q=SELECT+Id+FROM+Opportunity` and `/services/apexrest/donations/pledge`. | No client secret, token or Salesforce call from the browser; the guest gets no records and 401/403 on the APIs. |
+| TC39 | After TC15 (failed charges). | No email to the donor; only the staff alert after X failures. |
+| TC40 | After TC11, Cardcom admin → documents and the donor's inbox/phone. | No receipt, email or SMS from Cardcom for the micro-charges; only the monthly receipt (TC31). |
+
+## Running the tests (only when authorized — nothing has run in an org yet)
 
 ```bash
 sf project deploy validate --target-org <alias> --source-dir force-app --test-level RunLocalTests
 ```
+
+```bash
+sf apex run test --target-org <alias> --test-level RunLocalTests --code-coverage --result-format human --wait 60
+```
+
+```bash
+sf apex run test --target-org <alias> --class-names ChargeQueueableTest,ChargeOutcomeHandlerTest,ReconciliationJobTest,MonthlyReceiptTest --result-format human --wait 30
+```
+
+```bash
+cd wordpress/org-donations && composer install && vendor/bin/phpunit
+```
+
+```bash
+node --test wordpress/org-donations/tests/js/donation-form.test.mjs
+```
+
+Target: every test green and org-wide coverage ≥ 90% (B8).

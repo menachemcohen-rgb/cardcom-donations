@@ -56,6 +56,17 @@ private class StaffAlertServiceTest {
   }
 
   @IsTest
+  static void manyFailureStreaksUseOneSendEmailCall() {
+    // Prompt 12: 12 pledges crossing X in one charge batch must not hit the 10-sendEmail-calls limit
+    staffEmails();
+    Set<Id> ids = new Map<Id, Opportunity>(TestDataFactory.activePledges(12, 'OnceDaily')).keySet();
+    Integer before = Limits.getEmailInvocations();
+    StaffAlertService.failureStreak(ids);
+    Assert.areEqual(12, StaffAlertService.sentCount);
+    Assert.areEqual(before + 1, Limits.getEmailInvocations());
+  }
+
+  @IsTest
   static void dailyAlertsSendOnlyWhenThereIsSomethingToReport() {
     staffEmails();
     Assert.isFalse(StaffAlertService.receiptFailures());

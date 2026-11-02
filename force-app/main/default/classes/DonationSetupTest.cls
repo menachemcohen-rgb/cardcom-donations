@@ -107,7 +107,48 @@ private class DonationSetupTest {
       ChargeSettings.overrideValue = ChargeSettings.defaults();
       DonationSetup.Result r = DonationSetup.applyScheduleInvocable()[0];
       Assert.isTrue(r.ok, r.message);
-      Assert.areEqual('זמני החיוב עודכנו', r.message);
+      Assert.isTrue(r.message.startsWith('הבקשה נשלחה'), r.message);
+      Assert.areEqual(1, DonationSetup.published.size(), 'handed to the integration user (N42)');
+      Assert.areEqual('RESCHEDULE', DonationSetup.published[0].Command__c);
+      Assert.areEqual(0, donationJobs(), 'the admin schedules nothing itself');
+      ChargeSettings.overrideValue.AM_Time__c = 'bad';
+      r = DonationSetup.applyScheduleInvocable()[0];
+      Assert.isFalse(r.ok, 'invalid settings are refused at once');
+      Assert.areEqual(1, DonationSetup.published.size());
     }
+  }
+
+  @IsTest
+  static void commandsRunAsTheSubscriberUser() {
+    System.runAs(user('Asia/Jerusalem', false)) {
+      TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+      DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'SCHEDULE_ALL') });
+      Assert.areEqual(4 + 4 + LATER_JOBS, donationJobs());
+      Assert.areEqual(UserInfo.getUserId(), [SELECT OwnerId FROM CronTrigger WHERE CronJobDetail.Name = 'Donations AM'].OwnerId);
+      ChargeSettings.overrideValue.AM_Time__c = '07:15';
+      DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'RESCHEDULE') });
+      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('Donations AM'));
+      DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'UNSCHEDULE_ALL') });
+      Assert.areEqual(0, donationJobs());
+    }
+    System.runAs(user('Europe/London', false)) {
+      TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+      Integer before = StaffAlertService.sentCount;
+      DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'SCHEDULE_ALL') });
+      Assert.areEqual(0, donationJobs(), 'wrong time zone: nothing scheduled');
+      Assert.areEqual(before + 1, StaffAlertService.sentCount, '"זמני החיוב לא עודכנו" sent to staff');
+    }
+  }
+
+  @IsTest
+  static void requestRejectsUnknownCommands() {
+    try {
+      DonationSetup.request('DROP');
+      Assert.fail('expected an exception');
+    } catch (IllegalArgumentException e) {
+      Assert.isTrue(e.getMessage().contains('SCHEDULE_ALL'));
+    }
+    DonationSetup.request('SCHEDULE_ALL');
+    Assert.areEqual(1, DonationSetup.published.size());
   }
 }
