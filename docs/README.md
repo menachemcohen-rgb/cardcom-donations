@@ -73,36 +73,58 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
    **TimeZoneSidKey = Asia/Jerusalem**, Locale `he_IL`. Assign PS `Donations_Integration` (Prompt 2).
 
 ### Credentials (values never in the repo)
-7. External Credential `Cardcom_EC`, principal `CardcomTerminal`: enter `ApiName` and `ApiPassword` in Setup.
-   Sandbox uses Cardcom's public test terminal from B5.0א (terminal `1001`); production uses the client's terminal.
-8. `Donor_Link_Setting__mdt.Default` secret: generate a random value and enter it in Setup (Protected CMDT).
+7. **Cardcom credentials.** Setup → Named Credentials → External Credentials → `Cardcom_EC` → Principals → `CardcomTerminal` →
+   Authentication Parameters: add `ApiName` and `ApiPassword` (exact names; the request body uses
+   `{!$Credential.Cardcom_EC.ApiName}` / `{!$Credential.Cardcom_EC.ApiPassword}`). The named principal and the Named Credential
+   `Cardcom` (`https://secure.cardcom.solutions`, formulas allowed in the body only) are deployed as metadata; the values never are.
+   - Sandbox: Cardcom's public test terminal — terminal number, ApiName and ApiPassword are in `CLAUDE.md` B5.0א (terminal `1001`).
+     They're public, but B5.0א says not to copy them anywhere else in the repo, so this README only points to them.
+   - Production: the client's terminal.
+   - Principal access is granted only through `Donations_Integration`.
+8. **Donor-link secret.** Setup → Custom Metadata Types → Donor Link Setting → Manage Records → `Default`: set `Secret__c` to 64
+   random hex characters (for example `openssl rand -hex 32`). Leave `Previous_Secret__c` empty until the first rotation.
+   The type is Protected and the deployed record has an empty secret.
+9. **`Cardcom_Setting__mdt.Default` values.** The deployed record has the B2.6 defaults. Fill in by hand per org:
+   `Terminal_Number__c` (sandbox `1001`, production the client's), `Integration_User_Id__c` (18-char Id of the integration user),
+   `Failure_Notify_Emails__c` (Q7), `Org_Wide_Email_Address__c`, `Terms_Url__c` (Q8), and replace the `ORG` placeholders in
+   `Donor_Portal_Base_Url__c`, `Webhook_Url__c` and `Allowed_Return_Hosts__c`. `Default_Account_Id__c` stays empty (org-discovery D-3).
 
 ### External Client App, Site, email
-9. External Client App `WP_Donations` (Part C D27, replaces B3.2's Connected App): OAuth scope `api`, Client Credentials Flow with
+10. External Client App `WP_Donations` (Part C D27, replaces B3.2's Connected App): OAuth scope `api`, Client Credentials Flow with
    Run As = the integration user, IP restrictions to the WP server. Consumer Key/Secret go into the WordPress `wp-config.php` only.
    Prompt 3 adds the app's metadata where it can be deployed and the exact Setup steps for the rest.
-10. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
-11. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
+11. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
+12. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
     Deliverability = All email.
 
 ### After deploy
-12. **Record type access.** `Micro_Donation_Pledge` is the org's first Opportunity record type. It is deployed without profile
+13. **Custom-setting defaults.** Custom-setting data isn't metadata, so the deploy can't create the Org Default records. Run once per org
+    (it skips records that already exist):
+
+```bash
+sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
+```
+
+14. **Permission sets** (B2.7): assign `Donations_Integration` to the integration user, `Donations_Admin` to the data/finance managers,
+      `Donations_Staff` to fundraising staff, and `Donations_Site_Guest` to the guest user of Site `cardcom` (Prompt 3). Give the
+    integration user the "Salesforce API Integration" permission set license first, then check it can be assigned `Donations_Integration`.
+15. **Record type access.** `Micro_Donation_Pledge` is the org's first Opportunity record type. It is deployed without profile
     assignments (profiles are never deployed). Check that no profile's default Opportunity record type changed (org-discovery R3).
     Access to the record type comes from the `Donations_*` permission sets (Prompt 2).
-13. **Page layout assignment.** Setup → Object Manager → Opportunity → Page Layouts → Page Layout Assignment: assign
+16. **Page layout assignment.** Setup → Object Manager → Opportunity → Page Layouts → Page Layout Assignment: assign
     "Micro Donation Pledge Layout" to record type `Micro_Donation_Pledge` for every profile that will see pledges (at least System
     Administrator). Layout assignments live in profiles, which this repo doesn't deploy.
-14. **Activate the record page.** Lightning App Builder → `Pledge_Record_Page` (label "עמוד הוראת תרומה יומית") → Activation →
+17. **Activate the record page.** Lightning App Builder → `Pledge_Record_Page` (label "עמוד הוראת תרומה יומית") → Activation →
     App, Record Type and Profile: assign it to record type `Micro_Donation_Pledge` only (C2 rule 6). Don't make it the org default.
-15. **Field history on `StageName`** (optional). Part C lists it, but Opportunity already records every stage change in Stage History
+18. **Field history on `StageName`** (optional). Part C lists it, but Opportunity already records every stage change in Stage History
     (`OpportunityHistory`) automatically. Turn on Field History for `StageName` in Setup only if you also want it in the field-history
     list; it counts toward the limit of 20.
-16. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
+19. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
     `Needs_Review__c`, `Review_Reason__c`, `Donor_Tax_Id__c`, and the related list "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand
     because deploying the Contact layout would overwrite the org's existing one.
-17. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
+20. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
     `Donor_Contact_Duplicate` (B10 step 12).
-18. `DonationSetup.scheduleAll()` as the integration user.
+21. `DonationSetup.scheduleAll()` as the integration user.
 
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
@@ -113,10 +135,10 @@ Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-ch
 - All users have language `en_US`, so they see the English stage labels ("Pending Verification", "Active"…). The Hebrew labels from
   C1 appear only for users whose language is Hebrew.
 
-## Validating Prompt 1 (no deploy)
+## Validating (no deploy)
 
 `sf project deploy validate` is a check-only deploy: it compiles and runs the tests in the target org, then rolls everything back.
-Do this only against a sandbox, and only after manual steps 3 and 4 above.
+Do this only against a sandbox, and only after manual steps 3 and 4 above (field history, Translation Workbench).
 
 1. Retrieve the org's standard value sets into a scratch folder and compare them with the repo (E14):
 
@@ -128,18 +150,15 @@ sf project retrieve start --target-org <alias> --manifest manifest/retrieve-stan
 diff -r "$(find /tmp/svs-check -type d -name standardValueSets)" force-app/main/default/standardValueSets
 ```
 
-   Apart from formatting, the diff must show only added values: 5 stages in `OpportunityStage`, `Donor` in `ContactRole`. Anything else (a value missing from
-   the repo, a changed probability) means the org changed since 2026-11-02: update the repo file from the retrieved one first.
+   Apart from formatting, the diff must show only added values: 5 stages in `OpportunityStage`, `Donor` in `ContactRole`. Anything
+   else (a value missing from the repo, a changed probability) means the org changed since 2026-11-02: update the repo file from the
+   retrieved one first.
 
-2. Validate the data model and run its tests:
-
-```bash
-sf project deploy validate --target-org <alias> --manifest manifest/prompt-1-core.xml --test-level RunSpecifiedTests --tests MetadataSmokeTest --tests PledgeValidationRulesTest
-```
-
-3. The layout and record page (`manifest/prompt-1-pages.xml`) reference `Charge__c` and `Pledge_Change_Log__c`, which Prompt 2 creates.
-   Validate them together with Prompt 2 (B10 step 11):
+2. Validate the whole source tree and run all local tests (Prompts 1 and 2 together; the layout and record page need Prompt 2's
+   `Charge__c` and `Pledge_Change_Log__c`):
 
 ```bash
 sf project deploy validate --target-org <alias> --source-dir force-app --test-level RunLocalTests
 ```
+
+Credentials, CMDT values and custom-setting records are post-deploy steps (7–9, 13); the validation doesn't need them.

@@ -170,6 +170,10 @@ Classes (each with tests):
   user, scope api, IP restrictions) / Site / Guest profile: metadata where possible (ExternalClientApplication + its OAuth settings and
   policies, never the consumer secret), otherwise precise manual steps in the README (B3.2, B3.3).
 
+Already in place from Prompt 2 [v2.3]: Cardcom_Lp_Event__e has only LowProfileId__c (publish without Log_Id__c, N1); the guest
+PS can create the event (N28); Donations_Integration has the Cardcom_EC principal. Add classAccesses for every class you create to
+Donations_Integration (and CardcomWebhookResource to Donations_Site_Guest).
+
 Constraints: callouts before DML in every Queueable; the webhook trusts only the LowProfileId; Named Credential merge-field
 placeholders are never replaced in Apex; no real HTTP.
 
