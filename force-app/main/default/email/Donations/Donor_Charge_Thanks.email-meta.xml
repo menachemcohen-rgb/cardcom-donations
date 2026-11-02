@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <available>true</available>
+    <description>B6.9.3 thank-you email after a successful charge. Merged by DonorChargeEmailService with {{...}} placeholders (no merge fields, no WhatId).</description>
+    <encodingKey>UTF-8</encodingKey>
+    <name>Donor Charge Thanks</name>
+    <style>none</style>
+    <subject>תודה על תרומתך ל{{OrgName}} – {{Amount}} ₪</subject>
+    <type>custom</type>
+    <uiType>Aloha</uiType>
+</EmailTemplate>

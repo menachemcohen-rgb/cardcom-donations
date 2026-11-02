@@ -289,6 +289,23 @@ public without sharing class StaffAlertService {
     markSent('Schedule_Changed_Sent_On__c');
   }
 
+  /** B6.9.5: the org's daily single-email budget is almost used up — donor thank-you emails are being skipped. Once a day. */
+  public static Boolean emailLimit(Integer left) {
+    if (sentToday('Email_Limit_Sent_On__c'))
+      return false;
+    send(
+      'מכסת המיילים היומית כמעט נגמרה',
+      wrap(
+        '<p>נותרו ' +
+          EmailUtil.esc(left) +
+          ' מיילים יומיים בארגון. מיילי התודה לתורמים לא נשלחים עד מחר ' +
+          '(החיובים עצמם ממשיכים כרגיל). כדאי לבדוק את נפח המיילים (Q9).</p>'
+      )
+    );
+    markSent('Email_Limit_Sent_On__c');
+    return true;
+  }
+
   /** 09:00 SUN-FRI (B9 "Donations Daily Alerts"). */
   public class Daily implements Schedulable {
     public Daily() {

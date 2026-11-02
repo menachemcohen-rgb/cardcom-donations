@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Donation_Contact_Email</fullName>
+        <categories>Donations</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Donations: contact email in donor emails</shortDescription>
+        <value>donations@example.org</value>
+    </labels>
+    <labels>
+        <fullName>Donation_Contact_Phone</fullName>
+        <categories>Donations</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Donations: contact phone in donor emails</shortDescription>
+        <value>03-0000000</value>
+    </labels>
+    <labels>
+        <fullName>Donation_Impact_Sentence</fullName>
+        <categories>Donations</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Donations: impact sentence in the thank-you email</shortDescription>
+        <value>התרומה היומית שלך מאפשרת לנו להמשיך בפעילות – תודה שאת/ה איתנו.</value>
+    </labels>
+    <labels>
+        <fullName>Donation_Org_Name</fullName>
+        <categories>Donations</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Donations: organization name in donor emails</shortDescription>
+        <value>שם הארגון</value>
+    </labels>
+    <labels>
+        <fullName>Donation_Signer_Name</fullName>
+        <categories>Donations</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Donations: signer of the thank-you email</shortDescription>
+        <value>צוות הארגון</value>
+    </labels>
+</CustomLabels>

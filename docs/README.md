@@ -143,8 +143,8 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
 19. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
     `Needs_Review__c`, `Review_Reason__c`, `Donor_Tax_Id__c`, and the related list "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand
     because deploying the Contact layout would overwrite the org's existing one.
-20. **Platform event subscriber** (B6.3). `CardcomLpEventTrigger` must run as the integration user, otherwise its job can't use the
-    Cardcom credential. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
+20. **Platform event subscribers** (B6.3, B6.9.2). `CardcomLpEventTrigger` and `ChargeSuccessTrigger` must run as the integration
+    user: the first so its job can use the Cardcom credential, the second so donor emails go out from the org-wide address. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
     `force-app`. Deploy it once per org (a real deploy, after the trigger is deployed):
 
 ```bash
@@ -191,6 +191,18 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
 - **After a Cardcom configuration error** (wrong API user/password, B6.13 E21): fix the credential, then as the integration user
   `ChargeAdmin.requeueFailedConfig(Date.today());` — it creates one new attempt per Config-failed charge of that day and starts the chain.
 - **Simulated run** (sandbox, B11): `ChargePlanner.plan(Date.newInstance(2026, 11, 4), 'AM');` plans and starts charging immediately.
+
+### Donor emails and links (Prompt 8)
+- **Texts:** Setup → Custom Labels → category `Donations`: `Donation_Org_Name`, `Donation_Impact_Sentence`, `Donation_Contact_Phone`,
+  `Donation_Contact_Email`, `Donation_Signer_Name` (placeholders from B13.0; final wording Q8). The thank-you email layout is the Classic
+  email template `Donor_Charge_Thanks` (folder Donations); keep its `{{…}}` placeholders.
+- **Sender:** `Cardcom_Setting__mdt.Default.Org_Wide_Email_Address__c` = a verified Org-Wide Email Address the integration user may use.
+- **Deliverability:** Setup → Deliverability → All email (sandboxes default to "System email only", which blocks donor emails).
+- **Links:** `Donor_Portal_Base_Url__c` = the WordPress page with `[org_donor_portal]`; `Donor_Link_Setting__mdt.Default.Secret__c` must be
+  set (step 8) — without it no email is sent (the charges get `Donor_Email_Status__c = Failed`).
+- **Daily budget:** when fewer than 200 single emails are left for the day, thank-you emails are skipped (Failed) and staff get one alert (B6.9.5, Q9).
+- **Rotating the link secret** (B6.9.1): copy `Secret__c` into `Previous_Secret__c`, put a new value in `Secret__c`; after a month clear
+  `Previous_Secret__c` (old links stop working). To revoke one donor's links use the "ביטול קישורי תורם" button.
 
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
