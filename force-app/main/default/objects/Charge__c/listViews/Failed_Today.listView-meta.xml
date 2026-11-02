@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Failed_Today</fullName>
+    <columns>NAME</columns>
+    <columns>Pledge__c</columns>
+    <columns>Contact__c</columns>
+    <columns>Scheduled_Date__c</columns>
+    <columns>Slot__c</columns>
+    <columns>Attempt_Number__c</columns>
+    <columns>Status__c</columns>
+    <columns>Amount__c</columns>
+    <columns>Error_Code__c</columns>
+    <columns>Error_Category__c</columns>
+    <columns>Executed_At__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Status__c</field>
+        <operation>equals</operation>
+        <value>Failed</value>
+    </filters>
+    <filters>
+        <field>Run_Date__c</field>
+        <operation>equals</operation>
+        <value>TODAY</value>
+    </filters>
+    <label>חיובים שנכשלו היום</label>
+</ListView>

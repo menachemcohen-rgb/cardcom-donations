@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Issue_Type__c</fullName>
+    <label>סוג פער</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Missing_In_Cardcom</fullName>
+                <default>false</default>
+                <label>Missing_In_Cardcom</label>
+            </value>
+            <value>
+                <fullName>Missing_In_Salesforce</fullName>
+                <default>false</default>
+                <label>Missing_In_Salesforce</label>
+            </value>
+            <value>
+                <fullName>Amount_Mismatch</fullName>
+                <default>false</default>
+                <label>Amount_Mismatch</label>
+            </value>
+            <value>
+                <fullName>Status_Mismatch</fullName>
+                <default>false</default>
+                <label>Status_Mismatch</label>
+            </value>
+            <value>
+                <fullName>Duplicate_In_Cardcom</fullName>
+                <default>false</default>
+                <label>Duplicate_In_Cardcom</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

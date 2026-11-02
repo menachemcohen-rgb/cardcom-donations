@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Charge_Immutable_After_Final</fullName>
+    <active>true</active>
+    <description>B2.3.</description>
+    <errorConditionFormula>AND(NOT(ISNEW()), OR(ISPICKVAL(PRIORVALUE(Status__c),'Success')), ISCHANGED(Amount__c))</errorConditionFormula>
+    <errorDisplayField>Amount__c</errorDisplayField>
+    <errorMessage>לא ניתן לשנות סכום של חיוב שהצליח.</errorMessage>
+</ValidationRule>
