@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>DonationSetup</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>Cardcom_Setting__mdt</name>
@@ -12,6 +16,14 @@
         <enabled>true</enabled>
         <name>Stop_Pledge_Charges</name>
     </customPermissions>
+    <customSettingAccesses>
+        <enabled>true</enabled>
+        <name>Alert_State__c</name>
+    </customSettingAccesses>
+    <customSettingAccesses>
+        <enabled>true</enabled>
+        <name>Charge_Run_Lock__c</name>
+    </customSettingAccesses>
     <customSettingAccesses>
         <enabled>true</enabled>
         <name>Charge_Settings__c</name>
@@ -587,6 +599,10 @@
         <field>Reconciliation_Issue__c.Status__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Apply_Charge_Schedule</flow>
+    </flowAccesses>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Donations Admin</label>
     <objectPermissions>
