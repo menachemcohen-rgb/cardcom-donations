@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <backgroundEndColor>#FFFFFF</backgroundEndColor>
+    <backgroundFadeDirection>Diagonal</backgroundFadeDirection>
+    <backgroundStartColor>#FFFFFF</backgroundStartColor>
+    <chartTheme>light</chartTheme>
+    <colorPalette>unity</colorPalette>
+    <dashboardChartTheme>light</dashboardChartTheme>
+    <dashboardColorPalette>unity</dashboardColorPalette>
+    <dashboardGridLayout>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>0</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartAxisRange>Auto</chartAxisRange>
+                <chartSummary>
+                    <axisBinding>y</axisBinding>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Donut</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>הצליחו / נכשלו / דולגו</footer>
+                <groupingColumn>Charge__c.Status__c</groupingColumn>
+                <header>חיובים היום</header>
+                <legendPosition>Bottom</legendPosition>
+                <report>Donations/Charges_Today</report>
+                <showPercentage>true</showPercentage>
+                <showTotal>true</showTotal>
+                <showValues>true</showValues>
+            </dashboardComponent>
+            <rowIndex>0</rowIndex>
+            <rowSpan>8</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>4</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartSummary>
+                    <aggregate>Sum</aggregate>
+                    <column>Charge__c.Amount__c</column>
+                </chartSummary>
+                <componentType>Metric</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>₪ מצטבר מתחילת החודש</footer>
+                <header>נגבה החודש</header>
+                <indicatorHighColor>#54C254</indicatorHighColor>
+                <indicatorLowColor>#C25454</indicatorLowColor>
+                <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
+                <report>Donations/Collected_This_Month</report>
+                <showRange>false</showRange>
+            </dashboardComponent>
+            <rowIndex>0</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>8</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartSummary>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Metric</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>מספר נוכחי</footer>
+                <header>הוראות פעילות</header>
+                <indicatorHighColor>#54C254</indicatorHighColor>
+                <indicatorLowColor>#C25454</indicatorLowColor>
+                <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
+                <report>Donations/Active_Pledges</report>
+                <showRange>false</showRange>
+            </dashboardComponent>
+            <rowIndex>0</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>8</colSpan>
+            <columnIndex>4</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartAxisRange>Auto</chartAxisRange>
+                <chartSummary>
+                    <axisBinding>y</axisBinding>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Line</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>מגמת הצטרפות (90 יום)</footer>
+                <groupingColumn>Opportunity.Start_Date__c</groupingColumn>
+                <header>הוראות חדשות לפי שבוע</header>
+                <legendPosition>Bottom</legendPosition>
+                <report>Donations/New_Donors</report>
+            </dashboardComponent>
+            <rowIndex>4</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>0</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartSummary>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Metric</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>כולל כפולים – דוח "רשומות כפולות"</footer>
+                <header>תורמים לבדיקה</header>
+                <indicatorHighColor>#54C254</indicatorHighColor>
+                <indicatorLowColor>#C25454</indicatorLowColor>
+                <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
+                <report>Donations/Donors_Needs_Review</report>
+                <showRange>false</showRange>
+            </dashboardComponent>
+            <rowIndex>8</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>4</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartSummary>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Metric</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>לבדיקת כספים</footer>
+                <header>פערי התאמה פתוחים</header>
+                <indicatorHighColor>#54C254</indicatorHighColor>
+                <indicatorLowColor>#C25454</indicatorLowColor>
+                <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
+                <report>Donations/Open_Reconciliation_Issues</report>
+                <showRange>false</showRange>
+            </dashboardComponent>
+            <rowIndex>8</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <dashboardGridComponents>
+            <colSpan>4</colSpan>
+            <columnIndex>8</columnIndex>
+            <dashboardComponent>
+                <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+                <chartSummary>
+                    <column>RowCount</column>
+                </chartSummary>
+                <componentType>Metric</componentType>
+                <displayUnits>Auto</displayUnits>
+                <footer>לטיפול / החלטה</footer>
+                <header>כישלונות חוזרים</header>
+                <indicatorHighColor>#54C254</indicatorHighColor>
+                <indicatorLowColor>#C25454</indicatorLowColor>
+                <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
+                <report>Donations/Repeated_Failures</report>
+                <showRange>false</showRange>
+            </dashboardComponent>
+            <rowIndex>8</rowIndex>
+            <rowSpan>4</rowSpan>
+        </dashboardGridComponents>
+        <numberOfColumns>12</numberOfColumns>
+        <rowHeight>36</rowHeight>
+    </dashboardGridLayout>
+    <dashboardType>LoggedInUser</dashboardType>
+    <description>תרומות מיקרו (client spec ch. 8): today's charges, collected this month, active pledges and trend, donors to review, open reconciliation issues, repeated failures.</description>
+    <isGridLayout>true</isGridLayout>
+    <textColor>#000000</textColor>
+    <title>תרומות מיקרו</title>
+    <titleColor>#000000</titleColor>
+    <titleSize>12</titleSize>
+</Dashboard>

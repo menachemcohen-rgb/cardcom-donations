@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ReportType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Duplicate_Contacts</fullName>
+    <baseObject>DuplicateRecordSet</baseObject>
+    <category>other</category>
+    <deployed>true</deployed>
+    <description>Duplicate record sets of Contacts found by Donor_Contact_Duplicate (Alert+Report). The report on it is created by hand (README).</description>
+    <join>
+        <outerJoin>false</outerJoin>
+        <relationship>DuplicateRecordItems</relationship>
+    </join>
+    <label>רשומות כפולות</label>
+    <sections>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Name</field>
+            <table>DuplicateRecordSet</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>DuplicateRuleId</field>
+            <table>DuplicateRecordSet</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>RecordCount</field>
+            <table>DuplicateRecordSet</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>CreatedDate</field>
+            <table>DuplicateRecordSet</table>
+        </columns>
+        <masterLabel>קבוצת כפולים</masterLabel>
+    </sections>
+    <sections>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Name</field>
+            <table>DuplicateRecordSet.DuplicateRecordItems</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>RecordId</field>
+            <table>DuplicateRecordSet.DuplicateRecordItems</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>CreatedDate</field>
+            <table>DuplicateRecordSet.DuplicateRecordItems</table>
+        </columns>
+        <masterLabel>רשומה כפולה</masterLabel>
+    </sections>
+</ReportType>

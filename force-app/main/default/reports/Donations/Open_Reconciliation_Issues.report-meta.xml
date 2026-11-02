@@ -4,10 +4,10 @@
         <field>CUST_NAME</field>
     </columns>
     <columns>
-        <field>Reconciliation_Issue__c.Issue_Type__c</field>
+        <field>Reconciliation_Issue__c.Business_Date__c</field>
     </columns>
     <columns>
-        <field>Reconciliation_Issue__c.Business_Date__c</field>
+        <field>Reconciliation_Issue__c.Charge__c</field>
     </columns>
     <columns>
         <field>Reconciliation_Issue__c.Cardcom_Tranzaction_Id__c</field>
@@ -33,7 +33,12 @@
             <value>Open</value>
         </criteriaItems>
     </filter>
-    <format>Tabular</format>
+    <format>Summary</format>
+    <groupingsDown>
+        <dateGranularity>None</dateGranularity>
+        <field>Reconciliation_Issue__c.Issue_Type__c</field>
+        <sortOrder>Asc</sortOrder>
+    </groupingsDown>
     <name>פערי התאמה פתוחים</name>
     <params>
         <name>co</name>
@@ -44,8 +49,4 @@
     <showDetails>true</showDetails>
     <showGrandTotal>true</showGrandTotal>
     <showSubTotals>true</showSubTotals>
-    <timeFrameFilter>
-        <dateColumn>CUST_CREATED_DATE</dateColumn>
-        <interval>INTERVAL_CUSTOM</interval>
-    </timeFrameFilter>
 </Report>

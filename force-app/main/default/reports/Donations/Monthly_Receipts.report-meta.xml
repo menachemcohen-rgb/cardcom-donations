@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>CUST_NAME</field>
+    </columns>
+    <columns>
+        <field>Monthly_Receipt__c.Contact__c</field>
+    </columns>
+    <columns>
+        <aggregateTypes>Sum</aggregateTypes>
+        <field>Monthly_Receipt__c.Total_Amount__c</field>
+    </columns>
+    <columns>
+        <aggregateTypes>Sum</aggregateTypes>
+        <field>Monthly_Receipt__c.Charge_Count__c</field>
+    </columns>
+    <columns>
+        <field>Monthly_Receipt__c.Cardcom_Document_Number__c</field>
+    </columns>
+    <columns>
+        <field>Monthly_Receipt__c.Attempt_Count__c</field>
+    </columns>
+    <columns>
+        <field>Monthly_Receipt__c.Error_Code__c</field>
+    </columns>
+    <columns>
+        <field>Monthly_Receipt__c.Error_Message__c</field>
+    </columns>
+    <description>Monthly Cardcom receipts of the last 120 days by month and status: issued and sent, and those that failed and need handling.</description>
+    <format>Summary</format>
+    <groupingsDown>
+        <dateGranularity>Month</dateGranularity>
+        <field>Monthly_Receipt__c.Period_Month__c</field>
+        <sortOrder>Desc</sortOrder>
+    </groupingsDown>
+    <groupingsDown>
+        <dateGranularity>None</dateGranularity>
+        <field>Monthly_Receipt__c.Status__c</field>
+        <sortOrder>Asc</sortOrder>
+    </groupingsDown>
+    <name>קבלות חודשיות</name>
+    <params>
+        <name>co</name>
+        <value>1</value>
+    </params>
+    <reportType>CustomEntity$Monthly_Receipt__c</reportType>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+    <timeFrameFilter>
+        <dateColumn>Monthly_Receipt__c.Period_Month__c</dateColumn>
+        <interval>INTERVAL_LAST120</interval>
+    </timeFrameFilter>
+</Report>
