@@ -90,10 +90,29 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
    `Donor_Portal_Base_Url__c`, `Webhook_Url__c` and `Allowed_Return_Hosts__c`. `Default_Account_Id__c` stays empty (org-discovery D-3).
 
 ### External Client App, Site, email
-10. External Client App `WP_Donations` (Part C D27, replaces B3.2's Connected App): OAuth scope `api`, Client Credentials Flow with
-   Run As = the integration user, IP restrictions to the WP server. Consumer Key/Secret go into the WordPress `wp-config.php` only.
-   Prompt 3 adds the app's metadata where it can be deployed and the exact Setup steps for the rest.
-11. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
+10. **External Client App `WP_Donations`** (Part C D27, replaces B3.2's Connected App). Created in Setup, not deployed: its OAuth
+    policies name the org's integration user, and its global OAuth settings hold the consumer key.
+    1. Setup → External Client App Manager → New External Client App. Name `WP Donations`, API name `WP_Donations`, contact email,
+       Distribution State **Local**.
+    2. API (Enable OAuth): callback URL `https://login.salesforce.com/services/oauth2/success` (not used), OAuth scope
+       "Manage user data via APIs (`api`)" only. Flow Enablement: **Enable Client Credentials Flow**. Create.
+    3. Policies → Edit → OAuth Policies: Permitted Users = "Admin approved users are pre-authorized", select permission set
+       `Donations_Integration`; IP Relaxation = **Enforce IP restrictions**; Client Credentials Flow → Run As = the integration user
+       (step 6). Save.
+    4. Network access for the WP server's outgoing IP (Q11): Setup → Network Access, or the integration user's profile Login IP Ranges.
+    5. Settings → OAuth Settings → Consumer Key and Secret: copy them into the WordPress `wp-config.php` as `ORG_SF_CLIENT_ID` and
+       `ORG_SF_CLIENT_SECRET` (B7.3), together with `ORG_SF_LOGIN_URL` = the org's My Domain URL. Never anywhere else.
+    6. Check: `curl -s -X POST https://<mydomain>/services/oauth2/token -d grant_type=client_credentials -d client_id=... -d client_secret=...`
+       returns an `access_token`. The token endpoint is the same as for a Connected App.
+11. **Salesforce Site `cardcom`** (B3.3), created in Setup (its guest user is org-specific):
+    1. Setup → Sites: register a Sites domain if there is none, then New: label `cardcom`, name `cardcom`, default web address `cardcom`,
+       Active Site Home Page `InMaintenance`, Clickjack Protection "Allow framing by the same origin only". Activate.
+    2. Public Access Settings: leave the guest profile with no object access. Assign permission set `Donations_Site_Guest` to the site's
+       guest user (it grants only: create `Cardcom_Webhook_Log__c` rows, publish `Cardcom_Lp_Event__e`, run `CardcomWebhookResource`).
+    3. Setup → Sharing Settings: keep "Secure guest user record access" on; no sharing rules for the guest.
+    4. Put the webhook URL `https://<domain>.my.salesforce-sites.com/cardcom/services/apexrest/cardcom/webhook` into
+       `Cardcom_Setting__mdt.Default.Webhook_Url__c` (step 9). Check: a POST with `{"LowProfileId":"test-0000000001"}` returns 200
+       and creates a `Cardcom_Webhook_Log__c` row.
 12. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
     Deliverability = All email.
 
@@ -122,9 +141,32 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
 19. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
     `Needs_Review__c`, `Review_Reason__c`, `Donor_Tax_Id__c`, and the related list "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand
     because deploying the Contact layout would overwrite the org's existing one.
-20. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
-    `Donor_Contact_Duplicate` (B10 step 12).
-21. `DonationSetup.scheduleAll()` as the integration user.
+20. **Platform event subscriber** (B6.3). `CardcomLpEventTrigger` must run as the integration user, otherwise its job can't use the
+    Cardcom credential. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
+    `force-app`. Deploy it once per org (a real deploy, after the trigger is deployed):
+
+```bash
+scripts/deploy-pe-subscriber.sh <alias> integration.donations@<org>
+```
+
+21. **Normalize existing Contacts, then activate the donor rules** (B10 step 12). Matching Rule `Donor_Contact_Match` and Duplicate
+    Rule `Donor_Contact_Duplicate` are deployed **inactive**. First run the backfill as an admin and wait for it to finish:
+
+```bash
+sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex
+```
+
+    Then Setup → Matching Rules → `Donor Contact Match` → Activate (wait for the activation email), then Setup → Duplicate Rules →
+    `Donor Contact Duplicate` → Activate.
+22. **LP sweeper** (B5.3): schedule it every 15 minutes. Scheduled jobs run as the user who schedules them, and the sweeper's job calls
+    Cardcom, so schedule it as the integration user. That user is API-only, so authorize the CLI as it (for example with the JWT
+    bearer flow) and run (see spec-consistency N42):
+
+```bash
+sf apex run --target-org <alias> --file scripts/apex/schedule-lp-sweeper.apex
+```
+
+23. `DonationSetup.scheduleAll()` as the integration user (Prompt 4).
 
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
