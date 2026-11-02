@@ -1,0 +1,12 @@
+{
+  "orgName": "Cardcom Donations Dev",
+  "edition": "Developer",
+  "language": "iw",
+  "country": "IL",
+  "features": ["EnableSetPasswordInApi"],
+  "settings": {
+    "lightningExperienceSettings": { "enableS1DesktopEnabled": true },
+    "languageSettings": { "enableTranslationWorkbench": true },
+    "opportunitySettings": { "enableOpportunityTeam": false }
+  }
+}

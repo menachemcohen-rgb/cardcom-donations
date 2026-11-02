@@ -1,0 +1,32 @@
+# Salesforce CLI
+.sf/
+.sfdx/
+.localdevserver/
+deploy-options.json
+
+# Retrieved org snapshots used for discovery (may contain org-specific data)
+discovery/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# WordPress build output
+dist/
+*.zip
+wordpress/org-donations/vendor/
+
+# PHP tools
+.phpunit.result.cache
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Secrets — never commit
+.env
+*.key
+*.pem
+wp-config*.php
