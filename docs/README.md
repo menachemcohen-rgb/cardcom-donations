@@ -183,6 +183,13 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
     `Apply_Charge_Schedule`. It runs only for users with `Manage_Charge_Schedule` (in `Donations_Admin`) and TZ Asia/Jerusalem.
     Note: jobs re-scheduled from the button run as that admin (see spec-consistency N42).
 
+### Operations (charge engine)
+- **Emergency stop:** set `Charge_Settings__c.Charging_Enabled__c = false`. No run plans charges and the dispatcher sends nothing,
+  retries included; Pending charges wait. Setting it back to true resumes with the next scheduled run or retry sweep.
+- **After a Cardcom configuration error** (wrong API user/password, B6.13 E21): fix the credential, then as the integration user
+  `ChargeAdmin.requeueFailedConfig(Date.today());` — it creates one new attempt per Config-failed charge of that day and starts the chain.
+- **Simulated run** (sandbox, B11): `ChargePlanner.plan(Date.newInstance(2026, 11, 4), 'AM');` plans and starts charging immediately.
+
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
 - OWD: Opportunity **Public Read Only**, Account **Public Read/Write**, Contact **Controlled by Parent** (C2 rule 5).
