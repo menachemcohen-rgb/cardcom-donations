@@ -135,6 +135,8 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
     Administrator). Layout assignments live in profiles, which this repo doesn't deploy.
 17. **Activate the record page.** Lightning App Builder → `Pledge_Record_Page` (label "עמוד הוראת תרומה יומית") → Activation →
     App, Record Type and Profile: assign it to record type `Micro_Donation_Pledge` only (C2 rule 6). Don't make it the org default.
+    The page carries the dynamic actions הפסקת חיובים / חידוש חיובים / ביטול הוראה / ביטול קישורי תורם, shown by stage and only to
+    users with `Stop_Pledge_Charges` (`Donations_Admin`).
 18. **Field history on `StageName`** (optional). Part C lists it, but Opportunity already records every stage change in Stage History
     (`OpportunityHistory`) automatically. Turn on Field History for `StageName` in Setup only if you also want it in the field-history
     list; it counts toward the limit of 20.

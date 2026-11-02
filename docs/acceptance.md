@@ -42,8 +42,8 @@ starts the chain itself. On the test terminal a charge **above 5,000 ₪** is de
 | TC15 | Temporary failure | `ChargeOutcomeHandlerTest.retryableGoesA1A2A3ThenFinal` | Pledge with `Charge_Amount__c` 5001 (bypass the range rule temporarily, or charge by hand from Anonymous Apex with `CardcomService.chargeToken(token, exp, 5001, key)`): A1 Failed → A2 one hour later → A3 four hours later → final. `Consecutive_Failures__c = 1` comes with Prompt 6. |
 | TC16 | Blocked card | `ChargeOutcomeHandlerTest.cardDeadIsFinalForThisLogicalChargeOnly`, `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | No public blocked test card (B5.0א): covered by the mock only. |
 | TC17 | Expired card | `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | Set `CardExpirationMMYY__c = 0124` on a test pledge: the charge is sent, fails final (Card_Dead), and the next day's run still plans it (D11). |
-| TC18 | 3 consecutive failures | — | Prompt 6 (roll-ups and staff alert). |
-| TC19 | Success after a streak | — | Prompt 6. |
+| TC18 | 3 consecutive failures | `PledgeRollupServiceTest.threeFailuresAlertOnceAndTheFourthDoesNot` | TC15 three times on one pledge: one staff email (Failure_Notify_Emails__c), pledge stays Active; a fourth failure sends nothing. |
+| TC19 | Success after a streak | `PledgeRollupServiceTest.successResetsTheStreakAndReArmsTheAlert` | Replace the card (Prompt 8) or lower the amount, charge successfully: `Consecutive_Failures__c = 0`, `Failure_Alert_Sent_At__c` empty. |
 | TC20 | Retry after an unknown success | `ChargeQueueableTest.verifiedPreviousSuccessIsNotChargedAgain`, `ChargeQueueableTest.verifiedPreviousFailureIsChargedNormally` | Charge A1 by hand, then create an A2 with `Verify_Attempt_Key__c` = A1's key and run the chain: A2 becomes Success / `ALREADY_CHARGED`, and Cardcom shows one transaction. |
 | TC21 | Timeout | `ChargeOutcomeHandlerTest.unknownOutcomeVerifiesTheKeyNextTime`, `ChargeQueueableTest.timeoutLeadsToAVerifiedRetry` | Mock only (no way to force a Cardcom timeout). |
 
@@ -61,6 +61,16 @@ and scheduling (`ChargeSettingsTest`, `DonationSetupTest`).
   Thu–Fri + Shabbat) = 10,000 rows never land in one transaction (the per-transaction limit is 10,000).
 - Charging: 30 charges per link (`Batch_Size__c`), at most 2 callouts each; each link stops calling out after 90 s of the 120 s
   callout budget. 5,000 Friday charges ≈ 167 links (B6.5 rule 6).
+
+## Manual stop / resume / cancel / revoke (Prompt 6)
+
+| Scenario | Automated | Manual (sandbox) |
+|---|---|---|
+| Stop | `PledgeTriggerHandlerTest.stopSkipsPendingChargesAndLogs` | As a `Donations_Admin` user, on an Active pledge click "הפסקת חיובים", pick a reason: stage Stopped, Pending charges Skipped (STOPPED), change log "Stop". The button doesn't show without `Stop_Pledge_Charges`. |
+| Resume | `PledgeTriggerHandlerTest.resumeAndCancelAreLoggedAndCancelIsFinal` | "חידוש חיובים" on a Stopped pledge: Active from the next run, skipped days not made up, log "Resume". |
+| Cancel | same | "ביטול הוראה": Cancelled, End Date today, log "Cancel"; Edit → Active is refused. |
+| Revoke links | `PledgeTriggerHandlerTest.revokingLinksIsLogged` | "ביטול קישורי תורם": `Link_Version__c` + 1, log "Link_Revoke". Old links stop working with Prompt 8. |
+| Permission | `PledgeTriggerHandlerTest.userWithoutPermissionIsBlocked`, `PledgeValidationRulesTest.stoppingWithoutPermissionIsBlocked` | A `Donations_Staff` user sees no action buttons; a direct edit of the stage is refused with "אין לך הרשאה לעצור/לחדש חיובים." |
 
 ## Running the tests (sandbox, check-only)
 
