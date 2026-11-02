@@ -98,6 +98,17 @@ Decisions made while building the data model. Prompt 12 folds them into `CLAUDE.
 | N59 | spec | Resume and the failure counters | Part A 7.8א resets `Consecutive_Failures__c` on resume; B6.8 (authoritative) doesn't. | Not reset by hand: the roll-up recomputes the streak on the next charge (Skipped charges are neutral), and its alert re-arms after a Success. | Resolved |
 | N60 | spec | `scheduleChanged` de-duplication | E11 says every `StaffAlertService` alert is sent at most once a day. | Applied literally, including "זמני חיוב עודכנו": a second change on the same day sends no second email. `failureStreak` is once per streak per pledge (`Failure_Alert_Sent_At__c`), not per day. | Resolved |
 
+## Resolved in Prompt 10 (WordPress)
+
+| # | Kind | Identifier | Problem | Resolution in Prompt 10 | Status |
+|---|---|---|---|---|---|
+| N61 | duplicate-mismatch | Phone normalization (WP vs Salesforce) | `Org_Validator::phone` and the form JS accepted only `972…`; Salesforce `ContactMatcher.normPhone` also accepts `00972…` and numbers without the leading 0. A valid number could be rejected in the browser. | PHP and JS use the Salesforce rules (`+972`/`972`/`00972`, add a missing leading 0, mobile only). Covered by `ValidatorTest` and the JS test. | Resolved |
+| N62 | security | `Org_Rate_Limiter::ip()` | Trusted `CF-Connecting-IP` from any client, so the rate limits could be bypassed by sending the header. The spec's own comment says "only if the site is proxied by CF". | The header is used only when `ORG_BEHIND_CLOUDFLARE` is true in `wp-config.php`. | Resolved |
+| N63 | contract | `/donations/pledge` `VALIDATION` errors | Salesforce returns `fields` as a list of API names (B4); the form JS treats it as `field => message`, so errors landed on no field. | `Org_Form::sf_fields()` maps the names to the form's fields with a generic Hebrew message ("נא לבדוק שדה זה"). | Resolved |
+| N64 | bug | CSP header of the plugin (B7.4) | `frame-src https://secure.cardcom.solutions` blocks the iframe's redirect to the site's own `/cardcom-return/`, so the form would never submit after the card is saved. | `frame-src 'self' https://secure.cardcom.solutions`; `docs/wp-cache-exclusions.md` tells site owners to do the same in their own CSP. | Resolved |
+| N65 | spec | `uninstall.php` (B7.2) | Listed in the file tree with no code. | Deletes the plugin's transients only (token, instance URL, rate-limit counters). | Resolved |
+| N66 | test | JS helpers | `validId` and the monthly estimate lived inside the form's IIFE, so they couldn't be tested. | Exposed read-only as `window.OrgDonUtil` (`validId`, `perMonth`, `normPhone`); behaviour unchanged. Thank-you text set with `textContent` instead of `innerHTML`. | Resolved |
+
 ## Checked and consistent
 
 - **`CardcomService` signatures (B5.9) match every call site.** `createTokenLowProfile(String,String,String)` at 201 and 2533; `chargeToken(String,String,Decimal,String)` at 1989 and 1452; `listTransactions(Date,Integer,Integer)` at 2890; plus `findSuccessByExternalId`, `getLpResult`, `cardFrom`, `createDocument`, `redact` and `code`.

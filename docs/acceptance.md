@@ -27,6 +27,23 @@ Also automated for Prompt 3 (no B11 number):
   `PendingVerificationSweeperTest.ignoresFreshPledgesAndOtherOpportunities`, `PledgeActivationServiceTest.activatesOnlyWhenSubmittedAndVerified`.
 - Named Credential merge fields sent unchanged: `CardcomServiceTest.createTokenLowProfileSendsB51BodyWithCredentialPlaceholders`.
 
+## WordPress — form and donor page (Prompt 10)
+
+Staging site with the plugin installed (`docs/wp-install.md`), sandbox Salesforce, Cardcom test terminal. Automated: PHPUnit
+(`ValidatorTest`, `RateLimiterTest`) and `node --test wordpress/org-donations/tests/js/donation-form.test.mjs`.
+
+| ID | Scenario | Manual steps | Expected |
+|---|---|---|---|
+| TC01 | New donor, end to end | Open the form, fill every field, ₪3, twice a day, accept the terms, enter card `4580280000000008`, 12/30, CVV 123, any ID, click "שמור כרטיס". | The form submits by itself and shows "תודה! הוראת התרומה התקבלה…". In Salesforce the pledge becomes Active within a minute (Prompt 3). DevTools: no browser request to Salesforce. |
+| TC05 | Invalid Israeli ID | Type `123456789` in the ID field and click "סיום". | "מספר תעודת הזהות אינו תקין" under the field; no `org_donation_submit` request (browser check) and the server check rejects it too (`ValidatorTest`). |
+| TC06 | Missing field after the card is saved | Leave the email empty, enter and save the card. | "נא להשלים את פרטי הטופס וללחוץ 'סיום'" and a "סיום" button. Fill the email, click "סיום": success without entering the card again. |
+| TC07 | iframe expiry | Open the form, fill some fields, wait 21 minutes. | About 30 seconds before `expiresAt` the iframe reloads with a new payment page; the typed values stay. |
+| TC10 | Submit replay | After TC01, re-send the same `org_donation_submit` request (DevTools → Copy as fetch). | HTTP 409 with "ההוראה כבר נקלטה. תודה!". |
+| — | Rate limit | Reload the form page 11 times within 10 minutes. | The 11th load shows "בוצעו ניסיונות רבים. נסו שוב בעוד מספר דקות." and no iframe. |
+| — | Cache / CSP | Load the form page twice in two browsers. | Two different iframe URLs; `/cardcom-return/` shows inside the iframe (not blocked by CSP). |
+| — | Donor page: invalid link | Open `/donor/?a=amount&t=abc`. | "הקישור אינו תקף. לפרטים פנו אלינו: …"; the token disappears from the address bar. |
+| — | Donor page: amount, card | Needs the Salesforce `/donor/*` endpoints and signed links (Prompt 8). | Messages per B7.12.4. |
+
 ## Charging — TC11–TC21 (Prompts 4–5)
 
 Manual steps run in the sandbox against Cardcom's public test terminal (`CLAUDE.md` B5.0א) with a real token from TC01. The

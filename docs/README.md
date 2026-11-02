@@ -39,7 +39,7 @@ only), a thank-you email with signed donor links (card change / amount change), 
 | Path | Contents |
 |---|---|
 | `force-app/main/default/` | Salesforce source-format metadata (API 62.0). Platform Events live under `objects/` (`*__e`), as SFDX source format requires. |
-| `wordpress/org-donations/` | WordPress plugin (Prompt 10). |
+| `wordpress/org-donations/` | WordPress plugin (Prompt 10): install guide `docs/wp-install.md`, cache/CSP exclusions `docs/wp-cache-exclusions.md`, zip with `scripts/build-plugin.sh`. |
 | `docs/` | This README, prompts, consistency check, org discovery, acceptance, runbook (later prompts). |
 | `scripts/` | Read-only org discovery script; later the plugin build script. |
 | `spec/` | Client spec PDF. |
