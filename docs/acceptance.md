@@ -101,6 +101,18 @@ and scheduling (`ChargeSettingsTest`, `DonationSetupTest`).
 | Revoke links | `PledgeTriggerHandlerTest.revokingLinksIsLogged` | "ביטול קישורי תורם": `Link_Version__c` + 1, log "Link_Revoke". Old links stop working with Prompt 8. |
 | Permission | `PledgeTriggerHandlerTest.userWithoutPermissionIsBlocked`, `PledgeValidationRulesTest.stoppingWithoutPermissionIsBlocked` | A `Donations_Staff` user sees no action buttons; a direct edit of the stage is refused with "אין לך הרשאה לעצור/לחדש חיובים." |
 
+## Nightly reconciliation — TC36 (Prompt 7)
+
+| ID | Scenario | Automated | Manual (sandbox + test terminal) |
+|---|---|---|---|
+| TC36 | Reconciliation issue, re-run without duplicates | `ReconciliationJobTest.eachIssueTypeIsReported`, `ReconciliationJobTest.reRunUpdatesIssuesInPlaceAndKeepsStaffResolution` | After a charging day (TC11), as the integration user set one Success charge's `Cardcom_Tranzaction_Id__c` to `999999999`, then run `System.enqueueJob(new ReconciliationJob(Date.today()));`. Expect one `Missing_In_Cardcom` issue (and a `Missing_In_Salesforce` for the real transaction); run it again: still the same issues. B11's "change the amount of a Success charge" is blocked by `VR_Charge_Immutable_After_Final` (B2.3), so `Amount_Mismatch` is covered by the automated test only (N76). |
+| — | Every issue type | `ReconciliationJobTest.eachIssueTypeIsReported` (Missing_In_Cardcom, Amount_Mismatch, Status_Mismatch, Missing_In_Salesforce), `twoRealChargesForOneLogicalChargeIsADuplicate` | Report "פערי התאמה פתוחים" (folder Donations) and list view of the same name show them; staff set Status to Resolved/Ignored. |
+| — | Unknown outcome fixed automatically | `ReconciliationJobTest.unknownOutcomeConfirmedByCardcomIsFixedAutomatically`, `notFoundInCardcomClearsTheFlag`, `sameTranzactionIdOnTheRetryIsNotADuplicate` | TC20/TC21 leave a `Failed (Unknown)` attempt with `Needs_Reconciliation__c`; the next night it becomes Success `RECONCILED` (if Cardcom charged it) or the flag is cleared. |
+| — | Paging | `pagingContinuesWhileAPageIsFull`, `exactlyFullLastPageTriggersOneEmptyRequest` | — |
+| — | Unknown Cardcom transactions ignored | `unknownCardcomTransactionsCanBeIgnored` (`Recon_Report_Unknown__c = false`) | — |
+| — | Staff alert | `eachIssueTypeIsReported` (Alert_State__c), `cardcomErrorsAbortWithoutChanges` (config alert) | One "פערי התאמה פתוחים" email a day while issues are Open. |
+| — | Log clean-up | `LogCleanupBatchTest` | — |
+
 ## Running the tests (sandbox, check-only)
 
 ```bash

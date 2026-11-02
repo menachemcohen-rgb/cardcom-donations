@@ -117,6 +117,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>LogCleanupBatch</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>MicroPledges</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -138,6 +142,10 @@
     </classAccesses>
     <classAccesses>
         <apexClass>PledgeRollupService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ReconciliationJob</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>

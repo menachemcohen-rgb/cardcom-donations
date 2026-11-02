@@ -191,6 +191,13 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
 - **After a Cardcom configuration error** (wrong API user/password, B6.13 E21): fix the credential, then as the integration user
   `ChargeAdmin.requeueFailedConfig(Date.today());` — it creates one new attempt per Config-failed charge of that day and starts the chain.
 - **Simulated run** (sandbox, B11): `ChargePlanner.plan(Date.newInstance(2026, 11, 4), 'AM');` plans and starts charging immediately.
+- **Nightly reconciliation** (B6.12, 02:30 by default, `Charge_Settings__c.Reconcile_Time__c`): compares yesterday's Success charges with
+  Cardcom `ListTransactions` by TranzactionId. Open issues are in the report "פערי התאמה פתוחים" (folder Donations) and the list view of the
+  same name on Reconciliation Issues; staff set `Status__c` to Resolved or Ignored (a re-run never reopens them). Staff get one email a day
+  while issues are open. To re-run a day: `System.enqueueJob(new ReconciliationJob(Date.newInstance(2026, 11, 5)));`. If the terminal
+  also carries non-donation sales, set `Cardcom_Setting__mdt.Default.Recon_Report_Unknown__c = false` to stop "Missing_In_Salesforce" issues.
+- **Log clean-up** (Sunday 03:00): deletes webhook logs older than 90 days and empties `Raw_Response__c`/`Raw_Request__c` on charges and
+  receipts older than 90 days (B9, N73).
 
 ### Donor emails and links (Prompt 8)
 - **Texts:** Setup → Custom Labels → category `Donations`: `Donation_Org_Name`, `Donation_Impact_Sentence`, `Donation_Contact_Phone`,
