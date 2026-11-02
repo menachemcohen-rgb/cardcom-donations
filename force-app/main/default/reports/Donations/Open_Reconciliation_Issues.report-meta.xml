@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>CUST_NAME</field>
+    </columns>
+    <columns>
+        <field>Reconciliation_Issue__c.Issue_Type__c</field>
+    </columns>
+    <columns>
+        <field>Reconciliation_Issue__c.Business_Date__c</field>
+    </columns>
+    <columns>
+        <field>Reconciliation_Issue__c.Cardcom_Tranzaction_Id__c</field>
+    </columns>
+    <columns>
+        <aggregateTypes>Sum</aggregateTypes>
+        <field>Reconciliation_Issue__c.Cardcom_Amount__c</field>
+    </columns>
+    <columns>
+        <aggregateTypes>Sum</aggregateTypes>
+        <field>Reconciliation_Issue__c.SF_Amount__c</field>
+    </columns>
+    <columns>
+        <field>Reconciliation_Issue__c.ExternalUniqTranId__c</field>
+    </columns>
+    <description>B6.12: open reconciliation issues (Cardcom vs Salesforce). Staff set Status to Resolved or Ignored.</description>
+    <filter>
+        <criteriaItems>
+            <column>Reconciliation_Issue__c.Status__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>Open</value>
+        </criteriaItems>
+    </filter>
+    <format>Tabular</format>
+    <name>פערי התאמה פתוחים</name>
+    <params>
+        <name>co</name>
+        <value>1</value>
+    </params>
+    <reportType>CustomEntity$Reconciliation_Issue__c</reportType>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+    <timeFrameFilter>
+        <dateColumn>CUST_CREATED_DATE</dateColumn>
+        <interval>INTERVAL_CUSTOM</interval>
+    </timeFrameFilter>
+</Report>

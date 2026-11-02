@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Open_Issues</fullName>
+    <columns>NAME</columns>
+    <columns>Issue_Type__c</columns>
+    <columns>Business_Date__c</columns>
+    <columns>Charge__c</columns>
+    <columns>Cardcom_Tranzaction_Id__c</columns>
+    <columns>Cardcom_Amount__c</columns>
+    <columns>SF_Amount__c</columns>
+    <columns>Status__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Status__c</field>
+        <operation>equals</operation>
+        <value>Open</value>
+    </filters>
+    <label>פערי התאמה פתוחים</label>
+</ListView>
