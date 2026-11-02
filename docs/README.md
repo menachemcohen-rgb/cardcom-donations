@@ -7,7 +7,7 @@ The implementation prompts and their run order are in [`docs/prompts.md`](prompt
 ## Architecture
 
 A custom WordPress plugin (`org-donations`, shortcode `[org_donation_form]`) renders the donation form. On page load, PHP calls a
-Salesforce Apex REST endpoint (Connected App, OAuth Client Credentials) that asks Cardcom (`LowProfile/Create`, `CreateTokenOnly`) for a
+Salesforce Apex REST endpoint (External Client App, OAuth Client Credentials) that asks Cardcom (`LowProfile/Create`, `CreateTokenOnly`) for a
 hosted card iframe. Terminal credentials exist only in Salesforce (External/Named Credential `Cardcom`). When the donor submits, the
 iframe's return page posts a message to the parent, JS sends amount, frequency and donor details plus the `LowProfileId` to PHP, and PHP
 posts them to Salesforce, which stores them on a **pledge Opportunity** (Record Type `Micro_Donation_Pledge`, stage
@@ -77,9 +77,10 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
    Sandbox uses Cardcom's public test terminal from B5.0א (terminal `1001`); production uses the client's terminal.
 8. `Donor_Link_Setting__mdt.Default` secret: generate a random value and enter it in Setup (Protected CMDT).
 
-### Connected App, Site, email
-9. Connected App `WP_Donations` (Client Credentials, Run As the integration user, IP restrictions to the WP server) — B3.2.
-   Consumer Key/Secret go into the WordPress `wp-config.php` only.
+### External Client App, Site, email
+9. External Client App `WP_Donations` (Part C D27, replaces B3.2's Connected App): OAuth scope `api`, Client Credentials Flow with
+   Run As = the integration user, IP restrictions to the WP server. Consumer Key/Secret go into the WordPress `wp-config.php` only.
+   Prompt 3 adds the app's metadata where it can be deployed and the exact Setup steps for the rest.
 10. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
 11. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
     Deliverability = All email.

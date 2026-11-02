@@ -60,7 +60,7 @@ unless production discovery finds more.
 | R7 | Email deliverability / OWEA | The sandbox likely sends system email only. The only OWEA is a personal Gmail address. | Set Deliverability to "All email" for the sandbox tests. Use a verified organisational address for production (Q8). |
 | R8 | Shield likely absent | Classic Encrypted Text: max 175 characters, not filterable, masked by default. | Already handled by E15/E16; `MetadataSmokeTest` records `isFilterable()`. |
 | R9 | OpportunityContactRole `Donor` role missing | Activation inserts an OCR with Role `Donor`, which would fail on a restricted picklist or create an unlisted value. | Add `Donor` to the OpportunityContactRole `Role` standard value set in Prompt 1, the E14 way: retrieve the whole set, add the value, never deploy a partial set. |
-| R10 | Integration user doesn't exist | Needed for the Connected App Run As, scheduled jobs and the platform-event subscriber. | Manual step 5 in the README (Salesforce Integration license, Asia/Jerusalem). Check that the license's permission set license grants Opportunity access before Prompt 2. |
+| R10 | Integration user doesn't exist | Needed for the External Client App's Run As (D27), scheduled jobs and the platform-event subscriber. | Manual step 5 in the README (Salesforce Integration license, Asia/Jerusalem). Check that the license's permission set license grants Opportunity access before Prompt 2. |
 | R11 | Sandbox vs production | All findings are from the sandbox. | Re-run discovery on production before the production deploy. |
 
 ## Decisions needed (not in the spec)
