@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Charge_Amount__c</fullName>
+    <description>Replaces Recurring_Pledge__c.Amount__c (Part C C2). Snapshot into Charge__c.Amount__c. Required via layout and Apex, not at field level (D24).</description>
+    <externalId>false</externalId>
+    <inlineHelpText>הסכום לכל חיוב בודד</inlineHelpText>
+    <label>סכום לחיוב</label>
+    <precision>8</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>true</trackHistory>
+    <type>Currency</type>
+</CustomField>

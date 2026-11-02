@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Donor_Contact__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Replaces Recurring_Pledge__c.Contact__c (Part C C2). Filled on activation.</description>
+    <label>תורם</label>
+    <referenceTo>Contact</referenceTo>
+    <relationshipLabel>הוראות תרומה יומית</relationshipLabel>
+    <relationshipName>Donor_Pledges</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

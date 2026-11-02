@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Card_Expiry_Date__c</fullName>
+    <formula>IF(LEN(CardExpirationMMYY__c)=4, ADDMONTHS(DATE(2000+VALUE(RIGHT(CardExpirationMMYY__c,2)),VALUE(LEFT(CardExpirationMMYY__c,2)),1),1)-1, null)</formula>
+    <formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs>
+    <label>תאריך תוקף</label>
+    <type>Date</type>
+</CustomField>

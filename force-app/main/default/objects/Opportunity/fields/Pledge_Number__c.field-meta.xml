@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pledge_Number__c</fullName>
+    <description>Replaces the Recurring_Pledge__c auto-number Name (Part C C2). Standard Name is set by Apex (C1).</description>
+    <displayFormat>PLG-{000000}</displayFormat>
+    <externalId>false</externalId>
+    <label>מספר הוראה</label>
+    <type>AutoNumber</type>
+</CustomField>
