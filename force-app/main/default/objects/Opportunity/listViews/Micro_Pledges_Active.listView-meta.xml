@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Micro_Pledges_Active</fullName>
+    <columns>OPPORTUNITY.NAME</columns>
+    <columns>Pledge_Number__c</columns>
+    <columns>Donor_Contact__c</columns>
+    <columns>OPPORTUNITY.STAGE_NAME</columns>
+    <columns>Charge_Amount__c</columns>
+    <columns>Frequency__c</columns>
+    <columns>Last_Successful_Charge_Date__c</columns>
+    <columns>Consecutive_Failures__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>OPPORTUNITY.RECORDTYPE</field>
+        <operation>equals</operation>
+        <value>Opportunity.Micro_Donation_Pledge</value>
+    </filters>
+    <filters>
+        <field>OPPORTUNITY.STAGE_NAME</field>
+        <operation>equals</operation>
+        <value>Active</value>
+    </filters>
+    <label>הוראות פעילות</label>
+</ListView>

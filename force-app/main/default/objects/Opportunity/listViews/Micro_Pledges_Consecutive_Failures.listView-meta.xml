@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Micro_Pledges_Consecutive_Failures</fullName>
+    <columns>OPPORTUNITY.NAME</columns>
+    <columns>Pledge_Number__c</columns>
+    <columns>Donor_Contact__c</columns>
+    <columns>OPPORTUNITY.STAGE_NAME</columns>
+    <columns>Charge_Amount__c</columns>
+    <columns>Frequency__c</columns>
+    <columns>Last_Successful_Charge_Date__c</columns>
+    <columns>Consecutive_Failures__c</columns>
+    <columns>Failure_Alert_Sent_At__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>OPPORTUNITY.RECORDTYPE</field>
+        <operation>equals</operation>
+        <value>Opportunity.Micro_Donation_Pledge</value>
+    </filters>
+    <filters>
+        <field>Consecutive_Failures__c</field>
+        <operation>greaterOrEqual</operation>
+        <value>3</value>
+    </filters>
+    <label>הוראות בכישלונות רצופים</label>
+</ListView>

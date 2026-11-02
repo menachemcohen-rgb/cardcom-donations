@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Micro_Pledges_Pending_Verification</fullName>
+    <columns>OPPORTUNITY.NAME</columns>
+    <columns>OPPORTUNITY.CREATED_DATE</columns>
+    <columns>LowProfileId__c</columns>
+    <columns>Lp_Check_Count__c</columns>
+    <columns>Donor_Submitted__c</columns>
+    <columns>Lp_Processed__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>OPPORTUNITY.RECORDTYPE</field>
+        <operation>equals</operation>
+        <value>Opportunity.Micro_Donation_Pledge</value>
+    </filters>
+    <filters>
+        <field>OPPORTUNITY.STAGE_NAME</field>
+        <operation>equals</operation>
+        <value>Pending_Verification</value>
+    </filters>
+    <label>הוראות ממתינות לאימות</label>
+</ListView>
