@@ -196,6 +196,10 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
   same name on Reconciliation Issues; staff set `Status__c` to Resolved or Ignored (a re-run never reopens them). Staff get one email a day
   while issues are open. To re-run a day: `System.enqueueJob(new ReconciliationJob(Date.newInstance(2026, 11, 5)));`. If the terminal
   also carries non-donation sales, set `Cardcom_Setting__mdt.Default.Recon_Report_Unknown__c = false` to stop "Missing_In_Salesforce" issues.
+- **Monthly receipt** (B6.11, daily at `Receipt_Time__c` from `Receipt_Day_Of_Month__c` to the 10th, skipping Shabbat and holidays): one Cardcom
+  donation receipt per donor for last month's successful charges. Failed receipts are in the list view "קבלות שנכשלו" and the daily staff
+  email; after fixing the cause press "שליחה חוזרת" on the receipt (safe — the same ExternalId returns the same document). Go-live checks:
+  `docs/receipt-go-live-checklist.md`.
 - **Log clean-up** (Sunday 03:00): deletes webhook logs older than 90 days and empties `Raw_Response__c`/`Raw_Request__c` on charges and
   receipts older than 90 days (B9, N73).
 

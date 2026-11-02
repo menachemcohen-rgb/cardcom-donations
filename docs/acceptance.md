@@ -101,6 +101,19 @@ and scheduling (`ChargeSettingsTest`, `DonationSetupTest`).
 | Revoke links | `PledgeTriggerHandlerTest.revokingLinksIsLogged` | "ביטול קישורי תורם": `Link_Version__c` + 1, log "Link_Revoke". Old links stop working with Prompt 8. |
 | Permission | `PledgeTriggerHandlerTest.userWithoutPermissionIsBlocked`, `PledgeValidationRulesTest.stoppingWithoutPermissionIsBlocked` | A `Donations_Staff` user sees no action buttons; a direct edit of the stage is refused with "אין לך הרשאה לעצור/לחדש חיובים." |
 
+## Monthly receipt — TC31–TC35 (Prompt 9)
+
+Before the first real run go through `docs/receipt-go-live-checklist.md`.
+
+| ID | Scenario | Automated | Manual (sandbox + test terminal) |
+|---|---|---|---|
+| TC31 | Monthly receipt | `MonthlyReceiptTest.issuesReceiptWithCashByDefault`, `dealNumbersReplaceCashWhenTheFlagIsOn`, `taxIdAndEmailFallBackToThePledge` | With October 2026 Success charges: `MonthlyReceiptScheduler.todayOverride` is test-only, so run `Database.executeBatch(new MonthlyReceiptPlanner(Date.newInstance(2026, 10, 1)), 200);`. The receipt becomes Issued with a document number; Cardcom's email reaches the donor's inbox; the charges are linked. |
+| TC32 | No duplicate receipt | `MonthlyReceiptTest.issuedReceiptIsNeverReplanned`, `schedulerWindowAndRestDays` ("retried") | Run the planner again: no new receipt and no call to Cardcom. |
+| TC33 | Month without charges | `MonthlyReceiptTest.donorWithoutChargesGetsNoReceipt` | No record for that Contact. |
+| TC34 | Two pledges of one donor | `MonthlyReceiptTest.twoPledgesOfOneDonorGiveOneReceipt` | One receipt with the total of both pledges. |
+| TC35 | Receipt fails | `MonthlyReceiptTest.validationErrorIsFinal`, `noEmailAnywhereFailsWithoutCallingCardcom`, `timeoutIsRetryableButNotWithin12Hours`, `maxAttemptsReachedMeansNoSendAndAnAlert`, `configErrorStopsTheBatch` | Put a wrong amount in `Total_Amount__c` of a Pending receipt (6311): Failed, no retry, daily alert "קבלות חודשיות שנכשלו". After fixing it press "שליחה חוזרת" (`retryActionReArmsAndResends`). |
+| — | 1st of the month on Shabbat / holiday | `MonthlyReceiptTest.schedulerWindowAndRestDays` | — |
+
 ## Nightly reconciliation — TC36 (Prompt 7)
 
 | ID | Scenario | Automated | Manual (sandbox + test terminal) |
