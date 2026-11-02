@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template (B6.3): runs CardcomLpEventTrigger as the integration user, so its job can call Cardcom through the Named Credential.
+     The username is org-specific, so this file is outside force-app. See docs/README.md, "Platform event subscriber". -->
+<PlatformEventSubscriberConfig xmlns="http://soap.sforce.com/2006/04/metadata">
+    <batchSize>50</batchSize>
+    <masterLabel>CardcomLpSubscriber</masterLabel>
+    <platformEventConsumer>CardcomLpEventTrigger</platformEventConsumer>
+    <user>INTEGRATION_USERNAME</user>
+</PlatformEventSubscriberConfig>

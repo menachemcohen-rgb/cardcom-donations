@@ -1,0 +1,129 @@
+/** Test data for the donations project (B8). Pledges are Opportunities of record type Micro_Donation_Pledge (Part C). */
+@IsTest
+public class TestDataFactory {
+  public static final String HOST = 'www.example.org.il';
+  public static final String RETURN_URL = 'https://' + HOST + '/cardcom-return/';
+
+  /** In-memory Cardcom_Setting__mdt with the B2.6 defaults and test URLs; installed as CardcomService.settingsOverride. */
+  public static Cardcom_Setting__mdt settings() {
+    Cardcom_Setting__mdt s = new Cardcom_Setting__mdt(
+      Terminal_Number__c = 1001,
+      Api_Base__c = 'callout:Cardcom/api/v11',
+      Currency_Iso__c = 1,
+      Min_Amount__c = 1,
+      Max_Amount__c = 50,
+      Amount_Presets__c = '1,3,5,10',
+      Send_Donor_Charge_Email__c = true,
+      Donor_Portal_Base_Url__c = 'https://' + HOST + '/donor',
+      Receipt_Document_Type__c = 'DonationReceipt',
+      Receipt_Link_Deal_Numbers__c = false,
+      Batch_Size__c = 30,
+      Lp_JValidate_Type__c = 2,
+      Is_Recurring_Terminal__c = false,
+      Recon_Page_Size__c = 1000,
+      Recon_Report_Unknown__c = true,
+      Holiday_Auto_Detect__c = true,
+      Optional_Verify_On_Open__c = false,
+      Webhook_Url__c = 'https://example.my.salesforce-sites.com/cardcom/services/apexrest/cardcom/webhook',
+      Allowed_Return_Hosts__c = HOST + ', other.example.org.il'
+    );
+    CardcomService.settingsOverride = s;
+    return s;
+  }
+
+  static Database.DMLOptions allowDuplicates() {
+    Database.DMLOptions o = new Database.DMLOptions();
+    o.DuplicateRuleHeader.allowSave = true;
+    return o;
+  }
+
+  public static Contact contact(String firstName, String lastName, String email, String mobile) {
+    Contact c = new Contact(FirstName = firstName, LastName = lastName, Email = email, MobilePhone = mobile);
+    Database.insert(c, allowDuplicates());
+    return c;
+  }
+
+  /** A pending pledge (not inserted). */
+  public static Opportunity pledge(String lowProfileId) {
+    Opportunity o = MicroPledges.newPending(lowProfileId);
+    o.Charge_Amount__c = 3;
+    o.Frequency__c = 'OnceDaily';
+    return o;
+  }
+
+  /** A pending pledge with the donor's form data (not inserted). */
+  public static Opportunity submittedPledge(String lowProfileId, String email, String phone) {
+    Opportunity o = pledge(lowProfileId);
+    o.Donor_First_Name__c = 'ישראל';
+    o.Donor_Last_Name__c = 'ישראלי';
+    o.Donor_Email__c = email;
+    o.Donor_Phone__c = phone;
+    o.Donor_Submitted__c = true;
+    o.Terms_Accepted_At__c = Datetime.now();
+    return o;
+  }
+
+  /** Marks a pledge as verified by GetLpResult (not saved). */
+  public static Opportunity withToken(Opportunity o) {
+    o.Token__c = 'tok-' + o.LowProfileId__c;
+    o.CardExpirationMMYY__c = '0928';
+    o.Lp_Processed__c = true;
+    o.Verified_At__c = Datetime.now();
+    return o;
+  }
+
+  /** An Active pledge of the given Contact (inserted). */
+  public static Opportunity activePledge(Contact c, String lowProfileId) {
+    Opportunity o = withToken(submittedPledge(lowProfileId, c.Email, c.MobilePhone));
+    o.StageName = MicroPledges.STAGE_ACTIVE;
+    o.Donor_Contact__c = c.Id;
+    o.Activated_At__c = Datetime.now();
+    o.Start_Date__c = Date.today();
+    insert o;
+    return o;
+  }
+
+  /** A Pending charge attempt for a pledge (not inserted). */
+  public static Charge__c charge(Opportunity p, Date scheduled, String slot) {
+    String ext =
+      'PLG-' +
+      String.valueOf(p.Id).left(15) +
+      '-' +
+      Datetime.newInstance(scheduled, Time.newInstance(12, 0, 0, 0)).format('yyyyMMdd') +
+      '-' +
+      slot;
+    return new Charge__c(
+      Pledge__c = p.Id,
+      Contact__c = p.Donor_Contact__c,
+      Amount__c = p.Charge_Amount__c,
+      Scheduled_Date__c = scheduled,
+      Run_Date__c = scheduled,
+      Slot__c = slot,
+      Status__c = 'Pending',
+      ExternalUniqTranId__c = ext,
+      Attempt_Number__c = 1,
+      Attempt_Key__c = ext + '-A1'
+    );
+  }
+
+  /** A regular (non-pledge) Opportunity, to prove pledge logic never touches it (D24). */
+  public static Opportunity otherOpportunity() {
+    Opportunity o = new Opportunity(Name = 'Regular deal', StageName = 'Prospecting', CloseDate = Date.today().addDays(30));
+    insert o;
+    return o;
+  }
+
+  /** A REST context with a JSON body. */
+  public static void rest(String uri, Object body) {
+    RestRequest req = new RestRequest();
+    req.requestURI = uri;
+    req.httpMethod = 'POST';
+    req.requestBody = Blob.valueOf(body instanceof String ? (String) body : JSON.serialize(body));
+    RestContext.request = req;
+    RestContext.response = new RestResponse();
+  }
+
+  public static Map<String, Object> responseJson() {
+    return (Map<String, Object>) JSON.deserializeUntyped(RestContext.response.responseBody.toString());
+  }
+}
