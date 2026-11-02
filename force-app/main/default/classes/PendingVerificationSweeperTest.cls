@@ -10,7 +10,7 @@ private class PendingVerificationSweeperTest {
     PendingVerificationSweeper.sweep();
     Test.stopTest();
     Assert.areEqual(1, m.requestsTo('LowProfile/GetLpResult').size());
-    Assert.areEqual(1, [SELECT Lp_Check_Count__c FROM Opportunity].Lp_Check_Count__c);
+    Assert.areEqual(1, [SELECT Lp_Check_Count__c FROM Opportunity].Lp_Check_Count__c.intValue());
   }
 
   @IsTest

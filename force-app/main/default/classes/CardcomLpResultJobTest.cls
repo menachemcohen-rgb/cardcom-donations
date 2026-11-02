@@ -65,7 +65,7 @@ private class CardcomLpResultJobTest {
     CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpPending('lp-0000000001'));
     runJob(new List<String>{ 'lp-0000000001' });
     Opportunity p = byLp('lp-0000000001');
-    Assert.areEqual(0, p.Lp_Check_Count__c);
+    Assert.areEqual(0, p.Lp_Check_Count__c.intValue());
     Assert.isFalse(p.Lp_Processed__c);
   }
 
@@ -82,11 +82,11 @@ private class CardcomLpResultJobTest {
     runJob(new List<String>{ 'lp-0000000001', 'lp-0000000002' });
     Opportunity p1 = byLp('lp-0000000001');
     Assert.areEqual('Verification_Failed', p1.StageName);
-    Assert.areEqual(6, p1.Lp_Check_Count__c);
+    Assert.areEqual(6, p1.Lp_Check_Count__c.intValue());
     Assert.isTrue(p1.Lp_Processed__c);
     Opportunity p2 = byLp('lp-0000000002');
     Assert.areEqual('Pending_Verification', p2.StageName);
-    Assert.areEqual(1, p2.Lp_Check_Count__c);
+    Assert.areEqual(1, p2.Lp_Check_Count__c.intValue());
   }
 
   @IsTest
@@ -131,7 +131,7 @@ private class CardcomLpResultJobTest {
     CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.TIMEOUT);
     runJob(new List<String>{ 'lp-0000000001' });
     Opportunity p = byLp('lp-0000000001');
-    Assert.areEqual(0, p.Lp_Check_Count__c);
+    Assert.areEqual(0, p.Lp_Check_Count__c.intValue());
     Assert.isFalse(p.Lp_Processed__c);
   }
 

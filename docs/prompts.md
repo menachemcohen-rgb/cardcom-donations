@@ -239,6 +239,9 @@ Acceptance: all tests green, coverage ≥95% on ChargeQueueable/OutcomeHandler/P
 ```
 Implement B6.7 (roll-ups and streak), B6.8, B6.9.4, B2.8 actions, Part A 7.8/7.8א adapted by Part C.
 
+- Already in place from Prompt 5 [v2.3]: ChargeTrigger (after insert/update, calls PledgeRollupService.recalc when Status__c or
+  Is_Final_Failure__c changes) and a no-op PledgeRollupService — replace its body. StaffAlertService already has
+  configErrorOncePerDay, recipients() (E1) and a send() helper that never throws.
 - PledgeRollupService.recalc(Set<Id>) on Opportunity: Total_Collected__c (+ mirror to standard Amount, D25), Successful_Charge_Count__c,
   Last_Successful_Charge_Date__c, Consecutive_Failures__c (logical charges, Skipped neutral, pending logical charges not counted),
   Failure_Alert_Sent_At__c once per streak; NEVER changes StageName (D9).

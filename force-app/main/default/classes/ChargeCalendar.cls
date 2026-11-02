@@ -11,6 +11,13 @@ public with sharing class ChargeCalendar {
   static List<Charge_Holiday__mdt> manualOverridesForTest; // CMDT rows can't be inserted in tests
   @TestVisible
   static Date todayOverride; // pins the auto-detect window in tests
+  @TestVisible
+  static Datetime nowOverride; // test clock for the charge engine (N52)
+
+  /** Current time for the charge engine (Asia/Jerusalem running user). Tests pin it with nowOverride. */
+  public static Datetime now() {
+    return nowOverride != null ? nowOverride : Datetime.now();
+  }
 
   /** B6.6: automatic holidays for last/this/next year, then manual overrides (Add_Rest_Day / Remove_Rest_Day). */
   public static Set<Date> holidays() {

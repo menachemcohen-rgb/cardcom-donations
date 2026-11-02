@@ -27,19 +27,40 @@ Also automated for Prompt 3 (no B11 number):
   `PendingVerificationSweeperTest.ignoresFreshPledgesAndOtherOpportunities`, `PledgeActivationServiceTest.activatesOnlyWhenSubmittedAndVerified`.
 - Named Credential merge fields sent unchanged: `CardcomServiceTest.createTokenLowProfileSendsB51BodyWithCredentialPlaceholders`.
 
-## Calendar and schedule — part of TC12–TC14 (Prompt 4)
+## Charging — TC11–TC21 (Prompts 4–5)
 
-The charge records themselves come with Prompt 5; Prompt 4 covers the calendar decisions they depend on.
+Manual steps run in the sandbox against Cardcom's public test terminal (`CLAUDE.md` B5.0א) with a real token from TC01. The
+"simulated date" is Anonymous Apex as the integration user: `ChargePlanner.plan(Date.newInstance(2026, 11, 4), 'AM');` — the planner
+starts the chain itself. On the test terminal a charge **above 5,000 ₪** is declined (B5.0א).
 
-| ID | Scenario | Automated (Prompt 4) | Still needed |
+| ID | Scenario | Automated | Manual (sandbox + test terminal) |
 |---|---|---|---|
-| TC12 | Friday run charges Friday + Shabbat | `ChargeCalendarTest.multiplicityTableFromB66` (2026-11-06 → 6, 7), `DonationChargeSchedulerTest.runsOnlyOnItsDays` | Charges and grouped email: Prompts 5, 8 |
-| TC13 | Erev Rosh Hashana 5787 | `ChargeCalendarTest.multiplicityTableFromB66` (2026-09-11 → 11, 12, 13) | 3 Charge__c per pledge: Prompt 5 |
-| TC14 | No run on Shabbat/holiday | `DonationChargeSchedulerTest.runsOnlyOnItsDays` (2026-09-12), `ChargeCalendarTest.shouldRunCasesFromB8` | — |
+| TC11 | Regular day | `ChargePlannerTest.regularMorningPlansOneAttemptPerPledge`, `ChargeQueueableTest.successfulChargeUpdatesChargeAndPledgeLast4` | `plan(<Wednesday>, 'AM')`: one Success per Active pledge, `Cardcom_Tranzaction_Id__c` filled, `Last4__c` on the pledge. Thank-you email: Prompt 8. |
+| TC12 | Friday | `ChargePlannerTest.fridayChargesFridayAndShabbat`, `ChargeCalendarTest.multiplicityTableFromB66` | `plan(<Friday>, 'AM')`: 2 charges per pledge (Fri + Sat) with different `ExternalUniqTranId__c`. Grouped email: Prompt 8. |
+| TC13 | Erev Rosh Hashana 5787 | `ChargePlannerTest.erevRoshHashanaChargesThreeDays` | `plan(2026-09-11, 'AM')`: 3 charges (11, 12, 13). |
+| TC14 | Shabbat / holiday | `DonationChargeSchedulerTest.runsOnlyOnItsDays`, `ChargePlannerTest.restDayPlansNothingAndRerunIsIdempotent` | Run the scheduler on 2026-09-12: no charges. |
+| TC15 | Temporary failure | `ChargeOutcomeHandlerTest.retryableGoesA1A2A3ThenFinal` | Pledge with `Charge_Amount__c` 5001 (bypass the range rule temporarily, or charge by hand from Anonymous Apex with `CardcomService.chargeToken(token, exp, 5001, key)`): A1 Failed → A2 one hour later → A3 four hours later → final. `Consecutive_Failures__c = 1` comes with Prompt 6. |
+| TC16 | Blocked card | `ChargeOutcomeHandlerTest.cardDeadIsFinalForThisLogicalChargeOnly`, `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | No public blocked test card (B5.0א): covered by the mock only. |
+| TC17 | Expired card | `ChargeQueueableTest.expiredCardFailsFinalAndTheNextChargeIsStillPlanned` | Set `CardExpirationMMYY__c = 0124` on a test pledge: the charge is sent, fails final (Card_Dead), and the next day's run still plans it (D11). |
+| TC18 | 3 consecutive failures | — | Prompt 6 (roll-ups and staff alert). |
+| TC19 | Success after a streak | — | Prompt 6. |
+| TC20 | Retry after an unknown success | `ChargeQueueableTest.verifiedPreviousSuccessIsNotChargedAgain`, `ChargeQueueableTest.verifiedPreviousFailureIsChargedNormally` | Charge A1 by hand, then create an A2 with `Verify_Attempt_Key__c` = A1's key and run the chain: A2 becomes Success / `ALREADY_CHARGED`, and Cardcom shows one transaction. |
+| TC21 | Timeout | `ChargeOutcomeHandlerTest.unknownOutcomeVerifiesTheKeyNextTime`, `ChargeQueueableTest.timeoutLeadsToAVerifiedRetry` | Mock only (no way to force a Cardcom timeout). |
 
-Also automated: Rosh Hashana 5785–5790 and the 2026/2027 holiday sets (`HebrewHolidaysTest`), manual holiday overrides, retry window and
-next working morning (`ChargeCalendarTest`), settings validation and cron building (`ChargeSettingsTest`), scheduling, re-scheduling,
-time-zone and permission checks (`DonationSetupTest`).
+Also automated: Stopped pledge → Skipped STOPPED with no Cardcom call (`ChargeQueueableTest.stoppedPledgeIsSkipped`); Config error → no
+retry, one alert a day, manual re-run (`ChargeQueueableTest.configErrorCreatesNoRetryAndAlertsOncePerDay`); retry falling after the
+Friday cutoff → Sunday 08:00 (`ChargeOutcomeHandlerTest.retryThatWouldFallAfterTheFridayCutoffMovesToSunday`); 200 pledges × 2 dates
+in one transaction and the batch path for large volumes (`ChargePlannerTest`); callout time budget (`ChargeQueueableTest.calloutBudgetLeavesTheRestPending`).
+Calendar: Rosh Hashana 5785–5790 and the 2026/2027 sets (`HebrewHolidaysTest`), overrides, retry window (`ChargeCalendarTest`), settings
+and scheduling (`ChargeSettingsTest`, `DonationSetupTest`).
+
+### Planning volume (2,500 pledges)
+- Synchronous planning handles up to `ChargePlanner.SYNC_MAX` = 1,000 pledges: at most 4 dates each = 4,000 rows in one insert, a
+  constant number of queries (`bulkFridayStaysInsideLimits` measures ≤ 6 queries, ≤ 3 DML statements for 200 pledges).
+- Above 1,000 pledges `ChargePlannerBatch` plans 200 pledges per chunk (≤ 800 rows each), so 2,500 pledges × 4 dates (Rosh Hashana on
+  Thu–Fri + Shabbat) = 10,000 rows never land in one transaction (the per-transaction limit is 10,000).
+- Charging: 30 charges per link (`Batch_Size__c`), at most 2 callouts each; each link stops calling out after 90 s of the 120 s
+  callout budget. 5,000 Friday charges ≈ 167 links (B6.5 rule 6).
 
 ## Running the tests (sandbox, check-only)
 
