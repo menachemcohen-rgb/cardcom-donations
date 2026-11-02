@@ -3,10 +3,15 @@
   "edition": "Developer",
   "language": "iw",
   "country": "IL",
-  "features": ["EnableSetPasswordInApi"],
+  "features": [
+    "EnableSetPasswordInApi"
+  ],
   "settings": {
-    "lightningExperienceSettings": { "enableS1DesktopEnabled": true },
-    "languageSettings": { "enableTranslationWorkbench": true },
-    "opportunitySettings": { "enableOpportunityTeam": false }
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "languageSettings": {
+      "enableTranslationWorkbench": true
+    }
   }
 }
