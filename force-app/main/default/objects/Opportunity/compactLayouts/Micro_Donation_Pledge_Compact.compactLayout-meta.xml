@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Micro_Donation_Pledge_Compact</fullName>
+    <fields>Name</fields>
+    <fields>StageName</fields>
+    <fields>Charge_Amount__c</fields>
+    <fields>Frequency__c</fields>
+    <fields>Last4__c</fields>
+    <fields>Card_Expiry_Date__c</fields>
+    <fields>Consecutive_Failures__c</fields>
+    <label>הוראת תרומה יומית</label>
+</CompactLayout>

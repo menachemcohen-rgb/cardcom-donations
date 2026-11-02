@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Status_Change_Permission</fullName>
+    <active>true</active>
+    <description>B2.2 via Part C C2.</description>
+    <errorConditionFormula>AND(
+    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISCHANGED(StageName),
+    OR(
+        ISPICKVAL(StageName, 'Stopped'),
+        ISPICKVAL(StageName, 'Cancelled'),
+        AND(ISPICKVAL(PRIORVALUE(StageName), 'Stopped'), ISPICKVAL(StageName, 'Active'))
+    ),
+    NOT($Permission.Stop_Pledge_Charges),
+    $User.Id &lt;&gt; $CustomMetadata.Cardcom_Setting__mdt.Default.Integration_User_Id__c
+)</errorConditionFormula>
+    <errorMessage>אין לך הרשאה לעצור/לחדש חיובים.</errorMessage>
+</ValidationRule>

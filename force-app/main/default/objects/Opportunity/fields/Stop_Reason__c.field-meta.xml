@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Stop_Reason__c</fullName>
+    <externalId>false</externalId>
+    <label>סיבת הפסקה</label>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Donor_Request</fullName>
+                <default>false</default>
+                <label>בקשת התורם</label>
+            </value>
+            <value>
+                <fullName>Card_Blocked</fullName>
+                <default>false</default>
+                <label>כרטיס חסום</label>
+            </value>
+            <value>
+                <fullName>Financial_Review</fullName>
+                <default>false</default>
+                <label>בירור כספי</label>
+            </value>
+            <value>
+                <fullName>Other</fullName>
+                <default>false</default>
+                <label>אחר</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

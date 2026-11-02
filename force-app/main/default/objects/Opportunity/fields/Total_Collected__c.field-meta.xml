@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Total_Collected__c</fullName>
+    <defaultValue>0</defaultValue>
+    <description>Standard Amount mirrors this field (D25).</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Apex rollup (B6.7)</inlineHelpText>
+    <label>סה"כ נגבה</label>
+    <precision>10</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Currency</type>
+</CustomField>

@@ -56,41 +56,89 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
 
 ### Before the first deploy
 1. Run the read-only discovery in [`docs/org-discovery.md`](org-discovery.md) and resolve its risk list (existing Opportunity automation,
-   required fields, validation rules, duplicate rules).
-2. **Retrieve the existing `OpportunityStage` StandardValueSet** into `force-app/main/default/standardValueSets/` before adding the 5
-   new stages (E14). Confirm none of the 5 values already exists.
-3. Count the Opportunity fields that already have Field History tracking (limit 20; Part C adds 6).
-   - Sandbox: 0 tracked, no stage collisions (discovery 2026-11-02).
-   - Check the action of `Standard_Contact_Duplicate_Rule` in Setup: it must not **Block** (org-discovery R5).
-   - Add the `Donor` value to the OpportunityContactRole `Role` standard value set the same way as the stages (retrieve the whole set,
-     add, never deploy a partial set) — org-discovery R9.
-4. Enable **Translation Workbench** and add Hebrew (`iw`) for the Hebrew stage and record-type labels.
+   required fields, validation rules, duplicate rules). Sandbox: done 2026-11-02; production: still to do.
+2. **Standard value sets (E14).** The repo's `OpportunityStage` and `ContactRole` sets were built from the Ato Dev sandbox's live values
+   (2026-11-02) plus the new values. Before deploying to any org, retrieve that org's sets and compare; the only differences must be the
+   5 new stages and the `Donor` role. See "Validating Prompt 1" below. Never deploy a partial set.
+3. **Enable Opportunity field history** (Setup → Object Manager → Opportunity → Fields & Relationships → Set History Tracking →
+   "Enable Opportunity Field History"). It is off in the sandbox, and the fields Part C tracks (`Charge_Amount__c`, `Frequency__c`,
+   `Stop_Reason__c`, `Link_Version__c`, `Last4__c`) fail to deploy with `trackHistory=true` until it is on. Limit 20 tracked fields
+   (sandbox: 0 tracked before this project).
+4. Enable **Translation Workbench** and add Hebrew (`iw`) as an active language. The stage and contact-role translations
+   (`standardValueSetTranslations/*-iw`) fail to deploy without it.
+5. Check the action of `Standard_Contact_Duplicate_Rule` in Setup: it must not **Block** (org-discovery R5).
 
 ### Integration user
-5. Create `integration.donations@<org>`: Salesforce Integration license, profile `Minimum Access - API Only Integrations`,
+6. Create `integration.donations@<org>`: Salesforce Integration license, profile `Minimum Access - API Only Integrations`,
    **TimeZoneSidKey = Asia/Jerusalem**, Locale `he_IL`. Assign PS `Donations_Integration` (Prompt 2).
 
 ### Credentials (values never in the repo)
-6. External Credential `Cardcom_EC`, principal `CardcomTerminal`: enter `ApiName` and `ApiPassword` in Setup.
+7. External Credential `Cardcom_EC`, principal `CardcomTerminal`: enter `ApiName` and `ApiPassword` in Setup.
    Sandbox uses Cardcom's public test terminal from B5.0א (terminal `1001`); production uses the client's terminal.
-7. `Donor_Link_Setting__mdt.Default` secret: generate a random value and enter it in Setup (Protected CMDT).
+8. `Donor_Link_Setting__mdt.Default` secret: generate a random value and enter it in Setup (Protected CMDT).
 
 ### Connected App, Site, email
-8. Connected App `WP_Donations` (Client Credentials, Run As the integration user, IP restrictions to the WP server) — B3.2.
+9. Connected App `WP_Donations` (Client Credentials, Run As the integration user, IP restrictions to the WP server) — B3.2.
    Consumer Key/Secret go into the WordPress `wp-config.php` only.
-9. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
-10. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
+10. Salesforce Site `cardcom` + Guest user PS `Donations_Site_Guest`; only `CardcomWebhookResource` exposed — B3.3.
+11. Verify an **Org-Wide Email Address** for staff alerts and donor emails and allow the integration user to use it. Email
     Deliverability = All email.
 
 ### After deploy
-11. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
+12. **Record type access.** `Micro_Donation_Pledge` is the org's first Opportunity record type. It is deployed without profile
+    assignments (profiles are never deployed). Check that no profile's default Opportunity record type changed (org-discovery R3).
+    Access to the record type comes from the `Donations_*` permission sets (Prompt 2).
+13. **Page layout assignment.** Setup → Object Manager → Opportunity → Page Layouts → Page Layout Assignment: assign
+    "Micro Donation Pledge Layout" to record type `Micro_Donation_Pledge` for every profile that will see pledges (at least System
+    Administrator). Layout assignments live in profiles, which this repo doesn't deploy.
+14. **Activate the record page.** Lightning App Builder → `Pledge_Record_Page` (label "עמוד הוראת תרומה יומית") → Activation →
+    App, Record Type and Profile: assign it to record type `Micro_Donation_Pledge` only (C2 rule 6). Don't make it the org default.
+15. **Field history on `StageName`** (optional). Part C lists it, but Opportunity already records every stage change in Stage History
+    (`OpportunityHistory`) automatically. Turn on Field History for `StageName` in Setup only if you also want it in the field-history
+    list; it counts toward the limit of 20.
+16. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
+    `Needs_Review__c`, `Review_Reason__c`, `Donor_Tax_Id__c`, and the related list "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand
+    because deploying the Contact layout would overwrite the org's existing one.
+17. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
     `Donor_Contact_Duplicate` (B10 step 12).
-12. `DonationSetup.scheduleAll()` as the integration user.
-13. Check that no profile's default Opportunity record type became `Micro_Donation_Pledge` (it is the org's first Opportunity record
-    type; org-discovery R3).
+18. `DonationSetup.scheduleAll()` as the integration user.
 
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
 - OWD: Opportunity **Public Read Only**, Account **Public Read/Write**, Contact **Controlled by Parent** (C2 rule 5).
 - No Shield Platform Encryption detected: encrypted fields use **Classic Encrypted Text** (max 175 chars, not filterable, masked).
+  `MetadataSmokeTest.encryptedFieldsAreNotFilterable` records the scheme in its debug log and fails if a field is filterable.
 - Every new Contact gets a "{First} {Last} Household" Account from the org's flow `Create_New_Account_When_Creating_A_Contact`.
+- All users have language `en_US`, so they see the English stage labels ("Pending Verification", "Active"…). The Hebrew labels from
+  C1 appear only for users whose language is Hebrew.
+
+## Validating Prompt 1 (no deploy)
+
+`sf project deploy validate` is a check-only deploy: it compiles and runs the tests in the target org, then rolls everything back.
+Do this only against a sandbox, and only after manual steps 3 and 4 above.
+
+1. Retrieve the org's standard value sets into a scratch folder and compare them with the repo (E14):
+
+```bash
+sf project retrieve start --target-org <alias> --manifest manifest/retrieve-standard-value-sets.xml --output-dir /tmp/svs-check
+```
+
+```bash
+diff -r "$(find /tmp/svs-check -type d -name standardValueSets)" force-app/main/default/standardValueSets
+```
+
+   Apart from formatting, the diff must show only added values: 5 stages in `OpportunityStage`, `Donor` in `ContactRole`. Anything else (a value missing from
+   the repo, a changed probability) means the org changed since 2026-11-02: update the repo file from the retrieved one first.
+
+2. Validate the data model and run its tests:
+
+```bash
+sf project deploy validate --target-org <alias> --manifest manifest/prompt-1-core.xml --test-level RunSpecifiedTests --tests MetadataSmokeTest --tests PledgeValidationRulesTest
+```
+
+3. The layout and record page (`manifest/prompt-1-pages.xml`) reference `Charge__c` and `Pledge_Change_Log__c`, which Prompt 2 creates.
+   Validate them together with Prompt 2 (B10 step 11):
+
+```bash
+sf project deploy validate --target-org <alias> --source-dir force-app --test-level RunLocalTests
+```

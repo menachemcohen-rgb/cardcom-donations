@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Stop, resume and cancel micro-donation pledges (B2.7, B6.8).</description>
+    <isLicensed>false</isLicensed>
+    <label>עצירה/חידוש/ביטול חיובים</label>
+</CustomPermission>

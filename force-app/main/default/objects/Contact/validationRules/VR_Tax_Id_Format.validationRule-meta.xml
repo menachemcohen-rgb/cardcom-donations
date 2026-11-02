@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Tax_Id_Format</fullName>
+    <active>true</active>
+    <description>B2.1. Check digit is validated in Apex only.</description>
+    <errorConditionFormula>AND(NOT(ISBLANK(Donor_Tax_Id__c)), NOT(REGEX(Donor_Tax_Id__c, "^[0-9]{9}$")))</errorConditionFormula>
+    <errorDisplayField>Donor_Tax_Id__c</errorDisplayField>
+    <errorMessage>ת"ז חייבת להכיל 9 ספרות (כולל אפסים מובילים).</errorMessage>
+</ValidationRule>

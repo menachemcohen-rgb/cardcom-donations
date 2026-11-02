@@ -139,6 +139,11 @@ Implement B2.3–B2.7 and the platform events, adapted by Part C.
 8. Named Credential Cardcom + External Credential Cardcom_EC metadata WITHOUT secret values (B3.1). Document the manual
    Principal parameter entry and the sandbox test terminal values from B5.0א in the README (public test creds only).
 
+Already done in Prompt 1 [v2.2]: Cardcom_Setting__mdt exists with Min_Amount__c, Max_Amount__c, Integration_User_Id__c and the Default
+record — add the remaining B2.6 fields and extend the Default record, don't recreate it. Relationship names used by Prompt 1's layout and
+record page: Charge__c.Pledge__c → Charges, Pledge_Change_Log__c.Pledge__c → Pledge_Change_Logs (spec-consistency N19). Discovery found
+no automation that needs Donations_Bypass_Automation, so don't create it.
+
 Acceptance: extend MetadataSmokeTest to cover the new objects/fields (including isFilterable() of Pledge_Card_History__c.Token__c);
 README manual-steps updated; no secrets in the repo.
 ```

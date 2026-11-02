@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Donor_Tax_Id__c</fullName>
+    <description>Never filter or match on it in SOQL (Part C E16).</description>
+    <externalId>false</externalId>
+    <label>ת"ז (טופס)</label>
+    <length>9</length>
+    <maskChar>asterisk</maskChar>
+    <maskType>lastFour</maskType>
+    <required>false</required>
+    <type>EncryptedText</type>
+</CustomField>

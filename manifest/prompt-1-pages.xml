@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Validate after Prompt 2 objects exist (B10 step 11). -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Pledge_Record_Page</members>
+        <name>FlexiPage</name>
+    </types>
+    <types>
+        <members>Opportunity-Micro Donation Pledge Layout</members>
+        <name>Layout</name>
+    </types>
+    <version>62.0</version>
+</Package>
