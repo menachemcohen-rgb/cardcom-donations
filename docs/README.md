@@ -186,6 +186,18 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
     `Apply_Charge_Schedule`. It runs only for users with `Manage_Charge_Schedule` (in `Donations_Admin`) and TZ Asia/Jerusalem.
     Note: jobs re-scheduled from the button run as that admin (see spec-consistency N42).
 
+25. **Reports and dashboard** (Prompt 11, folder `Donations`). Deployed as metadata: 13 reports, 4 custom report types, and the
+    dashboard "תרומות מיקרו". Then by hand:
+    - **Folder access:** both folders are shared View with all internal users; give `Donations_Admin` users "Manage Reports in Public
+      Folders" (or Manage access on the folders) if they should edit them. Report rows still follow object/field permissions.
+    - **Dashboard running user:** it is a dynamic dashboard ("view as the logged-in user"). If the org has no dynamic dashboards left
+      (Enterprise edition: 5), edit it and set a fixed running user — the integration user is not a good choice (API only).
+    - **Duplicate contacts report** ("רשומות כפולות"): Reports → New → report type "רשומות כפולות" (`Duplicate_Contacts`) → filter
+      Duplicate Rule = `Donor_Contact_Duplicate`, group by Duplicate Record Set → save in `Donations`. Not shipped as metadata because
+      columns of reports on custom report types can't be checked without the org (N83).
+    - **Repeated failures threshold:** the report and list view use 3 (the default of `Max_Consecutive_Failures__c`); change their filter if X changes.
+    - **Dashboard on the home page / app:** optional, Lightning App Builder → Dashboard component → "תרומות מיקרו".
+
 ### Operations (charge engine)
 - **Emergency stop:** set `Charge_Settings__c.Charging_Enabled__c = false`. No run plans charges and the dispatcher sends nothing,
   retries included; Pending charges wait. Setting it back to true resumes with the next scheduled run or retry sweep.

@@ -126,6 +126,15 @@ Before the first real run go through `docs/receipt-go-live-checklist.md`.
 | — | Staff alert | `eachIssueTypeIsReported` (Alert_State__c), `cardcomErrorsAbortWithoutChanges` (config alert) | One "פערי התאמה פתוחים" email a day while issues are Open. |
 | — | Log clean-up | `LogCleanupBatchTest` | — |
 
+## Reports and dashboard (Prompt 11)
+
+| Check | Manual (sandbox, after a charging day) |
+|---|---|
+| Reports open | Every report in folder Donations runs without error; Opportunity-based ones show only pledge Opportunities (Record Type filter, D24). |
+| Dashboard | "תרומות מיקרו" shows 7 tiles: today's charges by status, collected this month (₪), active pledges, new pledges per week, donors to review, open reconciliation issues, repeated failures. Numbers match the list views. |
+| Collected this month | Equals the sum of `Amount__c` of Success charges with this month's `Run_Date__c`. |
+| No encrypted fields | No report or list view filters on `Token__c` or `Donor_Tax_Id__c` (E15/E16): `grep -rl "Token__c\|Donor_Tax_Id__c" force-app/main/default/reports force-app/main/default/objects/*/listViews` returns nothing. |
+
 ## Running the tests (sandbox, check-only)
 
 ```bash
