@@ -60,6 +60,10 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
 2. **Retrieve the existing `OpportunityStage` StandardValueSet** into `force-app/main/default/standardValueSets/` before adding the 5
    new stages (E14). Confirm none of the 5 values already exists.
 3. Count the Opportunity fields that already have Field History tracking (limit 20; Part C adds 6).
+   - Sandbox: 0 tracked, no stage collisions (discovery 2026-11-02).
+   - Check the action of `Standard_Contact_Duplicate_Rule` in Setup: it must not **Block** (org-discovery R5).
+   - Add the `Donor` value to the OpportunityContactRole `Role` standard value set the same way as the stages (retrieve the whole set,
+     add, never deploy a partial set) — org-discovery R9.
 4. Enable **Translation Workbench** and add Hebrew (`iw`) for the Hebrew stage and record-type labels.
 
 ### Integration user
@@ -82,6 +86,11 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
 11. Run `ContactNormalizationBatch` on existing Contacts **before** activating Matching Rule `Donor_Contact_Match` / Duplicate Rule
     `Donor_Contact_Duplicate` (B10 step 12).
 12. `DonationSetup.scheduleAll()` as the integration user.
+13. Check that no profile's default Opportunity record type became `Micro_Donation_Pledge` (it is the org's first Opportunity record
+    type; org-discovery R3).
 
 ### Org settings to record (do not change)
-- Opportunity and Contact org-wide defaults — record the current values here after discovery (C2 rule 5).
+Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.
+- OWD: Opportunity **Public Read Only**, Account **Public Read/Write**, Contact **Controlled by Parent** (C2 rule 5).
+- No Shield Platform Encryption detected: encrypted fields use **Classic Encrypted Text** (max 175 chars, not filterable, masked).
+- Every new Contact gets a "{First} {Last} Household" Account from the org's flow `Create_New_Account_When_Creating_A_Contact`.

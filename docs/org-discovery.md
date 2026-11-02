@@ -1,77 +1,75 @@
 # Org discovery (Prompt 0)
 
-**Status: not run yet.** No target org is connected to this repo, so nothing has been queried. The checks below are ready to run
-read-only with [`scripts/org-discovery.sh`](../scripts/org-discovery.sh). Fill the "Finding" column from its output, then work through
-the risk list before Prompt 1 deploys anything.
+**Status: run read-only on 2026-11-02 against the Ato Dev sandbox** through the Salesforce connector (REST and Tooling SOQL only;
+nothing was deployed or written).
 
-Known so far:
-- **NPSP is not installed** (confirmed 2026-11-02, Part C D26). No NPSP/TDTM bypass is needed.
+| | |
+|---|---|
+| Org | Association of Yeshiva Students – Torah and Social Activities for Students |
+| Instance | `associationofyeshivastudentstoraha--atosandbox.sandbox.my.salesforce.com` (ISR2S), **sandbox** |
+| Edition | Enterprise Edition |
 
-## How to run
+This is a sandbox. Re-run the same checks against production before the production deploy (B10); use
+[`scripts/org-discovery.sh`](../scripts/org-discovery.sh) with an `sf` alias, which also retrieves the metadata snapshots that the
+connector could not.
 
-```bash
-sf org login web --alias donations-target --instance-url https://<org>.my.salesforce.com
-```
+## Findings
 
-```bash
-scripts/org-discovery.sh donations-target
-```
-
-The script only queries, describes and retrieves into `discovery/` (git-ignored). It never deploys or writes data.
-Two items are not available through the API and are checked by hand in Setup: Email Deliverability level and the encryption option
-(Shield Platform Encryption vs Classic Encrypted Text).
-
-## Checklist
-
-| # | Check | Source in script output | Finding |
-|---|---|---|---|
-| 1 | NPSP (`npsp__`) installed | `packages.csv` | **No** (D26) |
-| 2 | Other managed packages that hook Opportunity/Contact | `packages.csv`, `triggers-*.csv` / `flows-active.csv` with `NamespacePrefix` | |
-| 3 | Person Accounts enabled | `summary.txt` | |
-| 4 | `Opportunity.AccountId` required at API level / by a VR | `summary.txt`, `vr-Opportunity.csv` | |
-| 5 | Org default currency is ILS; multi-currency on/off | `org.csv`, `summary.txt` | |
-| 6 | Existing Opportunity record types | `opp-recordtypes.csv` | |
-| 7 | Existing Sales Processes and stages | `opp-salesprocesses.csv`, `opp-stages.csv`, `retrieve/…/OpportunityStage.standardValueSet-meta.xml` | |
-| 8 | Any of `Pending_Verification`, `Active`, `Stopped`, `Cancelled`, `Verification_Failed` already a stage (E14) | `opp-stages.csv` (compare case-insensitively) | |
-| 9 | Opportunity fields already history-tracked (limit 20; Part C adds 6) | `opp-history-fields.csv` | |
-| 10 | Required-on-create fields (Opportunity, Contact) | `summary.txt` | |
-| 11 | Validation rules (Opportunity, Contact, OpportunityContactRole) | `vr-*.csv` | |
-| 12 | Apex triggers (Opportunity, Contact, OpportunityContactRole) | `triggers-*.csv` | |
-| 13 | Record-triggered flows and Process Builders | `flows-active.csv` | |
-| 14 | Workflow rules | `workflow-*.csv` | |
-| 15 | Duplicate / matching rules on Contact and Opportunity (any **Block** action?) | `duplicate-rules.csv`, `retrieve/…/matchingRules` | |
-| 16 | OWD for Account, Contact, Opportunity (record only; do not change — C2 rule 5) | `sharing.csv` | |
-| 17 | Org-Wide Email Addresses | `owea.csv` | |
-| 18 | Email Deliverability level | Setup → Deliverability (manual) | |
-| 19 | Encryption: Shield available, or Classic Encrypted Text | Setup → Encryption Settings (manual) | |
-| 20 | Integration user exists; TimeZone = Asia/Jerusalem; license grants Opportunity CRUD | `int-users.csv` | |
-| 21 | Translation Workbench enabled, Hebrew (`iw`) active | `retrieve/…/Language.settings-meta.xml` | |
-| 22 | Org TZ, locale, language | `org.csv` | |
-
-Assignment and escalation rules apply to Leads and Cases, not Opportunities, so they are out of scope.
+| # | Check | Finding |
+|---|---|---|
+| 1 | NPSP (`npsp__`) | **Not installed** (D26; `PackageLicense` lists only `OIQ`, `omnistudio`, `sf_com_apps`). |
+| 2 | Managed packages hooking Opportunity/Contact | **None.** No managed triggers, VRs or record-triggered flows on these objects. Platform flows from `PgmMgmt`, `industries_*`, `revcloud_*` etc. are present but none is record-triggered on Opportunity/Contact. |
+| 3 | Person Accounts | **Disabled** (`Account.IsPersonAccount` does not exist). |
+| 4 | `Opportunity.AccountId` required | Not required by any VR (there are none). The UI layout may still require it; API inserts are fine. |
+| 5 | Currency | **Single currency** (`CurrencyType` not available). The org currency value itself isn't exposed by the API; confirm it is ILS in Setup → Company Information. |
+| 6 | Opportunity record types | **None.** Every existing Opportunity uses the master record type. `Micro_Donation_Pledge` will be the first one. |
+| 7 | Sales processes | **None.** `Micro_Donation_Process` will be the first. |
+| 8 | Existing stages | 10 standard stages: Prospecting, Qualification, Needs Analysis, Value Proposition, Id. Decision Makers, Perception Analysis, Proposal/Price Quote, Negotiation/Review, Closed Won, Closed Lost. |
+| 9 | Stage collision (E14) | **None.** None of `Pending_Verification`, `Active`, `Stopped`, `Cancelled`, `Verification_Failed` exists. The 5 values can be added to the existing set. |
+| 10 | Opportunity field history | **0 fields tracked.** Part C's 6 fit within the limit of 20. |
+| 11 | Validation rules (Opportunity, Contact, Account, OpportunityContactRole) | **None.** |
+| 12 | Apex triggers (same objects) | **None.** |
+| 13 | Workflow rules (same objects) | **None.** |
+| 14 | Record-triggered flows and Process Builders | **Two relevant flows**, both unmanaged (see R1 and R2): `Create_New_Account_When_Creating_A_Contact` (Contact, after-save, create) and `Create_Opp_And_Tlush_After_Log_Created` (`Log__c`, after-save, creates Opportunities). No Process Builders. |
+| 15 | Duplicate rules | Active standard rules: `Standard_Contact_Duplicate_Rule`, `Standard_Account_Duplicate_Rule`, `Standard_Lead_Duplicate_Rule`. None on Opportunity. Their action (Allow/Block) can't be read through the API; check in Setup (R5). |
+| 16 | Org-wide defaults (record only; don't change) | Opportunity **Public Read Only**; Account **Public Read/Write**; Contact **Controlled by Parent**. |
+| 17 | Org-Wide Email Addresses | One: `menachag@gmail.com` ("Ato Olami"), allowed for all profiles. |
+| 18 | Email Deliverability | Not available through the API. Check Setup → Deliverability (sandboxes default to "System email only"). |
+| 19 | Encryption | `TenantSecret` is not available, so **Shield Platform Encryption is most likely not enabled**. Plan on Classic Encrypted Text and confirm in Setup → Encryption Settings. E15/E16 already cover the filtering limits. |
+| 20 | Integration user | **Doesn't exist yet.** Active users are 5 System Administrators plus the standard Sales Insights integration user. All are on Asia/Jerusalem. |
+| 21 | Translation Workbench | Not checked through the API. Org language is `en_US` and locale `iw_IL`; enable Hebrew in Translation Workbench for the stage and record-type labels. |
+| 22 | Org TZ / locale | Asia/Jerusalem, `iw_IL`, language `en_US`. |
+| 23 | Existing custom fields | Contact has **`Israeli_Id__c` Text(9), unencrypted** (4 of 5 Contacts filled in). Opportunity has a custom **`Contact__c`** Lookup(Contact). See D-1 and D-2. |
+| 24 | OpportunityContactRole `Role` values | Standard 9 values; **`Donor` does not exist** (confirms consistency finding N9). |
+| 25 | Data volume (sandbox) | 5 Contacts (all with an Account), 6 Opportunities (5 Closed Won, 1 Prospecting). |
 
 ## Risk list and plan
 
-Part C rule 4: existing automation must not break the integration user's inserts, and must not act on pledge Opportunities. The default
-plan is to **scope by record type first** and fall back to a bypass Custom Permission only where scoping isn't possible.
+Part C rule 4: existing automation must not break the integration user's inserts or act on pledge Opportunities. The org has very
+little Opportunity automation, so **no bypass Custom Permission is needed**. Don't create `Donations_Bypass_Automation` in Prompt 2
+unless production discovery finds more.
 
-The bypass, if needed, is a Custom Permission `Donations_Bypass_Automation`, granted only through the `Donations_Integration` permission
-set, and checked as `$Permission.Donations_Bypass_Automation` in flow entry conditions and validation rules (`Not` it into the condition).
-It is created in Prompt 2 only if discovery finds something that needs it.
-
-| # | Risk | Why it matters here | Plan |
+| # | Risk | Detail | Plan |
 |---|---|---|---|
-| R1 | **"Closed Won" automation** (flows, Process Builders, workflow rules, triggers) | `Active` and `Stopped` are `IsWon = true`. Every pledge activation would look like a won deal: welcome emails, invoices, tasks, Slack/Chatter posts, quota credit. | Add `RecordType.DeveloperName != 'Micro_Donation_Pledge'` to each entry condition. For managed automation that can't be edited, test in sandbox and document. |
-| R2 | Record-triggered flows / triggers on Opportunity insert/update | Fire on every webhook, activation and roll-up update (roll-ups update the Opportunity after every charge, up to ~5,000 updates/day at 2,500 donors). CPU and SOQL limits inside charge Queueables. | Same record-type guard. Flag any automation that does callouts or sends email. |
-| R3 | Validation rules on Opportunity / Contact | Can reject integration inserts (e.g. required `Type`, `LeadSource`, `NextStep`, AccountId). | Record-type exclusion on Opportunity VRs; bypass permission on Contact VRs if needed. |
-| R4 | Required-on-create fields | Inserts fail. | Set values in Apex only if they have an obvious default; otherwise list under Open issues and ask. |
-| R5 | AccountId required by a VR or process | Pledge insert fails when `Default_Account_Id__c` is blank. | Set `Cardcom_Setting__mdt.Default_Account_Id__c`, or exclude the record type. |
-| R6 | Stage value collision (E14) | Re-using an existing `Active`/`Cancelled` value would change its meaning in other sales processes. Deploying a partial StandardValueSet would remove existing stages org-wide. | Retrieve the full set, add the 5 values, review the diff before any deploy. If a value exists, stop and decide with Yosef. |
-| R7 | Field History limit | Deploy fails if tracked fields exceed 20. | Count first; drop the lowest-value Part C tracked field if needed and record it. |
-| R8 | Duplicate rules with **Block** on Contact | `ContactMatcher` uses `allowSave = true`, which does not override Block. Donor creation would fail. | Add a condition excluding the integration user, or switch to Alert. |
-| R9 | Contacts without Account are private | With Contact OWD "Controlled by Parent", a Contact with no Account is visible only to its owner (the integration user) and admins. Staff wouldn't see donors. | Set `Default_Account_Id__c` to a shared "Micro donors" Account, or confirm admins-only visibility is acceptable. Ask the client (Q1). |
-| R10 | Forecasting / quotas | Won pledges with `Amount` = total collected (D25), owned by the integration user, enter forecasts. | Confirm with the client; exclude the record type from forecast types if forecasting is on. |
-| R11 | Currency | `Charge_Amount__c` and `Amount` assume ILS. | If the org default isn't ILS or multi-currency is on, set `CurrencyIsoCode = 'ILS'` on insert and record it. |
-| R12 | Integration license scope | The Salesforce Integration license must grant Opportunity access. | Verify the license/permission set license before Prompt 2's permission sets. |
-| R13 | Encryption option | Classic encrypted fields are not filterable and max 175 chars; Shield probabilistic is also not filterable. | Already handled by E15/E16; `MetadataSmokeTest` records `isFilterable()`. |
-| R14 | OpportunityContactRole automation / "primary contact role required" | Activation inserts an OCR (Role `Donor`, primary). | Check OCR triggers/flows/VRs (`*-OpportunityContactRole.csv`). |
+| R1 | **Contact flow creates a Household Account for every new Contact** | `Create_New_Account_When_Creating_A_Contact` has no entry condition: on every Contact insert it creates an Account named "{First} {Last} Household" and **overwrites `Contact.AccountId`**. It will run when `ContactMatcher` creates a donor. | Accept it. It also means donor Contacts are never private (Contact OWD is Controlled by Parent, Account is Public Read/Write). Any `AccountId` set by `ContactMatcher` will be overwritten. Decision D-3 covers what the pledge's `AccountId` should be. Tests must expect one extra Account per new donor. |
+| R2 | **`Log__c` flow creates Closed Won Opportunities** | `Create_Opp_And_Tlush_After_Log_Created` (an existing payments/payslip process) finds the Contact by `Israeli_Id__c`, queries **all** Opportunities on that Contact's Account with no record-type filter, and creates a Closed Won Opportunity plus a `Tlush__c` when no `Tlush__c` is linked. | Pledges on the same Account will show up in its "Try To Find Opps" query. They have no linked `Tlush__c`, so the outcome is unchanged. Low impact, but our reports must filter on record type, and their Opportunity reports should exclude `Micro_Donation_Pledge`. Tell the org owner. |
+| R3 | First Opportunity record type in the org | When the first record type is added in Setup, Salesforce can make it a profile's default. Regular Opportunities created by staff or by the R2 flow would then become micro-pledges. | Deploy the record type through metadata **without** profile assignments (`.forceignore` already excludes profiles). Grant it only through the `Donations_*` permission sets. After deploy, check that no profile's default Opportunity record type changed. |
+| R4 | StandardValueSet (E14) | No collisions. | Retrieve the 10 existing stages, add the 5, deploy the full set. |
+| R5 | Standard Contact duplicate rule | It is active. If its action on create is **Block**, `ContactMatcher`'s `allowSave = true` won't help and donor creation fails. | Check in Setup. The standard default is Allow + Alert, which is fine. If it is Block, switch it to Allow or exclude the integration user. |
+| R6 | Opportunity OWD is Public Read Only | Every internal user can read every pledge, so FLS is the only protection for `Token__c` and `Donor_Tax_Id__c` (C2 rule 5). | Permission sets per B2.7. Make sure no profile grants FLS to these fields (they're new, so by default none does). |
+| R7 | Email deliverability / OWEA | The sandbox likely sends system email only. The only OWEA is a personal Gmail address. | Set Deliverability to "All email" for the sandbox tests. Use a verified organisational address for production (Q8). |
+| R8 | Shield likely absent | Classic Encrypted Text: max 175 characters, not filterable, masked by default. | Already handled by E15/E16; `MetadataSmokeTest` records `isFilterable()`. |
+| R9 | OpportunityContactRole `Donor` role missing | Activation inserts an OCR with Role `Donor`, which would fail on a restricted picklist or create an unlisted value. | Add `Donor` to the OpportunityContactRole `Role` standard value set in Prompt 1, the E14 way: retrieve the whole set, add the value, never deploy a partial set. |
+| R10 | Integration user doesn't exist | Needed for the Connected App Run As, scheduled jobs and the platform-event subscriber. | Manual step 5 in the README (Salesforce Integration license, Asia/Jerusalem). Check that the license's permission set license grants Opportunity access before Prompt 2. |
+| R11 | Sandbox vs production | All findings are from the sandbox. | Re-run discovery on production before the production deploy. |
+
+## Decisions needed (not in the spec)
+
+These come from the org, not from `CLAUDE.md`, so they're open until Yosef decides. Until then, Prompts 1–3 follow the conservative
+default shown.
+
+| # | Question | Conservative default |
+|---|---|---|
+| D-1 | Contact already has an **unencrypted `Israeli_Id__c`**, which the `Log__c` flow uses to find Contacts. The spec adds a new encrypted `Donor_Tax_Id__c`. Reuse the existing field, or keep both? | Keep the spec: add `Donor_Tax_Id__c` (encrypted) and `Tax_Id_Hash__c`. Also: (a) `ContactNormalizationTrigger` computes `Tax_Id_Hash__c` from `Donor_Tax_Id__c`, **falling back to `Israeli_Id__c`** when the former is blank, so existing Contacts match by ID; (b) `ContactMatcher` never writes `Israeli_Id__c`. Raise with the client as part of Q13 (ID retention). |
+| D-2 | Opportunity already has a custom `Contact__c` lookup (used by the `Log__c` flow). Part C uses `Donor_Contact__c`. Also fill `Contact__c` on pledges? | Don't fill it: `Donor_Contact__c` only, as Part C says. |
+| D-3 | Pledge `AccountId`: the spec uses `Cardcom_Setting__mdt.Default_Account_Id__c` (else blank). In this org every Contact gets its own Household Account (R1). | Keep the spec: `Default_Account_Id__c`, empty by default, so `AccountId` stays blank. Alternative to propose: set `AccountId = Donor_Contact__r.AccountId` on activation, so pledges appear under the donor's household like the org's other Opportunities. |
