@@ -158,7 +158,7 @@ sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex
 
     Then Setup → Matching Rules → `Donor Contact Match` → Activate (wait for the activation email), then Setup → Duplicate Rules →
     `Donor Contact Duplicate` → Activate.
-22. **LP sweeper** (B5.3): schedule it every 15 minutes. Scheduled jobs run as the user who schedules them, and the sweeper's job calls
+22. **LP sweeper** (B5.3), only if the full schedule (step 23) isn't set up yet: schedule it every 15 minutes. Scheduled jobs run as the user who schedules them, and the sweeper's job calls
     Cardcom, so schedule it as the integration user. That user is API-only, so authorize the CLI as it (for example with the JWT
     bearer flow) and run (see spec-consistency N42):
 
@@ -166,7 +166,22 @@ sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex
 sf apex run --target-org <alias> --file scripts/apex/schedule-lp-sweeper.apex
 ```
 
-23. `DonationSetup.scheduleAll()` as the integration user (Prompt 4).
+23. **Charge schedule** (B9). Before the first run, allow deploys while jobs are scheduled: Setup → Deployment Settings → "Allow
+    deployments of components when corresponding Apex jobs are pending or in progress". Otherwise every later deploy of a class used by
+    a scheduled job fails. Then, as the integration user (same JWT session as step 22, TZ Asia/Jerusalem):
+
+```bash
+sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
+```
+
+    It schedules the 4 charge runs (AM, PM, Eve AM, Eve PM on SUN-FRI; `ChargeCalendar.shouldRun` decides), the LP sweepers, and every
+    later job whose class is already deployed; it prints the ones it skipped. Don't run step 22 as well — `scheduleAll()` includes the
+    sweepers. After later prompts add the retry, receipt, reconciliation, alert and cleanup classes, run
+    `DonationSetup.unscheduleAll(); DonationSetup.scheduleAll();` again.
+24. **"Apply charge schedule" button** (B9.1). Times in `Charge_Settings__c` only take effect after re-scheduling. Add the screen flow
+    `Apply_Charge_Schedule` ("החלת זמני חיוב") where admins work, for example: App Manager → the app → Utility Items → Add → Flow →
+    `Apply_Charge_Schedule`. It runs only for users with `Manage_Charge_Schedule` (in `Donations_Admin`) and TZ Asia/Jerusalem.
+    Note: jobs re-scheduled from the button run as that admin (see spec-consistency N42).
 
 ### Org settings to record (do not change)
 Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-check on production.

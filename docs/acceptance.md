@@ -27,6 +27,20 @@ Also automated for Prompt 3 (no B11 number):
   `PendingVerificationSweeperTest.ignoresFreshPledgesAndOtherOpportunities`, `PledgeActivationServiceTest.activatesOnlyWhenSubmittedAndVerified`.
 - Named Credential merge fields sent unchanged: `CardcomServiceTest.createTokenLowProfileSendsB51BodyWithCredentialPlaceholders`.
 
+## Calendar and schedule — part of TC12–TC14 (Prompt 4)
+
+The charge records themselves come with Prompt 5; Prompt 4 covers the calendar decisions they depend on.
+
+| ID | Scenario | Automated (Prompt 4) | Still needed |
+|---|---|---|---|
+| TC12 | Friday run charges Friday + Shabbat | `ChargeCalendarTest.multiplicityTableFromB66` (2026-11-06 → 6, 7), `DonationChargeSchedulerTest.runsOnlyOnItsDays` | Charges and grouped email: Prompts 5, 8 |
+| TC13 | Erev Rosh Hashana 5787 | `ChargeCalendarTest.multiplicityTableFromB66` (2026-09-11 → 11, 12, 13) | 3 Charge__c per pledge: Prompt 5 |
+| TC14 | No run on Shabbat/holiday | `DonationChargeSchedulerTest.runsOnlyOnItsDays` (2026-09-12), `ChargeCalendarTest.shouldRunCasesFromB8` | — |
+
+Also automated: Rosh Hashana 5785–5790 and the 2026/2027 holiday sets (`HebrewHolidaysTest`), manual holiday overrides, retry window and
+next working morning (`ChargeCalendarTest`), settings validation and cron building (`ChargeSettingsTest`), scheduling, re-scheduling,
+time-zone and permission checks (`DonationSetupTest`).
+
 ## Running the tests (sandbox, check-only)
 
 ```bash

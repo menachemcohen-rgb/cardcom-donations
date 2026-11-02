@@ -208,6 +208,9 @@ Report any date in B6.6 that your implementation disagrees with (do not "fix" th
 ```
 Implement B6.5, B6.5.1–B6.5.3, B6.7 (retry part), Part A 7.7א for lock/retry scheduler, adapted by Part C.
 
+- Already in place from Prompt 4 [v2.3]: ChargeRunLock (Part A 7.7א, no-arg acquire/release); ChargePlanner and StaffAlertService
+  exist as stubs — replace their bodies, keep `Integer ChargePlanner.plan(Date, String)` and `StaffAlertService.scheduleChanged`.
+  ChargeRetryScheduler needs a public no-arg constructor (DonationSetup schedules it by name, spec-consistency N46).
 - ChargePlanner.plan(Date, String slot): [v2.2] SOQL selects ONLY Opportunities of record type Micro_Donation_Pledge with
   StageName='Active' and (End_Date__c = null OR End_Date__c >= :runDate) — NO Token__c condition in the SOQL (E15). Select Token__c
   and skip rows with String.isBlank(Token__c) in Apex (log them; VR_Active_Requires_Token should make this impossible).
@@ -239,7 +242,8 @@ Implement B6.7 (roll-ups and streak), B6.8, B6.9.4, B2.8 actions, Part A 7.8/7.8
 - PledgeRollupService.recalc(Set<Id>) on Opportunity: Total_Collected__c (+ mirror to standard Amount, D25), Successful_Charge_Count__c,
   Last_Successful_Charge_Date__c, Consecutive_Failures__c (logical charges, Skipped neutral, pending logical charges not counted),
   Failure_Alert_Sent_At__c once per streak; NEVER changes StageName (D9).
-- PledgeFailureAlert/StaffAlertService (all methods from E11 incl. Daily schedulable) with the HTML templates in B6.9.4; EmailUtil.
+- PledgeFailureAlert/StaffAlertService (all methods from E11 incl. Daily schedulable — `StaffAlertService.Daily` must be a public
+  inner class with a no-arg constructor implementing Schedulable, N46; keep the existing scheduleChanged signature) with the HTML templates in B6.9.4; EmailUtil.
 - OpportunityTrigger + OpportunityTriggerHandler (record-type guarded): on StageName Active→Stopped/Cancelled mark Pending Charges
   Skipped (STOPPED) and write Pledge_Change_Log__c for every stage transition.
 - Flows: Stop_Pledge_Charges, Resume_Pledge_Charges, Cancel_Pledge, Revoke_Donor_Links (Link_Version__c +1 + log) as screen flows on
@@ -254,6 +258,8 @@ Acceptance: green tests; this completes the core scope of the 40-hour quote. STO
 ## Prompt 7 — Nightly reconciliation (T48) (scope extension — only after approval)
 
 ```
+[v2.3] ReconciliationJob and LogCleanupBatch must have public no-arg constructors and implement Schedulable (DonationSetup schedules
+them by name, N46).
 Implement B6.12 ReconciliationJob with the fixes in Part C (SF_Amount__c, Charge_Settings__c.Reconcile_Time__c), Recon_* CMDT fields,
 LogCleanupBatch (Cardcom_Webhook_Log__c and Raw_* fields > 90 days), Report/List View for Reconciliation_Issue__c, and
 [v2.2] wire up and test the existing StaffAlertService.reconciliationOpen() from Prompt 6 (don't re-create it).
@@ -284,6 +290,7 @@ Security check: grep the codebase and confirm no PAN/CVV fields exist, no secret
 ## Prompt 9 — Monthly receipt (T60) (scope extension; blocked on accountant + Cardcom answers Q14/Q15)
 
 ```
+[v2.3] MonthlyReceiptScheduler must have a public no-arg constructor (DonationSetup schedules it by name, N46).
 Implement B6.11 and B6.11.1 exactly: MonthlyReceiptScheduler, MonthlyReceiptPlanner (Batch), MonthlyReceiptQueueable, MonthlyReceiptService,
 Monthly_Receipt__c flows (Retry_Receipt action + MonthlyReceiptRetryAction invocable), List View "failed receipts",
 [v2.2] and wire up and test the existing StaffAlertService.receiptFailures() from Prompt 6 (don't re-create it).
