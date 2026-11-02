@@ -27,6 +27,18 @@ Also automated for Prompt 3 (no B11 number):
   `PendingVerificationSweeperTest.ignoresFreshPledgesAndOtherOpportunities`, `PledgeActivationServiceTest.activatesOnlyWhenSubmittedAndVerified`.
 - Named Credential merge fields sent unchanged: `CardcomServiceTest.createTokenLowProfileSendsB51BodyWithCredentialPlaceholders`.
 
+## Thank-you email and donor page — TC25–TC30 (Prompts 8 and 10)
+
+| ID | Scenario | Automated | Manual (sandbox + staging WordPress) |
+|---|---|---|---|
+| — | Thank-you email | `DonorChargeEmailServiceTest` (grouping, no email, limit guard, disabled, missing secret, event trigger) | After TC11/TC12: one email per pledge per run with the amount, the dates (Friday: "עבור 06/11 ו-07/11"), the card phrase, and two links. |
+| TC25 | Change amount | `DonorPortalResourceTest.amountChangeAppliesFromTheNextChargeOnly` | Open the amount link → 5 ₪: "הסכום עודכן ל-5.00 ₪…"; `Charge_Amount__c` = 5, change log "Amount" (Donor_Portal); an existing Pending retry stays 3; the next run charges 5. |
+| TC26 | Amount out of range | `DonorPortalResourceTest.amountOutOfRangeOrWrongLinkIsRefused` | 0.5 / 100: range message, nothing changes. |
+| TC27 | Replace card | `DonorPortalResourceTest.cardReplacementStartsALowProfile`, `DonorPortalResourceTest.cardStatusWaitsThenPullsTheResult`, `CardChangeServiceTest.successfulReplacementKeepsHistory` | Card link → "החלפת כרטיס" → second test card: success message (with 4 digits when Cardcom returns them, else "בכרטיס החדש"); `Pledge_Card_History__c` holds the old token; the next charge uses the new token. |
+| TC28 | Replacement fails | `CardChangeServiceTest.failedReplacementKeepsTheOldCard` | Cancel inside the iframe: "פרטי הכרטיס לא נקלטו והכרטיס הקודם נשאר בתוקף…"; CCR Failed (or Expired after 30 min); token unchanged. |
+| TC29 | Revoke links | `DonorLinkTokenTest.wrongActionVersionSignatureAndStatusAreInvalid` | "ביטול קישורי תורם" on the pledge → the old link shows "הקישור אינו תקף…"; the link in the next thank-you email works. |
+| TC30 | Months-old link | `DonorLinkTokenTest.issueAndVerifyWithoutExpiry` (no expiry claim), `DonorLinkTokenTest.previousSecretStillWorksAfterRotation` | Issue a token with the current version (Anonymous Apex `DonorLinkToken.issue(pledgeId, 'amount', 1)`) and open it: it works (D15). |
+
 ## WordPress — form and donor page (Prompt 10)
 
 Staging site with the plugin installed (`docs/wp-install.md`), sandbox Salesforce, Cardcom test terminal. Automated: PHPUnit
@@ -42,7 +54,7 @@ Staging site with the plugin installed (`docs/wp-install.md`), sandbox Salesforc
 | — | Rate limit | Reload the form page 11 times within 10 minutes. | The 11th load shows "בוצעו ניסיונות רבים. נסו שוב בעוד מספר דקות." and no iframe. |
 | — | Cache / CSP | Load the form page twice in two browsers. | Two different iframe URLs; `/cardcom-return/` shows inside the iframe (not blocked by CSP). |
 | — | Donor page: invalid link | Open `/donor/?a=amount&t=abc`. | "הקישור אינו תקף. לפרטים פנו אלינו: …"; the token disappears from the address bar. |
-| — | Donor page: amount, card | Needs the Salesforce `/donor/*` endpoints and signed links (Prompt 8). | Messages per B7.12.4. |
+| — | Donor page: amount, card | See TC25–TC28 above. | Messages per B7.12.4. |
 
 ## Charging — TC11–TC21 (Prompts 4–5)
 
