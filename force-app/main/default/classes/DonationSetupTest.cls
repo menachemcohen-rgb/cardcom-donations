@@ -1,0 +1,113 @@
+@IsTest
+private class DonationSetupTest {
+  static final Integer LATER_JOBS = 5; // Retry, Receipts, Reconcile, Daily Alerts, Log Cleanup (classes from later prompts)
+
+  static User user(String tz, Boolean withPermission) {
+    User u;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      String uniq = String.valueOf(Crypto.getRandomInteger()).replace('-', '');
+      u = new User(
+        ProfileId = UserInfo.getProfileId(),
+        Username = 'donsetup-' + uniq + '@example.com.test',
+        Email = 'donsetup@example.com',
+        LastName = 'Setup',
+        Alias = 'dsetup',
+        TimeZoneSidKey = tz,
+        LocaleSidKey = 'iw_IL',
+        EmailEncodingKey = 'UTF-8',
+        LanguageLocaleKey = 'en_US'
+      );
+      insert u;
+      if (withPermission) {
+        PermissionSet ps = new PermissionSet(Name = 'Test_Manage_Schedule_' + uniq, Label = 'Test Manage Schedule ' + uniq);
+        insert ps;
+        CustomPermission cp = [SELECT Id FROM CustomPermission WHERE DeveloperName = 'Manage_Charge_Schedule'];
+        insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = cp.Id);
+        insert new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+      }
+    }
+    return u;
+  }
+
+  static Integer donationJobs() {
+    return [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'];
+  }
+
+  static String cronOf(String name) {
+    return [SELECT CronExpression FROM CronTrigger WHERE CronJobDetail.Name = :name].CronExpression;
+  }
+
+  @IsTest
+  static void scheduleAllAndUnscheduleAll() {
+    ChargeSettings.overrideValue = ChargeSettings.defaults();
+    DonationSetup.scheduleAll();
+    Integer missing = DonationSetup.lastSkipped.size();
+    Assert.isTrue(missing <= LATER_JOBS, String.valueOf(DonationSetup.lastSkipped));
+    Assert.areEqual(4 + 4 + (LATER_JOBS - missing), donationJobs(), '4 charge runs + 4 LP sweepers + later jobs that exist');
+    Assert.areEqual('0 0 8 ? * SUN-FRI', cronOf('Donations AM'));
+    Assert.areEqual('0 0 20 ? * SUN-FRI', cronOf('Donations PM'), 'PM is scheduled even when Runs_Per_Day__c = 1 (B9)');
+    Assert.areEqual('0 0 6 ? * SUN-FRI', cronOf('Donations Eve AM'));
+    Assert.areEqual('0 0 11 ? * SUN-FRI', cronOf('Donations Eve PM'));
+    DonationSetup.unscheduleAll();
+    Assert.areEqual(0, donationJobs());
+  }
+
+  @IsTest
+  static void missingOrNonSchedulableClassesAreSkipped() {
+    Assert.isFalse(DonationSetup.scheduleIfPresent('Donations X', '0 0 1 * * ?', 'NoSuchClassAnywhere'));
+    Assert.isFalse(DonationSetup.scheduleIfPresent('Donations Y', '0 0 1 * * ?', 'MicroPledges'));
+    Assert.areEqual(2, DonationSetup.lastSkipped.size());
+  }
+
+  @IsTest
+  static void rescheduleAppliesNewTimes() {
+    User u = user('Asia/Jerusalem', false);
+    System.runAs(u) {
+      ChargeSettings.overrideValue = ChargeSettings.defaults();
+      DonationSetup.scheduleAll();
+      ChargeSettings.overrideValue.AM_Time__c = '07:15';
+      List<String> errs = DonationSetup.reschedule();
+      Assert.isTrue(errs.isEmpty(), String.valueOf(errs));
+      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('Donations AM'));
+      Assert.areEqual(4, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations LP Sweeper%'], 'fixed jobs untouched');
+    }
+    Assert.isNotNull(Charge_Settings__c.getOrgDefaults().Schedule_Applied_At__c);
+  }
+
+  @IsTest
+  static void rescheduleRefusesWrongTimeZoneInvalidSettingsAndActiveChain() {
+    System.runAs(user('Europe/London', false)) {
+      ChargeSettings.overrideValue = ChargeSettings.defaults();
+      List<String> errs = DonationSetup.reschedule();
+      Assert.areEqual(1, errs.size());
+      Assert.isTrue(errs[0].contains('Asia/Jerusalem'));
+    }
+    User jlm = user('Asia/Jerusalem', false);
+    System.runAs(jlm) {
+      ChargeSettings.overrideValue = ChargeSettings.defaults();
+      ChargeSettings.overrideValue.AM_Time__c = '21:00';
+      Assert.isFalse(DonationSetup.reschedule().isEmpty(), 'invalid settings');
+      ChargeSettings.overrideValue = ChargeSettings.defaults();
+      ChargeRunLock.acquire();
+      List<String> errs = DonationSetup.reschedule();
+      Assert.areEqual(1, errs.size());
+      Assert.isTrue(errs[0].startsWith('חיוב פעיל כרגע'));
+      Assert.areEqual(0, donationJobs(), 'nothing scheduled');
+    }
+  }
+
+  @IsTest
+  static void invocableRequiresManageChargeSchedule() {
+    System.runAs(user('Asia/Jerusalem', false)) {
+      DonationSetup.Result r = DonationSetup.applyScheduleInvocable()[0];
+      Assert.isFalse(r.ok);
+      Assert.areEqual('אין הרשאה', r.message);
+    }
+    System.runAs(user('Asia/Jerusalem', true)) {
+      ChargeSettings.overrideValue = ChargeSettings.defaults();
+      DonationSetup.Result r = DonationSetup.applyScheduleInvocable()[0];
+      Assert.isTrue(r.ok, r.message);
+      Assert.areEqual('זמני החיוב עודכנו', r.message);
+    }
+  }
+}

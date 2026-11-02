@@ -1,0 +1,104 @@
+/**
+ * Schedules the Donations jobs from Charge_Settings__c (B9, B9.1, B9.2; Part C E6/E7).
+ * Jobs whose classes come in later prompts (retry, receipts, reconciliation, daily alerts, log cleanup) are scheduled by name and
+ * skipped while the class doesn't exist yet (spec-consistency N46). Re-run reschedule() after deploying them.
+ */
+public with sharing class DonationSetup {
+  static final List<String> TIMED = new List<String>{
+    'Donations AM',
+    'Donations PM',
+    'Donations Eve AM',
+    'Donations Eve PM',
+    'Donations Retry',
+    'Donations Receipts',
+    'Donations Reconcile'
+  };
+  @TestVisible
+  static List<String> lastSkipped = new List<String>();
+
+  public static void scheduleAll() {
+    lastSkipped = new List<String>();
+    scheduleTimed();
+    scheduleFixed();
+  }
+
+  static void scheduleTimed() {
+    Charge_Settings__c s = ChargeSettings.get();
+    System.schedule('Donations AM', ChargeSettings.cron(s.AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('AM'));
+    System.schedule('Donations PM', ChargeSettings.cron(s.PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('PM'));
+    System.schedule('Donations Eve AM', ChargeSettings.cron(s.Eve_AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EveAM'));
+    System.schedule('Donations Eve PM', ChargeSettings.cron(s.Eve_PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EvePM'));
+    scheduleIfPresent('Donations Retry', '0 ' + s.Retry_Minute__c.intValue() + ' * ? * SUN-FRI', 'ChargeRetryScheduler');
+    scheduleIfPresent('Donations Receipts', ChargeSettings.cron(s.Receipt_Time__c, '*'), 'MonthlyReceiptScheduler');
+    scheduleIfPresent('Donations Reconcile', ChargeSettings.cron(s.Reconcile_Time__c, '*'), 'ReconciliationJob');
+  }
+  static void scheduleFixed() {
+    PendingVerificationSweeper.scheduleAll();
+    scheduleIfPresent('Donations Daily Alerts', '0 0 9 ? * SUN-FRI', 'StaffAlertService.Daily');
+    scheduleIfPresent('Donations Log Cleanup', '0 0 3 ? * SUN', 'LogCleanupBatch');
+  }
+
+  /** Schedules `className` if it exists and is Schedulable; otherwise records it in lastSkipped. */
+  @TestVisible
+  static Boolean scheduleIfPresent(String jobName, String cron, String className) {
+    Type t = Type.forName(className);
+    Object o = t == null ? null : t.newInstance();
+    if (!(o instanceof Schedulable)) {
+      lastSkipped.add(jobName + ' (' + className + ')');
+      System.debug(LoggingLevel.WARN, 'Not scheduled yet, class missing: ' + className);
+      return false;
+    }
+    System.schedule(jobName, cron, (Schedulable) o);
+    return true;
+  }
+
+  /** Re-applies time settings. Returns errors (empty = success). */
+  public static List<String> reschedule() {
+    Charge_Settings__c s = ChargeSettings.get();
+    List<String> errs = ChargeSettings.validate(s);
+    if (UserInfo.getTimeZone().getID() != 'Asia/Jerusalem')
+      errs.add('אזור הזמן של המשתמש חייב להיות Asia/Jerusalem');
+    if (ChargeRunLock.isChainActive())
+      errs.add('חיוב פעיל כרגע — נסו שוב בעוד כמה דקות');
+    if (!errs.isEmpty())
+      return errs;
+    for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name IN :TIMED])
+      System.abortJob(ct.Id);
+    lastSkipped = new List<String>();
+    scheduleTimed();
+    Charge_Settings__c org = Charge_Settings__c.getOrgDefaults();
+    if (org == null || org.Id == null) {
+      org = ChargeSettings.defaults();
+      org.SetupOwnerId = UserInfo.getOrganizationId();
+    }
+    org.Schedule_Applied_At__c = Datetime.now();
+    upsert org;
+    StaffAlertService.scheduleChanged(s); // "זמני חיוב עודכנו" + the new values (Prompt 6)
+    return errs;
+  }
+
+  public static void unscheduleAll() {
+    for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'])
+      System.abortJob(ct.Id);
+  }
+
+  public class Result {
+    @InvocableVariable
+    public Boolean ok;
+    @InvocableVariable
+    public String message;
+  }
+  @InvocableMethod(label='Apply charge schedule' description='Re-schedules Donations jobs from Charge_Settings__c')
+  public static List<Result> applyScheduleInvocable() {
+    Result r = new Result();
+    if (!FeatureManagement.checkPermission('Manage_Charge_Schedule')) {
+      r.ok = false;
+      r.message = 'אין הרשאה';
+      return new List<Result>{ r };
+    }
+    List<String> errs = reschedule();
+    r.ok = errs.isEmpty();
+    r.message = r.ok ? 'זמני החיוב עודכנו' : String.join(errs, '\n');
+    return new List<Result>{ r };
+  }
+}
