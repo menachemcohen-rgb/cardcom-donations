@@ -1,0 +1,16 @@
+{
+  "name": "cardcom-donations",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cardcom ↔ WordPress ↔ Salesforce micro-donations",
+  "scripts": {
+    "prettier": "prettier --write \"force-app/**/*.{cls,trigger,xml,json}\" \"wordpress/**/*.{js,css}\"",
+    "prettier:verify": "prettier --check \"force-app/**/*.{cls,trigger,xml,json}\" \"wordpress/**/*.{js,css}\"",
+    "lint:wp": "eslint \"wordpress/**/*.js\""
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-apex": "^2.1.4"
+  }
+}
