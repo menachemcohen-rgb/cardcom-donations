@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Max_Consecutive_Failures__c</fullName>
+    <defaultValue>3</defaultValue>
+    <description>סף התראה לצוות</description>
+    <externalId>false</externalId>
+    <label>Max Consecutive Failures</label>
+    <precision>2</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

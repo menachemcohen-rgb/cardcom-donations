@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Friday_Cutoff_Hour__c</fullName>
+    <defaultValue>14</defaultValue>
+    <description>אין retries אחרי שעה זו בשישי/ערב חג</description>
+    <externalId>false</externalId>
+    <label>Friday Cutoff Hour</label>
+    <precision>2</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

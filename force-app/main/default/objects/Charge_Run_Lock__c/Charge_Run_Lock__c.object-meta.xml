@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Lock for the charge Queueable chain (Part A 7.7א, Part C E12).</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Charge Run Lock</label>
+    <visibility>Public</visibility>
+</CustomObject>
