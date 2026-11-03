@@ -72,6 +72,10 @@ Site `cardcom` + guest permission set, permission-set assignments, record type a
    scripts/deploy-pe-subscriber.sh <alias> <int-user>
    ```
 
+   **Check the publish behavior** in the target org: Setup → Platform Events → Charge Success → "Publish Behavior" must be
+   **Publish After Commit** (repo: `objects/Charge_Success__e` `publishBehavior=PublishAfterCommit`, commit 4f31290). With
+   "Publish Immediately" the thank-you trigger can read the charge before it is saved as Success and send nothing. An event's publish
+   behavior can't always be changed by a deploy once the event exists; if it still shows "Publish Immediately", change it by hand.
 3. **Normalize existing Contacts**, wait for the batch, then activate `Donor_Contact_Match` and `Donor_Contact_Duplicate` (README 21):
    `sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex`.
 4. **Schedule all jobs** (as any admin; the integration user does the scheduling, D30 — README 22–23):
