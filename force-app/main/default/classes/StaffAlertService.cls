@@ -215,6 +215,31 @@ public without sharing class StaffAlertService {
     return true;
   }
 
+  /**
+   * The nightly list from Cardcom can't be compared (N86): it has none of the day's TranzactionIds. Charges are checked one by one
+   * instead. Once a day. @return true if sent now.
+   */
+  public static Boolean reconciliationUnavailable(Date day, Integer charges, Integer checkedNow) {
+    if (sentToday('Reconciliation_Unavailable_Sent_On__c'))
+      return false;
+    send(
+      'התאמה לילית: רשימת העסקאות מ-Cardcom לא זמינה',
+      wrap(
+        '<p>רשימת העסקאות שהתקבלה מ-Cardcom ליום ' +
+          EmailUtil.esc(day == null ? null : day.format()) +
+          ' לא כוללת אף אחד מ-' +
+          EmailUtil.esc(charges) +
+          ' החיובים המוצלחים של אותו יום, ולכן לא בוצעה השוואה מולה.</p>' +
+          '<p>במקום זאת כל חיוב נבדק בנפרד מול Cardcom (' +
+          EmailUtil.esc(checkedNow) +
+          ' נבדקו בריצה הראשונה, השאר בהמשך). פער ייפתח רק לחיוב ש-Cardcom לא מצאה.</p>' +
+          '<p>כדאי לבדוק את הרשאות ה-API ואת מספר הטרמינל (LimitForTerminal) מול Cardcom.</p>'
+      )
+    );
+    markSent('Reconciliation_Unavailable_Sent_On__c');
+    return true;
+  }
+
   /** "הוראות ממתינות לאימות > 24 ש'" plus pledges that failed verification in the last day (7.7ב). @return true if sent now. */
   public static Boolean pendingVerificationStale() {
     if (sentToday('Daily_Summary_Sent_On__c'))
