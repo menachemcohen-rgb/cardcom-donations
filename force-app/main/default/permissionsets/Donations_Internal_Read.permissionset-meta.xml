@@ -3,6 +3,11 @@
     <description>Internal read-only access to the donations data (pledges, charges, receipts, change log, link use, reconciliation, webhook log). No card token (Token__c), no Israeli ID or its hash, no settings or link secret. Nothing editable.</description>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Card_Change_Request__c.New_Amount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Opportunity.Activated_At__c</field>
         <readable>true</readable>
     </fieldPermissions>

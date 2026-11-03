@@ -35,6 +35,11 @@
     <description>Data/finance manager (B2.7): stop/resume/cancel pledges, apply the charge schedule, retry monthly receipts, resolve reconciliation issues. Reads the Israeli ID; no access to card tokens.</description>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Card_Change_Request__c.New_Amount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Card_Change_Request__c.Client_Ip__c</field>
         <readable>true</readable>
     </fieldPermissions>

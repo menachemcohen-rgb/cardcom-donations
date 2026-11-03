@@ -211,6 +211,11 @@
     </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Card_Change_Request__c.New_Amount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Card_Change_Request__c.Client_Ip__c</field>
         <readable>true</readable>
     </fieldPermissions>

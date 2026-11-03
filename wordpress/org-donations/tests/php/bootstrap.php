@@ -44,3 +44,5 @@ require dirname(__DIR__, 2) . '/includes/class-org-validator.php';
 require dirname(__DIR__, 2) . '/includes/class-org-sf-client.php';
 require dirname(__DIR__, 2) . '/includes/class-org-rate-limiter.php';
 require dirname(__DIR__, 2) . '/includes/class-org-form.php';
+if (!function_exists('esc_url_raw')) { function esc_url_raw($u) { return (string) $u; } }
+require dirname(__DIR__, 2) . '/includes/class-org-portal.php';

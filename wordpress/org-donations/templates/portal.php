@@ -26,6 +26,7 @@
     <nav class="orgdon-tabs" role="tablist" aria-label="פעולות">
       <button type="button" role="tab" id="orgdon-tab-amount" aria-controls="orgdon-panel-amount" data-tab="amount">שינוי סכום</button>
       <button type="button" role="tab" id="orgdon-tab-card" aria-controls="orgdon-panel-card" data-tab="card">החלפת כרטיס</button>
+      <button type="button" role="tab" id="orgdon-tab-stop" aria-controls="orgdon-panel-stop" data-tab="stop">הפסקת חיובים</button>
     </nav>
 
     <section id="orgdon-panel-amount" role="tabpanel" aria-labelledby="orgdon-tab-amount" data-panel="amount" hidden>
@@ -47,11 +48,31 @@
 
     <section id="orgdon-panel-card" role="tabpanel" aria-labelledby="orgdon-tab-card" data-panel="card" hidden>
       <p>אפשר להחליף את הכרטיס שממנו נגבית התרומה. הכרטיס הקודם יישאר בתוקף עד שהחדש יישמר.</p>
+      <fieldset class="orgdon-row" data-role="card-amount">
+        <legend>סכום לכל חיוב (אפשר לשנות יחד עם הכרטיס)</legend>
+        <div class="orgdon-chips" data-role="card-presets"></div>
+        <div class="orgdon-row" data-role="card-other-wrap" hidden>
+          <label for="orgdon-card-other">סכום (₪)</label>
+          <input id="orgdon-card-other" name="card_other" type="number" inputmode="decimal" step="0.5">
+        </div>
+        <div class="orgdon-err" data-role="card-amount-err" aria-live="assertive"></div>
+        <p class="orgdon-note">סכום חדש יחול מהחיוב הבא, רק לאחר שהכרטיס החדש יישמר.</p>
+      </fieldset>
       <button type="button" class="orgdon-btn" data-role="card-start">החלפת כרטיס</button>
       <div class="orgdon-card" data-role="card-frame-wrap" hidden>
         <iframe title="טופס כרטיס אשראי מאובטח של Cardcom" data-role="card-frame" allow="payment" referrerpolicy="no-referrer"></iframe>
       </div>
       <div class="orgdon-wait" data-role="card-wait" hidden><span class="orgdon-spinner" aria-hidden="true"></span> בודקים את פרטי הכרטיס…</div>
+    </section>
+
+    <section id="orgdon-panel-stop" role="tabpanel" aria-labelledby="orgdon-tab-stop" data-panel="stop" hidden>
+      <p>אפשר להפסיק את הוראת התרומה. לאחר ההפסקה לא יבוצעו חיובים נוספים. לחידוש ההוראה יש לפנות אלינו.</p>
+      <button type="button" class="orgdon-btn orgdon-btn-danger" data-role="stop-ask">הפסקת החיובים</button>
+      <div class="orgdon-confirm" data-role="stop-confirm" hidden>
+        <p><strong>בטוח/ה? לאחר ההפסקה לא יבוצעו חיובים נוספים.</strong></p>
+        <button type="button" class="orgdon-btn orgdon-btn-danger" data-role="stop-yes">כן, להפסיק</button>
+        <button type="button" class="orgdon-btn orgdon-btn-secondary" data-role="stop-no">חזרה</button>
+      </div>
     </section>
 
     <p class="orgdon-msg-box" data-role="msg" role="status" hidden></p>

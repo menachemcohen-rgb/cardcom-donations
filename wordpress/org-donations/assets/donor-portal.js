@@ -9,7 +9,7 @@
   let token = cfg.token || sessionStorage.getItem(KEY) || '';
   if (cfg.token) { sessionStorage.setItem(KEY, cfg.token); }
   if (location.search) history.replaceState(null, '', location.pathname);
-  let ctx = null; let lpId = null; let pollTimer = null; let pollUntil = 0;
+  let ctx = null; let lpId = null; let pollTimer = null; let pollUntil = 0; let pendingAmount = null;
 
   function show(view) { root.querySelectorAll('[data-view]').forEach((el) => { el.hidden = el.dataset.view !== view; }); }
   function msg(text, kind) {
@@ -50,21 +50,51 @@
     $('[data-role=frequency]').textContent = ctx.frequency;
     $('[data-role=card]').textContent = cardText();
     $('[data-role=contact]').textContent = cfg.contactLine;
-    const box = $('[data-role=presets]'); box.textContent = '';
-    ctx.presets.forEach((p) => {
-      const l = document.createElement('label'); l.className = 'orgdon-chip';
-      const i = document.createElement('input'); i.type = 'radio'; i.name = 'preset'; i.value = String(p);
-      if (Number(p) === Number(ctx.amount)) i.checked = true;
-      const s = document.createElement('span'); s.textContent = money(p).replace(/\.00$/, '') + ' ₪';
-      l.append(i, s); box.append(l);
+    chips($('[data-role=presets]'), 'preset', false);
+    chips($('[data-role=card-presets]'), 'card_preset', true);
+    [$('#orgdon-other'), $('#orgdon-card-other')].forEach((other) => {
+      other.min = ctx.min; other.max = ctx.max; other.placeholder = 'בין ' + ctx.min + ' ל-' + ctx.max;
     });
-    const other = $('#orgdon-other'); other.min = ctx.min; other.max = ctx.max;
-    other.placeholder = 'בין ' + ctx.min + ' ל-' + ctx.max;
     show('main');
     tab(cfg.action || ctx.action || 'amount');
   }
 
+  /** Amount chips (presets, the current amount checked). withOther: the card panel has its own "סכום אחר" chip inside the box. */
+  function chips(box, name, withOther) {
+    box.textContent = '';
+    const values = ctx.presets.map(Number);
+    if (values.indexOf(Number(ctx.amount)) < 0 && withOther) values.push(Number(ctx.amount)); // keep the current amount selectable
+    values.forEach((p) => {
+      const l = document.createElement('label'); l.className = 'orgdon-chip';
+      const i = document.createElement('input'); i.type = 'radio'; i.name = name; i.value = String(p);
+      if (p === Number(ctx.amount)) i.checked = true;
+      const s = document.createElement('span'); s.textContent = money(p).replace(/\.00$/, '') + ' ₪';
+      l.append(i, s); box.append(l);
+    });
+    if (withOther) {
+      const l = document.createElement('label'); l.className = 'orgdon-chip orgdon-chip-other';
+      const i = document.createElement('input'); i.type = 'radio'; i.name = name; i.value = 'other';
+      const s = document.createElement('span'); s.textContent = 'סכום אחר';
+      l.append(i, s); box.append(l);
+    }
+  }
+
+  /** Amount chosen in a chip group: a valid string, '' if invalid (error shown), or null when nothing is selected. */
+  function chosenAmount(name, otherInput, errEl) {
+    const sel = root.querySelector('input[name=' + name + ']:checked');
+    if (!sel) return null;
+    const a = sel.value === 'other' ? otherInput.value.replace(',', '.') : sel.value;
+    const n = Number(a);
+    if (!a || isNaN(n) || n < ctx.min || n > ctx.max || !/^\d+(\.\d{1,2})?$/.test(a)) {
+      const t = 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
+      if (errEl && sel.value === 'other') errEl.textContent = t; else msg(t, 'error');
+      return '';
+    }
+    return a;
+  }
+
   function tab(name) {
+    const confirmBox = $('[data-role=stop-confirm]'); if (confirmBox) { confirmBox.hidden = true; $('[data-role=stop-ask]').hidden = false; }
     root.querySelectorAll('[data-tab]').forEach((b) => { const on = b.dataset.tab === name; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
     root.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== name; });
     msg('');
@@ -81,19 +111,14 @@
   // 4) amount
   root.addEventListener('change', (e) => {
     if (e.target.name === 'preset') $('[data-role=other-wrap]').hidden = e.target.value !== 'other';
+    if (e.target.name === 'card_preset') $('[data-role=card-other-wrap]').hidden = e.target.value !== 'other';
   });
   root.querySelector('.orgdon-amount-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = $('[data-role=amount-err]'); err.textContent = '';
-    const sel = root.querySelector('input[name=preset]:checked');
-    if (!sel) { msg('נא לבחור סכום.', 'error'); return; }
-    let a = sel.value === 'other' ? $('#orgdon-other').value.replace(',', '.') : sel.value;
-    const n = Number(a);
-    if (!a || isNaN(n) || n < ctx.min || n > ctx.max || !/^\d+(\.\d{1,2})?$/.test(a)) {
-      const t = 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
-      if (sel.value === 'other') err.textContent = t; else msg(t, 'error');
-      return;
-    }
+    const a = chosenAmount('preset', $('#orgdon-other'), err);
+    if (a === null) { msg('נא לבחור סכום.', 'error'); return; }
+    if (a === '') return;
     const btn = e.submitter || root.querySelector('.orgdon-amount-form .orgdon-btn'); btn.disabled = true;
     const j = await post('amount', { amount: a });
     btn.disabled = false;
@@ -105,8 +130,15 @@
   // 5) card replacement
   const frameWrap = $('[data-role=card-frame-wrap]'); const frame = $('[data-role=card-frame]');
   $('[data-role=card-start]').addEventListener('click', async (e) => {
-    const btn = e.currentTarget; btn.disabled = true; msg('');
-    const j = await post('card', {});
+    const btn = e.currentTarget; msg('');
+    const err = $('[data-role=card-amount-err]'); err.textContent = '';
+    const a = chosenAmount('card_preset', $('#orgdon-card-other'), err);
+    if (a === '') return;
+    // one step: the new amount (if any) goes with the card and is applied once the new card is saved
+    const data = a !== null && Number(a) !== Number(ctx.amount) ? { amount: a } : {};
+    pendingAmount = data.amount ? Number(data.amount) : null;
+    btn.disabled = true;
+    const j = await post('card', data);
     btn.disabled = false;
     if (!j.success) { if (j.data && j.data.invalid) return invalid(j.data.message); msg((j.data && j.data.message) || 'לא ניתן לטעון כעת את טופס התשלום.', 'error'); return; }
     lpId = j.data.lpId; frame.src = j.data.url; frameWrap.hidden = false; btn.hidden = true;
@@ -126,7 +158,7 @@
   async function poll() {
     clearTimeout(pollTimer);
     const j = await post('card_status', { lpId });
-    if (j.success && j.data.status === 'Completed') return cardDone(j.data.last4);
+    if (j.success && j.data.status === 'Completed') return cardDone(j.data.last4, j.data.amount);
     if (j.success && (j.data.status === 'Failed' || j.data.status === 'Expired')) return cardFailed();
     if (j.data && j.data.invalid) return invalid(j.data.message);
     if (Date.now() > pollUntil) {
@@ -136,14 +168,42 @@
     }
     pollTimer = setTimeout(poll, 3000);
   }
-  function cardDone(last4) {
+  function cardDone(last4, amount) {
     $('[data-role=card-wait]').hidden = true; lpId = null;
     if (last4) { ctx.last4 = last4; ctx.exp = null; }
     $('[data-role=card]').textContent = last4 ? '****' + last4 : 'כרטיס חדש';
-    msg(last4 ? 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס המסתיים ב-' + last4 + '.'
-              : 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס החדש.', 'ok');
+    let text = last4 ? 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס המסתיים ב-' + last4 + '.'
+                     : 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס החדש.';
+    if (pendingAmount !== null && amount != null && Number(amount) === pendingAmount) {
+      ctx.amount = Number(amount); $('[data-role=amount]').textContent = money(ctx.amount);
+      text += ' הסכום עודכן ל-' + money(ctx.amount) + ' ₪ לכל חיוב.';
+    }
+    pendingAmount = null;
+    msg(text, 'ok');
     $('[data-role=card-start]').hidden = false;
   }
+
+  // 6) stop the pledge (asks first)
+  $('[data-role=stop-ask]').addEventListener('click', () => {
+    msg(''); $('[data-role=stop-ask]').hidden = true; $('[data-role=stop-confirm]').hidden = false;
+    $('[data-role=stop-yes]').focus();
+  });
+  $('[data-role=stop-no]').addEventListener('click', () => {
+    $('[data-role=stop-confirm]').hidden = true; $('[data-role=stop-ask]').hidden = false;
+  });
+  $('[data-role=stop-yes]').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; btn.disabled = true;
+    const j = await post('stop', { confirm: '1' });
+    btn.disabled = false;
+    if (j.success) {
+      sessionStorage.removeItem(KEY);
+      root.querySelectorAll('.orgdon-tabs, [data-panel]').forEach((el) => { el.hidden = true; });
+      msg(j.data.message, 'ok');
+      return;
+    }
+    if (j.data && j.data.invalid) return invalid(j.data.message);
+    msg((j.data && j.data.message) || 'אירעה שגיאה. נסו שוב.', 'error');
+  });
   function cardFailed() {
     $('[data-role=card-wait]').hidden = true; lpId = null;
     msg('פרטי הכרטיס לא נקלטו והכרטיס הקודם נשאר בתוקף. ניתן לנסות שוב.', 'error');

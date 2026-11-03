@@ -7,6 +7,9 @@
  * - Change log for the manual stage transitions (Stop, Resume, Cancel) and for donor-link revocation (Link_Version__c raised).
  */
 public without sharing class OpportunityTriggerHandler {
+  /** Set by the donor page (DonorPortalResource.stop) so the change log says Donor_Portal instead of System. */
+  public static String sourceOverride;
+
   public static void beforeUpdate(List<Opportunity> news, Map<Id, Opportunity> olds) {
     Id rt = MicroPledges.recordTypeId();
     for (Opportunity n : news) {
@@ -22,7 +25,7 @@ public without sharing class OpportunityTriggerHandler {
     Set<Id> halted = new Set<Id>();
     Set<Id> resumed = new Set<Id>();
     List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
-    String source = isIntegrationUser() ? 'System' : 'Staff';
+    String source = sourceOverride != null ? sourceOverride : (isIntegrationUser() ? 'System' : 'Staff');
     for (Opportunity n : news) {
       if (n.RecordTypeId != rt)
         continue;
