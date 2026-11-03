@@ -126,12 +126,13 @@ public class TestDataFactory {
   }
 
   /**
-   * An Opportunity record type the running user may use that is not Micro_Donation_Pledge (Master included when available), or
-   * null. Never rely on the user's default: where the pledge type is the default, an Opportunity without RecordTypeId is a pledge.
+   * A custom Opportunity record type the running user may use that is not Micro_Donation_Pledge, or null. Master is never
+   * returned: describe reports it as available even when the user's profile has record types assigned, and the insert is then
+   * rejected (INVALID_CROSS_REFERENCE_KEY). Never rely on the user's default either: it may be the pledge type.
    */
   public static Id otherRecordTypeId() {
     for (Schema.RecordTypeInfo i : Schema.SObjectType.Opportunity.getRecordTypeInfos())
-      if (i.isAvailable() && i.isActive() && i.getDeveloperName() != 'Micro_Donation_Pledge')
+      if (!i.isMaster() && i.isAvailable() && i.isActive() && i.getDeveloperName() != 'Micro_Donation_Pledge')
         return i.getRecordTypeId();
     return null;
   }
