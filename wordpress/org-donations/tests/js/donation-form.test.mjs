@@ -27,3 +27,9 @@ test('normPhone: same rules as PHP and Salesforce', () => {
   assert.equal(normPhone('03-1234567'), null);
   assert.equal(normPhone(''), null);
 });
+
+test('validAmount: 1–50, at most 2 decimals (checked before the card step)', () => {
+  const { validAmount } = window.OrgDonUtil;
+  for (const ok of ['1', '50', '3.5', '49.99']) assert.equal(validAmount(ok, 1, 50), true, ok);
+  for (const bad of ['0', '51', '0.99', '3.333', '', 'abc', '-1']) assert.equal(validAmount(bad, 1, 50), false, bad);
+});

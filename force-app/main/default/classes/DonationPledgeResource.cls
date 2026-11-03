@@ -41,7 +41,17 @@ global without sharing class DonationPledgeResource {
           p.Terms_Accepted_At__c = Datetime.now();
           p.Client_Ip__c = s(q, 'clientIp') == null ? null : s(q, 'clientIp').left(45);
           if (ex.isEmpty()) {
-            insert p;
+            // Two concurrent submits of one LowProfileId both see no row; the Unique LowProfileId__c rejects the second insert.
+            // Answer it like any replay instead of a 500, so one LowProfileId never yields two pledges (or two Contacts).
+            Database.SaveResult sr = Database.insert(p, false);
+            if (!sr.isSuccess()) {
+              if (sr.getErrors()[0].getStatusCode() == StatusCode.DUPLICATE_VALUE) {
+                res.statusCode = 400;
+                res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'LP_ALREADY_USED' }));
+                return;
+              }
+              throw new CardcomService.CardcomException('Pledge insert failed: ' + sr.getErrors()[0].getMessage());
+            }
             String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Pledge_Number__c;
             update new Opportunity(Id = p.Id, Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, num));
           } else {

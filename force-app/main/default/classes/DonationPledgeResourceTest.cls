@@ -39,6 +39,19 @@ private class DonationPledgeResourceTest {
   }
 
   @IsTest
+  static void concurrentDuplicateInsertIsAnsweredAsAlreadyUsed() {
+    TestDataFactory.settings();
+    // Stand-in for a parallel submit that inserted the same LowProfileId after our SELECT: the Unique field rejects our insert.
+    Opportunity other = new Opportunity(Name = 'Race', StageName = 'Prospecting', CloseDate = Date.today(), LowProfileId__c = 'lp-0000000099');
+    insert other;
+    TestDataFactory.rest('/services/apexrest/donations/pledge', body('lp-0000000099'));
+    DonationPledgeResource.submit();
+    Assert.areEqual(400, RestContext.response.statusCode, RestContext.response.responseBody.toString());
+    Assert.areEqual('LP_ALREADY_USED', TestDataFactory.responseJson().get('error'));
+    Assert.areEqual(1, [SELECT COUNT() FROM Opportunity WHERE LowProfileId__c = 'lp-0000000099'], 'no second pledge');
+  }
+
+  @IsTest
   static void createsPendingPledgeOpportunity() {
     TestDataFactory.settings();
     TestDataFactory.rest('/services/apexrest/donations/pledge', body('lp-0000000001'));

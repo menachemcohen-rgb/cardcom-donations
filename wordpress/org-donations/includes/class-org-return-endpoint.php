@@ -9,10 +9,11 @@ final class Org_Return_Endpoint {
     public static function serve(): void {
         if (!get_query_var('orgdon_return')) return;
         nocache_headers();
+        $self = orgdon_const('ORG_DONATION_ORIGIN');          // never fatal on a missing constant (the parent then ignores the message)
         header('Content-Type: text/html; charset=utf-8');
-        header("Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors https://secure.cardcom.solutions " . ORG_DONATION_ORIGIN);
+        header("Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors https://secure.cardcom.solutions " . $self);
         $status = (($_GET['s'] ?? '') === 'ok') ? 'ok' : 'fail';
-        $origin = esc_js(ORG_DONATION_ORIGIN);
+        $origin = esc_js($self);
         $text = $status === 'ok' ? 'הכרטיס נשמר. רגע...' : 'פרטי הכרטיס לא נקלטו.';
         echo "<!doctype html><html lang=\"he\" dir=\"rtl\"><meta charset=\"utf-8\"><body style=\"font-family:Arial;text-align:center;padding:24px\">"
            . esc_html($text)

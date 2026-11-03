@@ -18,8 +18,11 @@ final class Org_Validator {
         for ($i = 0; $i < 9; $i++) { $n = (int)$id[$i] * (($i % 2) + 1); $sum += $n > 9 ? $n - 9 : $n; }
         return $sum % 10 === 0 ? $id : null;
     }
-    /** @return array{data:array, errors:array<string,string>} */
-    public static function signup(array $in, float $min, float $max): array {
+    /**
+     * @param bool $requireCard false for the check before the Cardcom session is created (no LowProfileId yet)
+     * @return array{data:array, errors:array<string,string>}
+     */
+    public static function signup(array $in, float $min, float $max, bool $requireCard = true): array {
         $e = []; $d = [];
         $d['firstName'] = trim(sanitize_text_field($in['first_name'] ?? ''));
         $d['lastName']  = trim(sanitize_text_field($in['last_name'] ?? ''));
@@ -42,7 +45,7 @@ final class Org_Validator {
             $e['amount'] = sprintf('סכום לא תקין – נא לבחור סכום בין %s ל-%s ₪', $min, $max);
         if (!$d['frequency'])                                          $e['frequency']  = 'נא לבחור תדירות';
         if (!$d['termsAccepted'])                                      $e['terms']      = 'יש לאשר את תנאי ההוראה';
-        if (!$d['lowProfileId'])                                       $e['card']       = 'נא להזין את פרטי הכרטיס ולשמור';
+        if ($requireCard && !$d['lowProfileId'])                       $e['card']       = 'נא להזין את פרטי הכרטיס ולשמור';
         return ['data' => $d, 'errors' => $e];
     }
 }
