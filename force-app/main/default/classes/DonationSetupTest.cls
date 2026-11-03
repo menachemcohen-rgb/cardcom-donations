@@ -141,6 +141,17 @@ private class DonationSetupTest {
   }
 
   @IsTest
+  static void publishedCommandRunsTheTrigger() {
+    // DonationSetupCommandTrigger (N42): the event reaches handleCommands; nothing is scheduled, so UNSCHEDULE_ALL is a no-op
+    Test.startTest();
+    DonationSetup.request('UNSCHEDULE_ALL');
+    Test.getEventBus().deliver();
+    Test.stopTest();
+    Assert.areEqual(1, DonationSetup.published.size());
+    Assert.areEqual(0, donationJobs());
+  }
+
+  @IsTest
   static void requestRejectsUnknownCommands() {
     try {
       DonationSetup.request('DROP');

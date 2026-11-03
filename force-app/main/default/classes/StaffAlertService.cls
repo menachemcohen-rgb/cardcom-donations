@@ -362,8 +362,8 @@ public without sharing class StaffAlertService {
     upsert st;
   }
 
-  static String wrap(String inner) {
-    return '<div dir="rtl" style="font-family:Arial,sans-serif"><p>שלום,</p>' + inner + '</div>';
+  static String wrap(String body) {
+    return '<div dir="rtl" style="font-family:Arial,sans-serif"><p>שלום,</p>' + body + '</div>';
   }
 
   static String table(List<String> headers, String rows) {

@@ -23,7 +23,9 @@ private class PledgeValidationRulesTest {
 
   private static Contact donor() {
     Contact c = new Contact(FirstName = 'Test', LastName = 'Donor', Email = 'donor@example.com');
-    insert c;
+    Database.DMLOptions o = new Database.DMLOptions();
+    o.DuplicateRuleHeader.allowSave = true; // the org's standard Contact duplicate rule alerts on similar names
+    Database.insert(c, o);
     return c;
   }
 
@@ -38,7 +40,7 @@ private class PledgeValidationRulesTest {
     Assert.isFalse(r.isSuccess(), 'Expected the save to fail with: ' + expectedMessage);
     Boolean found = false;
     for (Database.Error e : r.getErrors()) {
-      if (e.getMessage().contains(expectedMessage)) {
+      if (e.getMessage().unescapeHtml4().contains(expectedMessage)) {
         found = true;
       }
     }

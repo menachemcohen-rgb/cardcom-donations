@@ -3,8 +3,9 @@
  * Schedulable at Charge_Settings__c.Reconcile_Time__c (DonationSetup) → Queueable for yesterday (Run_Date__c = day).
  * Match key = TranzactionId. The only automatic fix: an attempt with an unknown outcome that Cardcom confirms as successful.
  * Issues are upserted by Issue_Key__c, so a re-run never duplicates them and never reopens one staff resolved.
+ * A class that is Schedulable can't be enqueued, so the callouts run in the inner Queueable Job.
  */
-public without sharing class ReconciliationJob implements Schedulable, Queueable, Database.AllowsCallouts {
+public without sharing class ReconciliationJob implements Schedulable {
   @TestVisible
   static Date dayOverride;
   @TestVisible
@@ -15,17 +16,28 @@ public without sharing class ReconciliationJob implements Schedulable, Queueable
 
   public ReconciliationJob() {
   }
-  /** Manual re-run of one day: System.enqueueJob(new ReconciliationJob(Date.newInstance(2026, 11, 5))). */
-  public ReconciliationJob(Date d) {
+  @TestVisible
+  ReconciliationJob(Date d) {
     day = d;
   }
 
   public void execute(SchedulableContext sc) {
-    System.enqueueJob(new ReconciliationJob(dayOverride != null ? dayOverride : Date.today().addDays(-1)));
+    enqueue(dayOverride != null ? dayOverride : Date.today().addDays(-1));
   }
 
-  public void execute(QueueableContext qc) {
-    run();
+  /** Manual re-run of one day: ReconciliationJob.enqueue(Date.newInstance(2026, 11, 5)); */
+  public static Id enqueue(Date d) {
+    return System.enqueueJob(new Job(d));
+  }
+
+  public class Job implements Queueable, Database.AllowsCallouts {
+    final Date day;
+    Job(Date d) {
+      day = d;
+    }
+    public void execute(QueueableContext qc) {
+      new ReconciliationJob(day).run();
+    }
   }
 
   @TestVisible

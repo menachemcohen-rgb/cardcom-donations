@@ -43,8 +43,8 @@ private class ChargePlannerTest {
       FROM Charge__c
       WHERE Pledge__c = :once[0].Id
     ];
-    String ext = 'PLG-' + String.valueOf(once[0].Id).left(15) + '-20261104-AM';
-    Assert.areEqual(ext, c.ExternalUniqTranId__c, 'B2.3 format with the 15-character Id (N15)');
+    String ext = 'PLG-' + String.valueOf(once[0].Id) + '-20261104-AM';
+    Assert.areEqual(ext, c.ExternalUniqTranId__c, 'B2.3 format with the 18-character Id (N85)');
     Assert.areEqual(ext + '-A1', c.Attempt_Key__c);
     Assert.areEqual(3, c.Amount__c.intValue(), 'Charge_Amount__c snapshot (D16)');
     Assert.areEqual(once[0].Donor_Contact__c, c.Contact__c);

@@ -14,6 +14,8 @@ public without sharing class DonorChargeEmailService {
   static Integer remainingOverride; // tests: OrgLimits can't be set
   @TestVisible
   static Integer messagesSent = 0;
+  @TestVisible
+  static Boolean simulateSendForTests = false; // tests: count a send as successful without Messaging (deliverability may be off)
   static final Integer PER_SEND_CALL = 100;
 
   public static void send(List<Id> chargeIds) {

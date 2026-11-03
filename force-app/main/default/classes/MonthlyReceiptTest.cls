@@ -36,12 +36,12 @@ private class MonthlyReceiptTest {
     return r;
   }
 
-  static Map<String, Object> issued(Long number) {
+  static Map<String, Object> issued(Long docNumber) {
     return new Map<String, Object>{
       'ResponseCode' => 0,
       'Description' => '',
       'DocumentType' => 'DonationReceipt',
-      'DocumentNumber' => number,
+      'DocumentNumber' => docNumber,
       'DocumentUrl' => 'https://secure.cardcom.solutions/api/v11/documents/DownloadDoc/?c=1&code=x'
     };
   }
