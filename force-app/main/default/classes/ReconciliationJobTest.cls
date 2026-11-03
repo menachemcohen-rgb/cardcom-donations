@@ -378,21 +378,45 @@ private class ReconciliationJobTest {
     Assert.isNull(Alert_State__c.getOrgDefaults().Reconciliation_Unavailable_Sent_On__c);
   }
 
+  // Apex refuses a callout after uncommitted DML in the same transaction, so run() (which ends with DML) and fallback() can't be
+  // chained inside one test transaction. In production every FallbackJob is its own Queueable transaction. One path per test:
   @IsTest
-  static void fallbackIsChainedWhenTheBudgetRunsOut() {
+  static void runDefersWhatTheBudgetCantCover() {
     setup();
     List<Charge__c> cs = threeSuccess();
     ReconciliationJob.FALLBACK_PER_JOB = 1;
     CardcomMock m = CardcomMock.install().always(LIST_PATH, 200, page(new List<Object>())).always(FIND_PATH, 200, NOT_FOUND);
-    Test.startTest();
-    new ReconciliationJob(DAY).run();
-    Assert.areEqual(1, m.requestsTo(FIND_PATH).size());
+    runFor(DAY);
+    Assert.areEqual(1, m.requestsTo(FIND_PATH).size(), 'budget = 1 lookup in this job');
     Assert.areEqual(new List<Id>{ cs[1].Id, cs[2].Id }, ReconciliationJob.chainedFallback, 'the rest goes to FallbackJob');
-    new ReconciliationJob(DAY).fallback(ReconciliationJob.chainedFallback); // what FallbackJob runs
-    new ReconciliationJob(DAY).fallback(ReconciliationJob.chainedFallback);
+    Assert.areEqual(cs[0].Id, [SELECT Charge__c FROM Reconciliation_Issue__c].Charge__c);
+  }
+
+  @IsTest
+  static void fallbackSlicesAndChainsTheRest() {
+    setup();
+    List<Charge__c> cs = threeSuccess();
+    ReconciliationJob.FALLBACK_PER_JOB = 1;
+    CardcomMock m = CardcomMock.install().always(FIND_PATH, 200, NOT_FOUND);
+    Test.startTest();
+    new ReconciliationJob(DAY).fallback(new List<Id>{ cs[1].Id, cs[2].Id }); // what one FallbackJob runs
     Test.stopTest();
-    Assert.areEqual(3, m.requestsTo(FIND_PATH).size());
-    Assert.areEqual(3, [SELECT COUNT() FROM Reconciliation_Issue__c WHERE Issue_Type__c = 'Missing_In_Cardcom']);
+    Assert.areEqual(1, m.requestsTo(FIND_PATH).size());
+    Assert.areEqual(new List<Id>{ cs[2].Id }, ReconciliationJob.chainedFallback, 'chained again for the last charge');
+    Assert.areEqual(cs[1].Id, [SELECT Charge__c FROM Reconciliation_Issue__c].Charge__c);
+  }
+
+  @IsTest
+  static void fallbackJobChecksEveryChargeItIsGiven() {
+    setup();
+    List<Charge__c> cs = threeSuccess();
+    CardcomMock m = CardcomMock.install().enqueue(FIND_PATH, 200, found(202, 3)).always(FIND_PATH, 200, NOT_FOUND);
+    Test.startTest();
+    System.enqueueJob(new ReconciliationJob.FallbackJob(DAY, new List<Id>{ cs[1].Id, cs[2].Id }));
+    Test.stopTest(); // runs the queueable in its own transaction
+    Assert.areEqual(2, m.requestsTo(FIND_PATH).size());
+    Assert.areEqual(1, [SELECT COUNT() FROM Reconciliation_Issue__c]);
+    Assert.areEqual(cs[2].Id, [SELECT Charge__c FROM Reconciliation_Issue__c].Charge__c, 'only the charge Cardcom did not find');
   }
 
   @IsTest
