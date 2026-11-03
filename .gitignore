@@ -31,3 +31,6 @@ Thumbs.db
 *.pem
 wp-config*.php
 .phpunit.cache/
+
+# Python
+__pycache__/
