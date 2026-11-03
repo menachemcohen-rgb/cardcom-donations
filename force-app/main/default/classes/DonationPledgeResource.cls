@@ -43,14 +43,10 @@ global without sharing class DonationPledgeResource {
           if (ex.isEmpty()) {
             // Two concurrent submits of one LowProfileId both see no row; the Unique LowProfileId__c rejects the second insert.
             // Answer it like any replay instead of a 500, so one LowProfileId never yields two pledges (or two Contacts).
-            Database.SaveResult sr = Database.insert(p, false);
-            if (!sr.isSuccess()) {
-              if (sr.getErrors()[0].getStatusCode() == StatusCode.DUPLICATE_VALUE) {
-                res.statusCode = 400;
-                res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'LP_ALREADY_USED' }));
-                return;
-              }
-              throw new CardcomService.CardcomException('Pledge insert failed: ' + sr.getErrors()[0].getMessage());
+            if (!insertUnlessDuplicate(p)) {
+              res.statusCode = 400;
+              res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'LP_ALREADY_USED' }));
+              return;
             }
             String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Pledge_Number__c;
             update new Opportunity(Id = p.Id, Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, num));
@@ -74,6 +70,17 @@ global without sharing class DonationPledgeResource {
       out = new Map<String, Object>{ 'error' => 'INTERNAL' };
     }
     res.responseBody = Blob.valueOf(JSON.serialize(out));
+  }
+
+  /** Inserts the new pledge. false = another request already inserted this LowProfileId (Unique LowProfileId__c). */
+  @TestVisible
+  static Boolean insertUnlessDuplicate(Opportunity p) {
+    Database.SaveResult sr = Database.insert(p, false);
+    if (sr.isSuccess())
+      return true;
+    if (sr.getErrors()[0].getStatusCode() == StatusCode.DUPLICATE_VALUE)
+      return false;
+    throw new CardcomService.CardcomException('Pledge insert failed: ' + sr.getErrors()[0].getMessage());
   }
 
   static String s(Map<String, Object> m, String k) {
