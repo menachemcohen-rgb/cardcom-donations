@@ -7,7 +7,7 @@ The implementation prompts and their run order are in [`docs/prompts.md`](prompt
 ## Architecture
 
 A custom WordPress plugin (`org-donations`, shortcode `[org_donation_form]`) renders the donation form. On page load, PHP calls a
-Salesforce Apex REST endpoint (External Client App, OAuth Client Credentials) that asks Cardcom (`LowProfile/Create`, `CreateTokenOnly`) for a
+Salesforce Apex REST endpoint (External Client App, OAuth 2.0 JWT Bearer) that asks Cardcom (`LowProfile/Create`, `CreateTokenOnly`) for a
 hosted card iframe. Terminal credentials exist only in Salesforce (External/Named Credential `Cardcom`). When the donor submits, the
 iframe's return page posts a message to the parent, JS sends amount, frequency and donor details plus the `LowProfileId` to PHP, and PHP
 posts them to Salesforce, which stores them on a **pledge Opportunity** (Record Type `Micro_Donation_Pledge`, stage
@@ -96,15 +96,24 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
     1. Setup → External Client App Manager → New External Client App. Name `WP Donations`, API name `WP_Donations`, contact email,
        Distribution State **Local**.
     2. API (Enable OAuth): callback URL `https://login.salesforce.com/services/oauth2/success` (not used), OAuth scope
-       "Manage user data via APIs (`api`)" only. Flow Enablement: **Enable Client Credentials Flow**. Create.
+       "Manage user data via APIs (`api`)" only. Flow Enablement: **Enable JWT Bearer Flow** and upload the public certificate
+       (`server.crt`, see 5). Create.
     3. Policies → Edit → OAuth Policies: Permitted Users = "Admin approved users are pre-authorized", select permission set
-       `Donations_Integration`; IP Relaxation = **Enforce IP restrictions**; Client Credentials Flow → Run As = the integration user
-       (step 6). Save.
+       `Donations_Integration` (assigned to the integration user, step 6); IP Relaxation = **Enforce IP restrictions**. Save.
     4. Network access for the WP server's outgoing IP (Q11): Setup → Network Access, or the integration user's profile Login IP Ranges.
-    5. Settings → OAuth Settings → Consumer Key and Secret: copy them into the WordPress `wp-config.php` as `ORG_SF_CLIENT_ID` and
-       `ORG_SF_CLIENT_SECRET` (B7.3), together with `ORG_SF_LOGIN_URL` = the org's My Domain URL. Never anywhere else.
-    6. Check: `curl -s -X POST https://<mydomain>/services/oauth2/token -d grant_type=client_credentials -d client_id=... -d client_secret=...`
-       returns an `access_token`. The token endpoint is the same as for a Connected App.
+    5. Key pair (D31), made once on a trusted machine:
+       `openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 730 -subj "/CN=WP_Donations"`.
+       `server.crt` goes into the app (2). `server.key` goes only to the WordPress server, **outside the web root, `chmod 600`, never
+       committed** (`*.key` is in `.gitignore`). No client secret is used.
+       Settings → OAuth Settings → Consumer Key → `wp-config.php` (B7.3):
+       ```php
+       define('ORG_SF_LOGIN_URL', 'https://test.salesforce.com');   // production: https://login.salesforce.com
+       define('ORG_SF_CLIENT_ID', '<Consumer Key of ECA WP_Donations>');
+       define('ORG_SF_USERNAME',  'integration.donations@ato770.com.atosandbox');
+       define('ORG_SF_KEY_PATH',  '/path/outside/webroot/server.key');
+       ```
+    6. Check: the donation form page loads the Cardcom iframe; a failure logs `[orgdon] SF token failure: <HTTP code>` or
+       `[orgdon] SF key unreadable` (never the key, JWT or token). The Apex REST base is the `instance_url` returned with the token.
 11. **Salesforce Site `cardcom`** (B3.3), created in Setup (its guest user is org-specific):
     1. Setup → Sites: register a Sites domain if there is none, then New: label `cardcom`, name `cardcom`, default web address `cardcom`,
        Active Site Home Page `InMaintenance`, Clickjack Protection "Allow framing by the same origin only". Activate.

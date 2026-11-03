@@ -17,7 +17,7 @@ foreach (['sf-client','validator','rate-limiter','form','portal','return-endpoin
 }
 
 function orgdon_configured(): bool {
-    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_CLIENT_SECRET','ORG_DONATION_ORIGIN'] as $c) {
+    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_USERNAME','ORG_SF_KEY_PATH','ORG_DONATION_ORIGIN'] as $c) {
         if (!defined($c) || constant($c) === '') return false;
     }
     return true;

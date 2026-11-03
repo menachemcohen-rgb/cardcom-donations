@@ -11,9 +11,10 @@ Requirements: PHP ≥ 8.0, WordPress ≥ 6.2, HTTPS, outgoing HTTPS to Salesforc
 Add above `/* That's all, stop editing! */`. Values are never stored in the database or in the plugin.
 
 ```php
-define('ORG_SF_LOGIN_URL',       'https://<mydomain>.my.salesforce.com');   // Salesforce My Domain
-define('ORG_SF_CLIENT_ID',       '<consumer key of External Client App WP_Donations>');      // Part C D27
-define('ORG_SF_CLIENT_SECRET',   '<consumer secret of External Client App WP_Donations>');
+define('ORG_SF_LOGIN_URL', 'https://test.salesforce.com');   // production: https://login.salesforce.com
+define('ORG_SF_CLIENT_ID', '<Consumer Key of ECA WP_Donations>');
+define('ORG_SF_USERNAME',  'integration.donations@ato770.com.atosandbox');
+define('ORG_SF_KEY_PATH',  '/path/outside/webroot/server.key');
 define('ORG_DONATION_ORIGIN',    'https://www.<site>');                    // exact canonical origin, no trailing slash
 define('ORG_CARDCOM_ORIGIN',     'https://secure.cardcom.solutions');
 define('ORG_DONATION_TERMS_URL', 'https://www.<site>/terms-recurring/');  // Q8
@@ -24,6 +25,11 @@ define('ORG_BEHIND_CLOUDFLARE', true);                                     // on
 ```
 
 If a required constant is missing, admins see a notice and the shortcodes show "הטופס אינו זמין כרגע".
+
+Salesforce authentication is the OAuth 2.0 JWT Bearer flow (D31): the plugin signs a short JWT (RS256) with the private key at
+`ORG_SF_KEY_PATH`; there is no client secret. **The private key must be outside the web root, `chmod 600` (readable only by the PHP
+user), and never committed.** Its public certificate is uploaded to the External Client App `WP_Donations` (README step 10). If the
+key is missing or unreadable the log shows `[orgdon] SF key unreadable` and the form shows its "not available" message.
 
 ## 3. Activate
 Plugins → Org Donations (Cardcom + Salesforce) → Activate. This registers the `/cardcom-return/` endpoint (rewrite rules are flushed on

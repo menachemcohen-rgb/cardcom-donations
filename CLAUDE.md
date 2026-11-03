@@ -3020,14 +3020,17 @@ org-donations/
 
 ### B7.3 `wp-config.php` (מוגדר ע"י מנהל האתר; לעולם לא ב-DB או בקוד)
 ```php
-define('ORG_SF_LOGIN_URL',     'https://ORG.my.salesforce.com');      // My Domain
-define('ORG_SF_CLIENT_ID',     '3MVG9...');
-define('ORG_SF_CLIENT_SECRET', '...');
+define('ORG_SF_LOGIN_URL', 'https://test.salesforce.com');   // production: https://login.salesforce.com
+define('ORG_SF_CLIENT_ID', '<Consumer Key of ECA WP_Donations>');
+define('ORG_SF_USERNAME',  'integration.donations@ato770.com.atosandbox');
+define('ORG_SF_KEY_PATH',  '/path/outside/webroot/server.key');
 define('ORG_DONATION_ORIGIN',  'https://www.ORG.org.il');              // parent origin for postMessage
 define('ORG_CARDCOM_ORIGIN',   'https://secure.cardcom.solutions');
 define('ORG_DONATION_TERMS_URL', 'https://www.ORG.org.il/terms-recurring/');
 ```
 אם חסר קבוע → התוסף מציג admin notice ו-shortcode מחזיר "הטופס אינו זמין כרגע".
+> **(D31) אימות JWT Bearer:** ה-WP מתחבר ב-OAuth 2.0 JWT Bearer flow (לא Client Credentials, ואין Client Secret). JWT חתום RS256 במפתח הפרטי שב-`ORG_SF_KEY_PATH`; claims: `iss`=Client ID, `sub`=`ORG_SF_USERNAME`, `aud`=`ORG_SF_LOGIN_URL`, `exp`=now+180.
+> **המפתח הפרטי:** מחוץ ל-web root, `chmod 600` (קריא רק למשתמש של PHP), **לעולם לא ב-repo**. התעודה הציבורית התואמת מועלית ל-ECA `WP_Donations` (JWT Bearer Flow מופעל, משתמש האינטגרציה pre-authorized).
 
 ### B7.4 `org-donations.php`
 ```php
@@ -3050,7 +3053,7 @@ foreach (['sf-client','validator','rate-limiter','form','portal','return-endpoin
 }
 
 function orgdon_configured(): bool {
-    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_CLIENT_SECRET','ORG_DONATION_ORIGIN'] as $c) {
+    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_USERNAME','ORG_SF_KEY_PATH','ORG_DONATION_ORIGIN'] as $c) {
         if (!defined($c) || constant($c) === '') return false;
     }
     return true;
@@ -3091,15 +3094,18 @@ if (!defined('ABSPATH')) exit;
 
 final class Org_SF_Client {
     const TOKEN_TRANSIENT = 'orgdon_sf_token';
+    const JWT_TTL = 180;   // seconds; Salesforce accepts up to 3 minutes
 
+    /** OAuth 2.0 JWT Bearer flow (External Client App WP_Donations, pre-authorized integration user). */
     private static function token(bool $force = false): string {
         if (!$force && ($t = get_transient(self::TOKEN_TRANSIENT))) return $t;
+        $key = self::private_key();
+        $jwt = self::build_jwt(ORG_SF_CLIENT_ID, ORG_SF_USERNAME, ORG_SF_LOGIN_URL, $key, time());
         $res = wp_remote_post(ORG_SF_LOGIN_URL . '/services/oauth2/token', [
             'timeout' => 10,
             'body'    => [
-                'grant_type'    => 'client_credentials',
-                'client_id'     => ORG_SF_CLIENT_ID,
-                'client_secret' => ORG_SF_CLIENT_SECRET,
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion'  => $jwt,
             ],
         ]);
         if (is_wp_error($res) || wp_remote_retrieve_response_code($res) !== 200) {
@@ -3107,19 +3113,63 @@ final class Org_SF_Client {
             throw new RuntimeException('SF_AUTH');
         }
         $j = json_decode(wp_remote_retrieve_body($res), true);
+        if (empty($j['access_token'])) {
+            error_log('[orgdon] SF token failure: no access_token');
+            throw new RuntimeException('SF_AUTH');
+        }
         set_transient(self::TOKEN_TRANSIENT, $j['access_token'], 50 * MINUTE_IN_SECONDS);
         if (!empty($j['instance_url'])) set_transient('orgdon_sf_instance', $j['instance_url'], DAY_IN_SECONDS);
         return $j['access_token'];
     }
 
+    /** Loads the private key at ORG_SF_KEY_PATH. Never logs the path contents. */
+    private static function private_key(): OpenSSLAsymmetricKey {
+        $pem = (is_string(ORG_SF_KEY_PATH) && is_file(ORG_SF_KEY_PATH) && is_readable(ORG_SF_KEY_PATH))
+            ? @file_get_contents(ORG_SF_KEY_PATH) : false;
+        $key = $pem === false ? false : openssl_pkey_get_private($pem);
+        unset($pem);
+        if ($key === false) {
+            error_log('[orgdon] SF key unreadable');
+            throw new RuntimeException('SF_AUTH');
+        }
+        return $key;
+    }
+
+    /**
+     * RS256 JWT for the Salesforce JWT Bearer flow. Public for tests only.
+     * @param OpenSSLAsymmetricKey|string $key private key (resource or PEM)
+     */
+    public static function build_jwt(string $clientId, string $username, string $aud, $key, int $now): string {
+        $header = self::b64url(json_encode(['alg' => 'RS256']));
+        $claims = self::b64url(json_encode([
+            'iss' => $clientId,
+            'sub' => $username,
+            'aud' => $aud,
+            'exp' => $now + self::JWT_TTL,
+        ], JSON_UNESCAPED_SLASHES));
+        $input = $header . '.' . $claims;
+        $sig = '';
+        if (!openssl_sign($input, $sig, $key, OPENSSL_ALGO_SHA256)) {
+            error_log('[orgdon] SF JWT signing failed');
+            throw new RuntimeException('SF_AUTH');
+        }
+        return $input . '.' . self::b64url($sig);
+    }
+
+    public static function b64url(string $data): string {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
     /** @return array{code:int, body:array} */
     public static function post(string $path, array $payload): array {
-        $base = get_transient('orgdon_sf_instance') ?: ORG_SF_LOGIN_URL;
         for ($i = 0; $i < 2; $i++) {
+            // Token first: it caches instance_url (ORG_SF_LOGIN_URL is login/test.salesforce.com, not the org's domain).
+            $token = self::token($i === 1);
+            $base = get_transient('orgdon_sf_instance') ?: ORG_SF_LOGIN_URL;
             $res = wp_remote_post($base . '/services/apexrest' . $path, [
                 'timeout' => 15,
                 'headers' => [
-                    'Authorization' => 'Bearer ' . self::token($i === 1),
+                    'Authorization' => 'Bearer ' . $token,
                     'Content-Type'  => 'application/json; charset=utf-8',
                 ],
                 'body' => wp_json_encode($payload, JSON_UNESCAPED_UNICODE),
@@ -4398,3 +4448,4 @@ Full list with reasons: `docs/spec-consistency.md` (N1–N84, all closed). The o
 | E20 | Part A 7.1 (`CardcomCred`, `Cardcom_Integration`, Named Credential URL with `/api/v11`), the section 1 frequency values and the 2.6 diagram (receipt key/status) are superseded by B3.1, B2.2 and B2.4. |
 | E21 | Staff alerts are sent in one `Messaging.sendEmail` call per transaction and skip when the 10-call limit is reached (an uncatchable LimitException would roll back a charge batch). The Org-Wide address lookup is cached per transaction. |
 | E22 | Every SOQL on Opportunity, including by-Id re-reads, carries `RecordTypeId = :MicroPledges.recordTypeId()` (D24). |
+| D31 | **WordPress → Salesforce auth = OAuth 2.0 JWT Bearer** (2026-11-03), replacing Client Credentials in B3.2/B6.1/B7.3/B7.5 and D27. No client secret: `ORG_SF_CLIENT_SECRET` is removed; WP needs `ORG_SF_LOGIN_URL` (`https://test.salesforce.com` / `https://login.salesforce.com`), `ORG_SF_CLIENT_ID`, `ORG_SF_USERNAME`, `ORG_SF_KEY_PATH`. The ECA `WP_Donations` enables the JWT Bearer flow with the public certificate; the integration user is pre-authorized. The API base is the `instance_url` returned with the token. |

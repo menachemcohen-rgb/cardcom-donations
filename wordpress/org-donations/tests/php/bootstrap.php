@@ -10,5 +10,6 @@ function get_transient($k) { return $GLOBALS['orgdon_test_transients'][$k] ?? fa
 function set_transient($k, $v, $ttl) { $GLOBALS['orgdon_test_transients'][$k] = $v; return true; }
 
 require dirname(__DIR__, 2) . '/includes/class-org-validator.php';
+require dirname(__DIR__, 2) . '/includes/class-org-sf-client.php';
 require dirname(__DIR__, 2) . '/includes/class-org-rate-limiter.php';
 require dirname(__DIR__, 2) . '/includes/class-org-form.php';
