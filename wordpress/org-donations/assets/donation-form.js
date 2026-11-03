@@ -13,6 +13,13 @@
   // lpId: the Cardcom card session, created only once the form is valid (server checks it again before creating it).
   let lpId = null, lpExpires = 0, cardSaved = false, submitting = false, opening = false, timer, pendingTries = 0;
 
+  // Phones (portrait or landscape): the Cardcom frame is tall (CSS) and doesn't scroll itself, so only the page scrolls.
+  // Set before the frame gets its src: browsers apply `scrolling` when the document loads.
+  const phone = window.matchMedia ? window.matchMedia('(max-width: 640px), (max-height: 500px)') : null;
+  function frameScrolling() { if (iframe) iframe.setAttribute('scrolling', phone && phone.matches ? 'no' : 'auto'); }
+  frameScrolling();
+  if (phone && phone.addEventListener) phone.addEventListener('change', frameScrolling);
+
   const $ = (n) => form.elements[n];
   const setErr = (k, t) => { const el = form.querySelector(`.orgdon-err[data-for="${k}"]`); if (el) el.textContent = t || ''; };
   const clearErrs = () => form.querySelectorAll('.orgdon-err').forEach((e) => (e.textContent = ''));
