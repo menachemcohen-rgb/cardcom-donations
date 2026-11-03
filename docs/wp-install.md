@@ -3,7 +3,7 @@
 Requirements: PHP ≥ 8.0, WordPress ≥ 6.2, HTTPS, outgoing HTTPS to Salesforce (`wp_remote_post` / cURL).
 
 ## 1. Build or copy the plugin
-- Build a zip from the repo: `scripts/build-plugin.sh` → `dist/org-donations-1.0.0.zip`.
+- Build a zip from the repo: `scripts/build-plugin.sh` → `dist/org-donations-1.0.1.zip`.
 - WordPress → Plugins → Add New → Upload Plugin → choose the zip → Install. Or copy the folder `wordpress/org-donations/` to
   `wp-content/plugins/org-donations/` over SFTP (without `tests/`, `vendor/`, `composer.*`, `phpunit.xml.dist`).
 

@@ -125,7 +125,7 @@ Implement B2.3–B2.7 and the platform events, adapted by Part C.
 1. Charge__c, Monthly_Receipt__c, Card_Change_Request__c, Pledge_Card_History__c, Pledge_Change_Log__c, Donor_Link_Use__c,
    Reconciliation_Issue__c (use SF_Amount__c per E2), Cardcom_Webhook_Log__c. Every Pledge__c lookup points to Opportunity
    (Part C), keep the API name Pledge__c, child relationship name Charges on Charge__c. Lookups with Restrict delete (no Master-Detail).
-2. Platform Events Cardcom_Lp_Event__e and Charge_Success__e (B6.3/B6.5.1), Publish Immediately.
+2. Platform Events Cardcom_Lp_Event__e (B6.3, Publish Immediately) and Charge_Success__e (B6.5.1, Publish After Commit: its subscriber reads the Success charges, so it must not run before they are committed).
 3. Custom Metadata types + records: Cardcom_Setting__mdt (add Terms_Url__c, Failure_Notify_Emails__c per E1/E3),
    Donor_Link_Setting__mdt (Protected; secret left EMPTY, documented as manual), Charge_Holiday__mdt, Cardcom_Error_Code__mdt
    with the 17 rows listed at the end of B5.8 (Source__c filled).

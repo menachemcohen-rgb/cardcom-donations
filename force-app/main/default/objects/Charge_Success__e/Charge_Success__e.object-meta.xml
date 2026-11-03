@@ -5,5 +5,5 @@
     <eventType>HighVolume</eventType>
     <label>Charge Success</label>
     <pluralLabel>Charge Successes</pluralLabel>
-    <publishBehavior>PublishImmediately</publishBehavior>
+    <publishBehavior>PublishAfterCommit</publishBehavior>
 </CustomObject>
