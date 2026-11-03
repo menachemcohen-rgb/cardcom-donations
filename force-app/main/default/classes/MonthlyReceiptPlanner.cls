@@ -2,36 +2,36 @@
  * Groups last month's successful charges by Contact into one Monthly_Receipt__c each (B6.11.1). Scope = Contacts that have such
  * charges (semi-join query locator instead of the spec's GROUP BY iterable, so the batch is not capped by aggregate-row limits, N77).
  * A receipt that already left Pending is never touched again (N78): late charges stay unlinked for the "Success without receipt" report.
+ * MonthlyReceiptPlanner(period, contactIds) limits planning and sending to those Contacts, so a sandbox run can't send documents
+ * to real donors (the scheduled run always passes null = everyone).
  */
 public without sharing class MonthlyReceiptPlanner implements Database.Batchable<SObject>, Database.Stateful {
   final Date period;
   final Date fromD;
   final Date toD;
+  final Set<Id> onlyContactIds;
 
   public MonthlyReceiptPlanner(Date periodStart) {
+    this(periodStart, null);
+  }
+
+  /** onlyContactIds: plan and send only for these Contacts (null = everyone). */
+  public MonthlyReceiptPlanner(Date periodStart, Set<Id> onlyContactIds) {
     period = periodStart.toStartOfMonth();
     fromD = period;
     toD = period.addMonths(1).addDays(-1);
+    this.onlyContactIds = onlyContactIds == null ? null : new Set<Id>(onlyContactIds);
   }
 
   public Database.QueryLocator start(Database.BatchableContext bc) {
+    Date f = fromD;
+    Date t = toD;
+    Set<Id> only = onlyContactIds;
     return Database.getQueryLocator(
-      [
-        SELECT Id
-        FROM Contact
-        WHERE
-          Id IN (
-            SELECT Contact__c
-            FROM Charge__c
-            WHERE
-              Status__c = 'Success'
-              AND Monthly_Receipt__c = NULL
-              AND Needs_Reconciliation__c = FALSE
-              AND Run_Date__c >= :fromD
-              AND Run_Date__c <= :toD
-              AND Cardcom_Deal_Number__c != NULL
-          )
-      ]
+      'SELECT Id FROM Contact WHERE Id IN (SELECT Contact__c FROM Charge__c WHERE Status__c = \'Success\'' +
+        ' AND Monthly_Receipt__c = NULL AND Needs_Reconciliation__c = FALSE AND Run_Date__c >= :f AND Run_Date__c <= :t' +
+        ' AND Cardcom_Deal_Number__c != NULL)' +
+        (only == null ? '' : ' AND Id IN :only')
     );
   }
 
@@ -97,6 +97,6 @@ public without sharing class MonthlyReceiptPlanner implements Database.Batchable
 
   public void finish(Database.BatchableContext bc) {
     if (!Test.isRunningTest())
-      MonthlyReceiptQueueable.start(period); // tests call start() themselves
+      MonthlyReceiptQueueable.start(period, onlyContactIds); // tests call start() themselves
   }
 }

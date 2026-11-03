@@ -387,4 +387,28 @@ private class MonthlyReceiptTest {
     Assert.areEqual('ינואר', MonthlyReceiptService.monthNameHe(1));
     Assert.areEqual('דצמבר', MonthlyReceiptService.monthNameHe(12));
   }
+
+  @IsTest
+  static void aLimitedRunTouchesOnlyTheGivenContacts() {
+    // Sandbox safety: MonthlyReceiptPlanner(period, contactIds) / start(period, contactIds) never reach other donors
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity b = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(a, Date.newInstance(2026, 10, 5), 'AM', 3);
+    success(b, Date.newInstance(2026, 10, 5), 'AM', 3);
+    Test.startTest();
+    Database.executeBatch(new MonthlyReceiptPlanner(OCT, new Set<Id>{ a.Donor_Contact__c }), 200);
+    Test.stopTest();
+    Assert.areEqual(1, [SELECT COUNT() FROM Monthly_Receipt__c]);
+    Assert.areEqual(a.Donor_Contact__c, [SELECT Contact__c FROM Monthly_Receipt__c].Contact__c);
+
+    Monthly_Receipt__c other = receipt(b.Donor_Contact__c, 'Pending', 3, 0);
+    MonthlyReceiptQueueable.start(OCT, new Set<Id>{ a.Donor_Contact__c });
+    Assert.areEqual('Pending', [SELECT Status__c FROM Monthly_Receipt__c WHERE Id = :other.Id].Status__c, 'not picked');
+    Assert.areEqual(
+      'Processing',
+      [SELECT Status__c FROM Monthly_Receipt__c WHERE Contact__c = :a.Donor_Contact__c].Status__c,
+      'the given donor is sent'
+    );
+  }
 }
