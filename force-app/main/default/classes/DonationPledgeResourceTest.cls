@@ -39,6 +39,24 @@ private class DonationPledgeResourceTest {
   }
 
   @IsTest
+  static void concurrentDuplicateInsertIsAnsweredAsAlreadyUsed() {
+    TestDataFactory.settings();
+    // A parallel submit inserted the same LowProfileId after our SELECT: the Unique field rejects our insert.
+    insert MicroPledges.newPending('lp-0000000099');
+    Assert.isFalse(DonationPledgeResource.insertUnlessDuplicate(MicroPledges.newPending('LP-0000000099')), 'duplicate (case-insensitive)');
+    Assert.areEqual(1, [SELECT COUNT() FROM Opportunity WHERE LowProfileId__c = 'lp-0000000099'], 'no second pledge');
+    Assert.isTrue(DonationPledgeResource.insertUnlessDuplicate(MicroPledges.newPending('lp-0000000100')));
+    Opportunity broken = MicroPledges.newPending('lp-0000000101');
+    broken.StageName = null;
+    try {
+      DonationPledgeResource.insertUnlessDuplicate(broken);
+      Assert.fail('other insert errors are not swallowed');
+    } catch (CardcomService.CardcomException e) {
+      Assert.isTrue(e.getMessage().startsWith('Pledge insert failed'));
+    }
+  }
+
+  @IsTest
   static void createsPendingPledgeOpportunity() {
     TestDataFactory.settings();
     TestDataFactory.rest('/services/apexrest/donations/pledge', body('lp-0000000001'));

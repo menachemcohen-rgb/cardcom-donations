@@ -53,22 +53,21 @@
 
     <div class="orgdon-row orgdon-terms">
       <label><input type="checkbox" name="terms" value="1" required>
-        אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת. <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a></label>
+        אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת.<?php if ($terms_url !== ''): ?> <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php endif; ?></label>
       <span class="orgdon-err" data-for="terms" role="alert"></span>
     </div>
 
     <div class="orgdon-card">
       <h3>פרטי כרטיס אשראי (מסגרת מאובטחת של Cardcom)</h3>
-      <?php if ($iframe_url): ?>
-        <iframe id="orgdon-iframe" src="<?= esc_url($iframe_url) ?>" title="תשלום מאובטח Cardcom" loading="eager"
-                referrerpolicy="no-referrer" allow="payment" sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation-by-user-activation"></iframe>
-      <?php else: ?>
-        <p class="orgdon-error"><?= esc_html($error ?? 'לא ניתן לטעון כעת את טופס התשלום.') ?></p>
-      <?php endif; ?>
+      <p class="orgdon-card-note">שמירת כרטיס בלבד – לא יתבצע חיוב עכשיו. הסכום ₪1.00 שמופיע במסגרת הוא בדיקת תקינות של הכרטיס, והחיוב יתבצע לפי הסכום והתדירות שבחרת.</p>
+      <p class="orgdon-card-hint" data-role="card-hint">יש למלא את פרטי הטופס ולאשר את התנאים, ואז ללחוץ על "המשך להזנת פרטי כרטיס".</p>
+      <button type="button" id="orgdon-continue" class="orgdon-btn">המשך להזנת פרטי כרטיס</button>
+      <iframe id="orgdon-iframe" title="תשלום מאובטח Cardcom" hidden
+              referrerpolicy="no-referrer" allow="payment" sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation-by-user-activation"></iframe>
       <span class="orgdon-err" data-for="card" role="alert"></span>
     </div>
 
-    <button type="submit" id="orgdon-finish" class="orgdon-btn" hidden>סיום</button>
+    <button type="submit" id="orgdon-finish" class="orgdon-btn" hidden disabled>סיום</button>
     <div id="orgdon-msg" class="orgdon-msg" role="status" aria-live="polite"></div>
   </form>
 </div>

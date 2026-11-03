@@ -14,8 +14,8 @@ final class Org_Portal {
     }
 
     public static function contact_line(): string {
-        $p = defined('ORG_DONATION_CONTACT_PHONE') ? ORG_DONATION_CONTACT_PHONE : '';
-        $e = defined('ORG_DONATION_CONTACT_EMAIL') ? ORG_DONATION_CONTACT_EMAIL : '';
+        $p = orgdon_const('ORG_DONATION_CONTACT_PHONE');
+        $e = orgdon_const('ORG_DONATION_CONTACT_EMAIL');
         $parts = array_filter([$p, $e]);
         return $parts ? 'לפרטים פנו אלינו: ' . implode(' · ', $parts) : 'לפרטים פנו אלינו.';
     }
@@ -36,7 +36,7 @@ final class Org_Portal {
             'nonce'         => wp_create_nonce('org_portal'),
             'token'         => $token,             // removed from the URL by JS immediately
             'action'        => $action,
-            'cardcomOrigin' => ORG_CARDCOM_ORIGIN,
+            'cardcomOrigin' => orgdon_const('ORG_CARDCOM_ORIGIN', 'https://secure.cardcom.solutions'),
             'selfOrigin'    => ORG_DONATION_ORIGIN,
             'invalidMsg'    => self::invalid_msg(),
             'contactLine'   => self::contact_line(),

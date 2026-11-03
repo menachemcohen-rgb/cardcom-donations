@@ -42,4 +42,33 @@ final class RateLimiterTest extends TestCase
         $_SERVER['HTTP_CF_CONNECTING_IP'] = '198.51.100.1';
         $this->assertSame('198.51.100.1', Org_Rate_Limiter::ip());
     }
+
+    public function testFixedWindowIsNotExtendedByLaterHits(): void
+    {
+        $this->assertTrue(Org_Rate_Limiter::hit('w', 2, 600));
+        $k = 'orgdon_rl_w_' . md5('203.0.113.7');
+        $until = $GLOBALS['orgdon_test_transients'][$k]['until'];
+        $this->assertTrue(Org_Rate_Limiter::hit('w', 2, 600));
+        $this->assertSame($until, $GLOBALS['orgdon_test_transients'][$k]['until'], 'second hit keeps the window end');
+        $this->assertFalse(Org_Rate_Limiter::hit('w', 2, 600));
+        $GLOBALS['orgdon_test_transients'][$k]['until'] = time() - 1;   // window over
+        $this->assertTrue(Org_Rate_Limiter::allowed('w', 2));
+    }
+
+    public function testAllowedDoesNotCount(): void
+    {
+        for ($i = 0; $i < 50; $i++) $this->assertTrue(Org_Rate_Limiter::allowed('peek', 1));
+        Org_Rate_Limiter::count('peek', 600);
+        $this->assertFalse(Org_Rate_Limiter::allowed('peek', 1));
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testLimitsAreConfigurable(): void
+    {
+        define('ORG_DONATION_RL_SUBMIT_MAX', 12);
+        define('ORG_DONATION_RL_WINDOW', 'nonsense');
+        $this->assertSame(12, Org_Form::submit_max());
+        $this->assertSame(600, Org_Form::window(), 'invalid value falls back to the default');
+    }
 }

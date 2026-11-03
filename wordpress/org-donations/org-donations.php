@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Org Donations (Cardcom + Salesforce)
  * Description: טופס הוראת תרומה יומית ודף אישי לתורם.
- * Version: 1.0.1
+ * Version: 1.1.1
  * Requires PHP: 8.0
  * Text Domain: org-donations
  */
 if (!defined('ABSPATH')) exit;
 
-define('ORGDON_VER', '1.0.1');
+define('ORGDON_VER', '1.1.1');
 define('ORGDON_DIR', plugin_dir_path(__FILE__));
 define('ORGDON_URL', plugin_dir_url(__FILE__));
 
@@ -16,8 +16,13 @@ foreach (['sf-client','validator','rate-limiter','form','portal','return-endpoin
     require_once ORGDON_DIR . "includes/class-org-$f.php";
 }
 
+/** Optional wp-config.php constant with a safe default, so a missing constant never fatals a page. */
+function orgdon_const(string $name, string $default = ''): string {
+    return defined($name) ? (string) constant($name) : $default;
+}
+
 function orgdon_configured(): bool {
-    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_CLIENT_SECRET','ORG_DONATION_ORIGIN'] as $c) {
+    foreach (['ORG_SF_LOGIN_URL','ORG_SF_CLIENT_ID','ORG_SF_USERNAME','ORG_SF_KEY_PATH','ORG_DONATION_ORIGIN'] as $c) {
         if (!defined($c) || constant($c) === '') return false;
     }
     return true;
