@@ -9,7 +9,9 @@ private class PledgeActivationServiceTest {
     insert new List<Opportunity>{ notSubmitted, notVerified };
     Assert.isFalse(PledgeActivationService.tryActivate(notSubmitted.Id));
     Assert.isFalse(PledgeActivationService.tryActivate(notVerified.Id));
-    Assert.isFalse(PledgeActivationService.tryActivate(TestDataFactory.otherOpportunity().Id), 'non-pledge Opportunity ignored');
+    Opportunity other = TestDataFactory.otherOpportunity(); // null when the org has no non-pledge record type for this user
+    if (other != null)
+      Assert.isFalse(PledgeActivationService.tryActivate(other.Id), 'non-pledge Opportunity ignored');
   }
 
   @IsTest

@@ -107,6 +107,8 @@ private class CardcomLpResultJobTest {
   static void otherOpportunitiesAreNeverSelectedOrModified() {
     TestDataFactory.settings();
     Opportunity other = TestDataFactory.otherOpportunity();
+    if (other == null)
+      return; // no non-pledge Opportunity record type for this user: nothing else to protect
     other.LowProfileId__c = 'lp-0000000009';
     update other;
     Datetime before = [SELECT LastModifiedDate FROM Opportunity WHERE Id = :other.Id].LastModifiedDate;

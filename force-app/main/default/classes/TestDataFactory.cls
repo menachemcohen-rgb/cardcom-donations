@@ -106,10 +106,17 @@ public class TestDataFactory {
     );
   }
 
-  /** A regular (non-pledge) Opportunity, to prove pledge logic never touches it (D24). */
+  /**
+   * A regular (non-pledge) Opportunity, to prove pledge logic never touches it (D24). Inserted with a record type other than
+   * Micro_Donation_Pledge that the running user may use. Returns null when there is none (an org whose only Opportunity record
+   * type for this user is the pledge type, like atosandbox): then no regular Opportunity can exist and the caller skips the check.
+   */
   public static Opportunity otherOpportunity() {
+    Id rt = otherRecordTypeId();
+    if (rt == null)
+      return null;
     Opportunity o = new Opportunity(
-      RecordTypeId = masterRecordTypeId(),
+      RecordTypeId = rt,
       Name = 'Regular deal',
       StageName = 'Prospecting',
       CloseDate = Date.today().addDays(30)
@@ -119,12 +126,12 @@ public class TestDataFactory {
   }
 
   /**
-   * The Opportunity Master record type. A non-pledge test Opportunity must name it: in an org where Micro_Donation_Pledge is the
-   * running user's default (or only) record type, an Opportunity without RecordTypeId would be created as a pledge.
+   * An Opportunity record type the running user may use that is not Micro_Donation_Pledge (Master included when available), or
+   * null. Never rely on the user's default: where the pledge type is the default, an Opportunity without RecordTypeId is a pledge.
    */
-  public static Id masterRecordTypeId() {
+  public static Id otherRecordTypeId() {
     for (Schema.RecordTypeInfo i : Schema.SObjectType.Opportunity.getRecordTypeInfos())
-      if (i.isMaster())
+      if (i.isAvailable() && i.isActive() && i.getDeveloperName() != 'Micro_Donation_Pledge')
         return i.getRecordTypeId();
     return null;
   }

@@ -116,8 +116,10 @@ private class PledgeTriggerHandlerTest {
   static void otherOpportunitiesAreUnaffected() {
     TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
     Opportunity other = TestDataFactory.otherOpportunity();
-    update new Opportunity(Id = other.Id, StageName = 'Closed Lost');
-    Assert.areEqual(0, [SELECT COUNT() FROM Pledge_Change_Log__c]);
+    if (other != null) {
+      update new Opportunity(Id = other.Id, StageName = 'Closed Lost');
+      Assert.areEqual(0, [SELECT COUNT() FROM Pledge_Change_Log__c]);
+    }
     Assert.isNull(OpportunityTriggerHandler.changeType('Pending_Verification', 'Active'), 'activation is not a manual change');
   }
 
