@@ -66,7 +66,13 @@ private class PledgeValidationRulesTest {
 
   @IsTest
   static void otherOpportunitiesAreNotAffected() {
-    Opportunity other = new Opportunity(Name = 'Regular deal', StageName = 'Prospecting', CloseDate = Date.today(), Charge_Amount__c = 0.5);
+    Opportunity other = new Opportunity(
+      RecordTypeId = TestDataFactory.masterRecordTypeId(), // never the running user's default, which may be the pledge type
+      Name = 'Regular deal',
+      StageName = 'Prospecting',
+      CloseDate = Date.today(),
+      Charge_Amount__c = 0.5
+    );
     assertSucceeds(Database.insert(other, false));
     other.StageName = 'Closed Won';
     assertSucceeds(Database.update(other, false));
