@@ -135,7 +135,12 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
 ```
 
 14. **Permission sets** (B2.7): assign `Donations_Integration` to the integration user, `Donations_Admin` to the data/finance managers,
-      `Donations_Staff` to fundraising staff, and `Donations_Site_Guest` to the guest user of Site `cardcom` (Prompt 3). Give the
+      `Donations_Staff` to fundraising staff, and `Donations_Site_Guest` to the guest user of Site `cardcom` (Prompt 3).
+    `Donations_Internal_Read` (optional) is for internal users who only need to look at the data (support, BI, auditors): read on
+    pledge Opportunities (record type `Micro_Donation_Pledge`), Contact donor fields, `Charge__c`, `Monthly_Receipt__c`,
+    `Card_Change_Request__c`, `Pledge_Card_History__c`, `Pledge_Change_Log__c`, `Donor_Link_Use__c`, `Reconciliation_Issue__c` and
+    `Cardcom_Webhook_Log__c`; nothing editable, no actions. It never includes `Token__c` (pledge and card history), the Israeli ID
+    (`Donor_Tax_Id__c`) or its hash, and no settings, custom metadata or the donor-link secret. Give the
     integration user the "Salesforce API Integration" permission set license first, then check it can be assigned `Donations_Integration`.
 15. **Record type access.** `Micro_Donation_Pledge` is the org's first Opportunity record type. It is deployed without profile
     assignments (profiles are never deployed). Check that no profile's default Opportunity record type changed (org-discovery R3).
