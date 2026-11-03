@@ -120,4 +120,48 @@ private class PledgeTriggerHandlerTest {
     Assert.areEqual(0, [SELECT COUNT() FROM Pledge_Change_Log__c]);
     Assert.isNull(OpportunityTriggerHandler.changeType('Pending_Verification', 'Active'), 'activation is not a manual change');
   }
+
+  @IsTest
+  static void resumeClearsTheReasonAndFreesTodaysAndLaterStoppedSlots() {
+    // N87. Engine clock = Wed 2026-11-04 08:00; the pledge has Pending charges for Nov 4 and Nov 5 (+ one for Nov 3 here)
+    Opportunity p = pledgeWithPendingCharges();
+    Charge__c past = TestDataFactory.charge(p, Date.newInstance(2026, 11, 3), 'AM');
+    insert past;
+    System.runAs(staff(true)) {
+      update new Opportunity(Id = p.Id, StageName = 'Stopped', Stop_Reason__c = 'Other', Stop_Reason_Details__c = 'בדיקה');
+    }
+    Assert.areEqual(3, [SELECT COUNT() FROM Charge__c WHERE Pledge__c = :p.Id AND Status__c = 'Skipped' AND Error_Code__c = 'STOPPED']);
+
+    System.runAs(staff(true)) {
+      update new Opportunity(Id = p.Id, StageName = 'Active'); // a direct edit, not only the flow
+    }
+    Opportunity after = [SELECT Stop_Reason__c, Stop_Reason_Details__c FROM Opportunity WHERE Id = :p.Id];
+    Assert.isNull(after.Stop_Reason__c, 'cleared on resume');
+    Assert.isNull(after.Stop_Reason_Details__c);
+    Assert.isTrue(logs(p.Id)[0].New_Value__c.contains('Other'), 'the reason stays in the Stop log entry');
+
+    for (Charge__c c : [SELECT Scheduled_Date__c, Status__c, Attempt_Key__c, ExternalUniqTranId__c FROM Charge__c WHERE Pledge__c = :p.Id]) {
+      Assert.areEqual('Skipped', c.Status__c, 'history kept');
+      if (c.Scheduled_Date__c < Date.newInstance(2026, 11, 4))
+        Assert.areEqual(c.ExternalUniqTranId__c + '-A1', c.Attempt_Key__c, 'past slot untouched');
+      else
+        Assert.isTrue(c.Attempt_Key__c.contains('-STOPPED-'), 'key released: ' + c.Attempt_Key__c);
+    }
+
+    // The next run plans the slot again with the normal key; the missed past slot is not made up
+    Assert.areEqual(1, ChargePlanner.plan(Date.newInstance(2026, 11, 4), 'AM'));
+    Charge__c planned = [SELECT Attempt_Key__c, Scheduled_Date__c FROM Charge__c WHERE Pledge__c = :p.Id AND Status__c = 'Pending'];
+    Assert.areEqual(Date.newInstance(2026, 11, 4), planned.Scheduled_Date__c);
+    Assert.isTrue(planned.Attempt_Key__c.endsWith('-20261104-AM-A1'));
+  }
+
+  @IsTest
+  static void reasonIsKeptWhileStillStopped() {
+    Opportunity p = pledgeWithPendingCharges();
+    System.runAs(staff(true)) {
+      update new Opportunity(Id = p.Id, StageName = 'Stopped', Stop_Reason__c = 'Donor_Request');
+      update new Opportunity(Id = p.Id, Stop_Reason__c = 'Financial_Review'); // still Stopped
+    }
+    Assert.areEqual('Financial_Review', [SELECT Stop_Reason__c FROM Opportunity WHERE Id = :p.Id].Stop_Reason__c);
+  }
 }
