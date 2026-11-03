@@ -67,7 +67,8 @@ private class ContactDedupSimulationTest {
     Assert.isTrue(failures.isEmpty(), String.join(failures, '\n'));
     Assert.areEqual(before + 1, [SELECT COUNT() FROM Contact], 'only the one genuinely new donor was created');
     Contact a = [SELECT Email, MobilePhone, FirstName FROM Contact WHERE Id = :ids.get('A')];
-    Assert.areEqual('Avi@Example.COM', a.Email, 'existing values are never overwritten');
+    // Salesforce stores Email lowercased, so compare case-insensitively: the point is that the original address was kept.
+    Assert.areEqual('avi@example.com', a.Email.toLowerCase(), 'existing values are never overwritten');
     Assert.areEqual('Avi', a.FirstName);
   }
 
