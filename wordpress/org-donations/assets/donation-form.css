@@ -1,4 +1,6 @@
 .orgdon{max-width:560px;margin:0 auto;font-family:inherit;direction:rtl;text-align:right}
+.orgdon,.orgdon *,.orgdon *::before,.orgdon *::after{box-sizing:border-box}
+@media (max-width:600px){.orgdon{padding:0 12px}}
 .orgdon-row{display:flex;flex-direction:column;margin:0 0 14px;border:0;padding:0}
 .orgdon-row label,.orgdon legend{font-weight:600;margin-bottom:6px}
 .orgdon input[type=text],.orgdon input:not([type]),.orgdon input[type=email],.orgdon input[type=tel],.orgdon input[type=number]{padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}
