@@ -7,7 +7,7 @@ final class Org_Portal {
 
     public static function register(): void {
         add_shortcode('org_donor_portal', [self::class, 'render']);
-        foreach (['context', 'amount', 'card', 'card_status'] as $a) {
+        foreach (['context', 'amount', 'card', 'card_status', 'stop'] as $a) {
             add_action("wp_ajax_org_portal_$a",        [self::class, "ajax_$a"]);
             add_action("wp_ajax_nopriv_org_portal_$a", [self::class, "ajax_$a"]);
         }
@@ -111,9 +111,17 @@ final class Org_Portal {
         self::fail_generic($r);
     }
 
+    /** Card replacement; optional `amount` = new amount per charge, applied by Salesforce only once the new card is saved. */
     public static function ajax_card(): void {
         $t = self::guard('card', 5, 3600);
-        $r = self::call('/donor/card', ['token' => $t, 'returnUrlBase' => home_url('/cardcom-return/')]);
+        $payload = ['token' => $t, 'returnUrlBase' => home_url('/cardcom-return/')];
+        $raw = isset($_POST['amount']) ? str_replace(',', '.', trim((string) wp_unslash($_POST['amount']))) : '';
+        if ($raw !== '') {
+            if (!preg_match('/^\d{1,4}(\.\d{1,2})?$/', $raw)) wp_send_json_error(['message' => 'נא להזין סכום תקין.', 'field' => 'amount'], 422);
+            $payload['amount'] = (float) $raw;
+        }
+        $r = self::call('/donor/card', $payload);
+        if (($r['body']['error'] ?? '') === 'AMOUNT_RANGE') wp_send_json_error(['message' => 'הסכום אינו בטווח המותר.', 'field' => 'amount'], 422);
         if ($r['code'] === 200 && !empty($r['body']['url']) && preg_match(self::LP_RE, (string) ($r['body']['lowProfileId'] ?? ''))) {
             wp_send_json_success(['lpId' => $r['body']['lowProfileId'], 'url' => esc_url_raw($r['body']['url']), 'expiresAt' => $r['body']['expiresAt'] ?? null]);
         }
@@ -128,7 +136,19 @@ final class Org_Portal {
         if ($r['code'] === 200) {
             $st = in_array($r['body']['status'] ?? '', ['Pending', 'Completed', 'Failed', 'Expired'], true) ? $r['body']['status'] : 'Pending';
             $l4 = isset($r['body']['last4']) && preg_match('/^\d{4}$/', (string) $r['body']['last4']) ? $r['body']['last4'] : null;
-            wp_send_json_success(['status' => $st, 'last4' => $l4]);
+            $amount = isset($r['body']['amount']) && is_numeric($r['body']['amount']) ? (float) $r['body']['amount'] : null;
+            wp_send_json_success(['status' => $st, 'last4' => $l4, 'amount' => $amount]);
+        }
+        self::fail_generic($r);
+    }
+
+    /** The donor stops the pledge (either link). Salesforce sets it to Stopped and emails staff; resuming is a staff action. */
+    public static function ajax_stop(): void {
+        $t = self::guard('stop', 5, 3600);
+        if (empty($_POST['confirm'])) wp_send_json_error(['message' => 'שגיאה.'], 400);   // the page always asks first
+        $r = self::call('/donor/stop', ['token' => $t]);
+        if ($r['code'] === 200) {
+            wp_send_json_success(['message' => 'הוראת התרומה הופסקה. לא יבוצעו חיובים נוספים. תודה רבה על תרומתך!']);
         }
         self::fail_generic($r);
     }

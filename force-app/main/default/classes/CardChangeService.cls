@@ -16,6 +16,8 @@ public without sharing class CardChangeService {
         Status__c,
         Pledge__c,
         Link_Version__c,
+        New_Amount__c,
+        Pledge__r.Charge_Amount__c,
         Pledge__r.Token__c,
         Pledge__r.CardExpirationMMYY__c,
         Pledge__r.Last4__c,
@@ -48,21 +50,38 @@ public without sharing class CardChangeService {
       Replaced_At__c = Datetime.now(),
       Replaced_By_Request__c = ccr.Id
     );
-    update new Opportunity(
+    Opportunity upd = new Opportunity(
       Id = ccr.Pledge__c,
       Token__c = d.token,
       CardExpirationMMYY__c = d.expMMYY,
       Token_Expiry_Date__c = d.tokenExpiry,
       Last4__c = d.last4
     ); // last4 null until next charge (B5.3)
-    insert new Pledge_Change_Log__c(
+    List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
+    Boolean amountChanged = ccr.New_Amount__c != null && ccr.New_Amount__c != ccr.Pledge__r.Charge_Amount__c;
+    if (amountChanged) {
+      upd.Charge_Amount__c = ccr.New_Amount__c; // chosen with the card on the donor page; D16: from the next created charge
+      logs.add(
+        new Pledge_Change_Log__c(
+          Pledge__c = ccr.Pledge__c,
+          Change_Type__c = 'Amount',
+          Old_Value__c = String.valueOf(ccr.Pledge__r.Charge_Amount__c),
+          New_Value__c = String.valueOf(ccr.New_Amount__c),
+          Source__c = 'Donor_Portal',
+          Link_Version__c = ccr.Link_Version__c
+        )
+      );
+    }
+    update upd;
+    logs.add(new Pledge_Change_Log__c(
       Pledge__c = ccr.Pledge__c,
       Change_Type__c = 'Card',
       Old_Value__c = ccr.Pledge__r.Last4__c == null ? null : '****' + ccr.Pledge__r.Last4__c,
       New_Value__c = d.last4 == null ? 'כרטיס חדש' : '****' + d.last4,
       Source__c = 'Donor_Portal',
       Link_Version__c = ccr.Link_Version__c
-    );
+    ));
+    insert logs;
     ccr.Status__c = 'Completed';
     ccr.Completed_At__c = Datetime.now();
     update ccr;

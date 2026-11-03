@@ -349,6 +349,43 @@ public without sharing class StaffAlertService {
     return true;
   }
 
+  /** The donor stopped the pledge from the donor page. Sent every time (one per stop). */
+  public static void donorStopped(Id pledgeId) {
+    Id rt = MicroPledges.recordTypeId();
+    List<Opportunity> ps = [
+      SELECT Id, Pledge_Number__c, Charge_Amount__c, Frequency__c, Donor_Contact__r.Name, Donor_Contact__r.Email, Donor_Contact__r.MobilePhone
+      FROM Opportunity
+      WHERE Id = :pledgeId AND RecordTypeId = :rt
+    ];
+    if (ps.isEmpty())
+      return;
+    Opportunity p = ps[0];
+    String donor = p.Donor_Contact__r == null ? '' : p.Donor_Contact__r.Name;
+    send(
+      'תורם הפסיק את הוראת התרומה – ' + donor + ' (' + p.Pledge_Number__c + ')',
+      wrap(
+        '<p>התורם ' +
+          EmailUtil.esc(donor) +
+          ' הפסיק את הוראת התרומה בדף האישי. לא יבוצעו חיובים נוספים.</p>' +
+          '<p>ההוראה: ' +
+          EmailUtil.esc(p.Pledge_Number__c) +
+          ' · ' +
+          EmailUtil.esc(p.Charge_Amount__c) +
+          ' ₪ · ' +
+          EmailUtil.esc(FREQ_HE.get(p.Frequency__c)) +
+          '</p>' +
+          '<p>פרטי התורם: ' +
+          EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.Email) +
+          ' · ' +
+          EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.MobilePhone) +
+          '</p>' +
+          '<p>לחידוש ההוראה: כפתור "חידוש חיובים" ברשומה. <a href="' +
+          EmailUtil.recordUrl(p.Id) +
+          '">לצפייה ברשומה</a></p>'
+      )
+    );
+  }
+
   /** 09:00 SUN-FRI (B9 "Donations Daily Alerts"). */
   public class Daily implements Schedulable {
     public Daily() {

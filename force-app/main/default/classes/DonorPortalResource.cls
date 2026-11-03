@@ -34,7 +34,10 @@ global without sharing class DonorPortalResource {
           out = amount(token, ip, body.get('amount'));
         }
         when 'card' {
-          out = card(token, ip, (String) body.get('returnUrlBase'));
+          out = card(token, ip, (String) body.get('returnUrlBase'), body.get('amount'));
+        }
+        when 'stop' {
+          out = stop(token, ip);
         }
         when 'card/status' {
           out = cardStatus(token, ip, (String) body.get('lowProfileId'));
@@ -62,6 +65,10 @@ global without sharing class DonorPortalResource {
     res.responseBody = Blob.valueOf(JSON.serialize(out));
   }
 
+  /**
+   * Either email link (card or amount) may do every action: the page shows all tabs, and the card step can carry a new amount.
+   * Both links go to the same donor; the action in the token only picks the tab that opens first (N92).
+   */
   static Set<String> BOTH = new Set<String>{ 'card', 'amount' };
 
   static Map<String, Object> context(String token, String ip, String verifyCode) {
@@ -99,17 +106,23 @@ global without sharing class DonorPortalResource {
     }
   }
 
-  static Map<String, Object> amount(String token, String ip, Object rawAmount) {
-    Opportunity p = DonorLinkToken.verify(token, new Set<String>{ 'amount' }, ip);
+  /** Amount per charge within Min/Max with at most 2 decimals, else 400 AMOUNT_RANGE. */
+  static Decimal validAmount(Object rawAmount) {
     Cardcom_Setting__mdt s = CardcomService.settings();
     Decimal a;
     try {
-      a = Decimal.valueOf(String.valueOf(rawAmount)).setScale(2);
+      a = Decimal.valueOf(String.valueOf(rawAmount));
     } catch (Exception e) {
       throw err(400, 'AMOUNT_RANGE');
     }
-    if (a < s.Min_Amount__c || a > s.Max_Amount__c)
+    if (a.scale() > 2 || a < s.Min_Amount__c || a > s.Max_Amount__c)
       throw err(400, 'AMOUNT_RANGE');
+    return a.setScale(2);
+  }
+
+  static Map<String, Object> amount(String token, String ip, Object rawAmount) {
+    Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
+    Decimal a = validAmount(rawAmount);
     if (a == p.Charge_Amount__c)
       return new Map<String, Object>{ 'ok' => true, 'amount' => a, 'changed' => false };
     Decimal old = p.Charge_Amount__c;
@@ -126,9 +139,16 @@ global without sharing class DonorPortalResource {
     return new Map<String, Object>{ 'ok' => true, 'amount' => a, 'changed' => true };
   }
 
-  static Map<String, Object> card(String token, String ip, String returnUrlBase) {
-    Opportunity p = DonorLinkToken.verify(token, new Set<String>{ 'card' }, ip);
+  /**
+   * Starts a card replacement. Optional `amount`: a new amount per charge chosen in the same step; it is stored on the request
+   * and applied only when the new card is saved (CardChangeService.complete), so a failed card change leaves the amount alone.
+   */
+  static Map<String, Object> card(String token, String ip, String returnUrlBase, Object rawAmount) {
+    Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
     DonationLowProfileResource.assertAllowedReturnUrl(returnUrlBase); // same host allow-list as signup (7.3)
+    Decimal newAmount = rawAmount == null || String.isBlank(String.valueOf(rawAmount)) ? null : validAmount(rawAmount);
+    if (newAmount == p.Charge_Amount__c)
+      newAmount = null; // unchanged
     Integer today = [SELECT COUNT() FROM Card_Change_Request__c WHERE Pledge__c = :p.Id AND CreatedDate = TODAY];
     if (today >= 5)
       throw err(429, 'TOO_MANY');
@@ -139,7 +159,8 @@ global without sharing class DonorPortalResource {
       LowProfileId__c = (String) lp.get('LowProfileId'),
       Status__c = 'Pending',
       Link_Version__c = p.Link_Version__c,
-      Client_Ip__c = ip == null ? null : ip.left(45)
+      Client_Ip__c = ip == null ? null : ip.left(45),
+      New_Amount__c = newAmount
     );
     return new Map<String, Object>{
       'lowProfileId' => lp.get('LowProfileId'),
@@ -149,7 +170,7 @@ global without sharing class DonorPortalResource {
   }
 
   static Map<String, Object> cardStatus(String token, String ip, String lpId) {
-    Opportunity p = DonorLinkToken.verify(token, new Set<String>{ 'card' }, ip);
+    Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
     List<Card_Change_Request__c> cc = [
       SELECT Id, Status__c, CreatedDate
       FROM Card_Change_Request__c
@@ -167,7 +188,32 @@ global without sharing class DonorPortalResource {
         st = CardChangeService.complete(lpId, r);
     }
     Id rt = MicroPledges.recordTypeId();
-    String last4 = [SELECT Last4__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Last4__c;
-    return new Map<String, Object>{ 'status' => st, 'last4' => st == 'Completed' ? last4 : null };
+    Opportunity now = [SELECT Last4__c, Charge_Amount__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt];
+    return new Map<String, Object>{
+      'status' => st,
+      'last4' => st == 'Completed' ? now.Last4__c : null,
+      'amount' => now.Charge_Amount__c
+    };
+  }
+
+  /**
+   * The donor stops the pledge from the donor page (with either link). Same effect as staff "הפסקת חיובים" (B6.8): Stopped,
+   * reason Donor_Request; OpportunityTrigger skips the Pending charges and logs it (source Donor_Portal). Staff are emailed.
+   * Resuming stays a staff action. Links stop working afterwards (verify requires Active).
+   */
+  static Map<String, Object> stop(String token, String ip) {
+    Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
+    OpportunityTriggerHandler.sourceOverride = 'Donor_Portal';
+    update new Opportunity(
+      Id = p.Id,
+      StageName = MicroPledges.STAGE_STOPPED,
+      Stop_Reason__c = 'Donor_Request',
+      Stop_Reason_Details__c = 'הופסק ע"י התורם בדף האישי',
+      Stopped_At__c = Datetime.now(),
+      Stopped_By__c = UserInfo.getUserId()
+    );
+    OpportunityTriggerHandler.sourceOverride = null;
+    StaffAlertService.donorStopped(p.Id);
+    return new Map<String, Object>{ 'ok' => true, 'status' => MicroPledges.STAGE_STOPPED };
   }
 }

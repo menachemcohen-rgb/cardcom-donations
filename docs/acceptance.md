@@ -87,6 +87,14 @@ Also automated for Prompt 3 (no B11 number):
 | TC29 | Revoke links | `DonorLinkTokenTest.wrongActionVersionSignatureAndStatusAreInvalid` | "ביטול קישורי תורם" on the pledge → the old link shows "הקישור אינו תקף…"; the link in the next thank-you email works. |
 | TC30 | Months-old link | `DonorLinkTokenTest.issueAndVerifyWithoutExpiry` (no expiry claim), `DonorLinkTokenTest.previousSecretStillWorksAfterRotation` | Issue a token with the current version (Anonymous Apex `DonorLinkToken.issue(pledgeId, 'amount', 1)`) and open it: it works (D15). |
 
+## Donor page — stop and card with amount (N92, N93)
+
+| Scenario | Automated | Manual (sandbox) |
+|---|---|---|
+| Donor stops the pledge | `DonorPortalResourceTest.donorStopsThePledgeWithEitherLink`, `stopWithABadLinkChangesNothing`; PHP `PortalAjaxTest.testStopNeedsTheConfirmation` | Open a thank-you email link → tab "הפסקת חיובים" → "הפסקת החיובים" → "כן, להפסיק". The page shows "הוראת התרומה הופסקה…"; the pledge is Stopped (reason Donor_Request), its Pending charges Skipped, a change-log "Stop" with source Donor_Portal, and staff get "תורם הפסיק את הוראת התרומה". Opening the link again shows "הקישור אינו תקף". Staff can resume with "חידוש חיובים". |
+| New card and new amount in one step | `newAmountWithTheCardAppliesOnlyWhenTheCardIsSaved`, `failedCardKeepsTheOldAmount`, `cardWithoutOrWithTheSameAmountChangesNoAmount`, `cardWithAnAmountOutOfRangeIsRefusedBeforeCardcom`; PHP `testCardCarriesTheNewAmount` | Tab "החלפת כרטיס", pick 5 ₪, "החלפת כרטיס", save test card `4580280000000008`. Message ends "הסכום עודכן ל-5.00 ₪ לכל חיוב."; the pledge has the new token and amount 5; change log "Card" and "Amount". Cancel the card instead: amount unchanged. |
+| Either link works on every tab | `amountOutOfRangeOrWrongLinkIsRefused` | Open the "החלפת כרטיס" link and change the amount on the "שינוי סכום" tab: it works. |
+
 ## WordPress — form and donor page (Prompt 10)
 
 Staging site with the plugin installed (`docs/wp-install.md`), sandbox Salesforce, Cardcom test terminal. Automated: PHPUnit
