@@ -174,4 +174,40 @@ private class ChargeQueueableTest {
     Assert.areEqual('Pending', reload(c.Id).Status__c);
     Assert.isTrue(m.requests.isEmpty());
   }
+
+  @IsTest
+  static void credentialErrorIsAConfigErrorWithoutRetry() {
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Charge__c c = TestDataFactory.pendingCharge(p, WED, 'AM', 1, null);
+    CardcomMock.install().always('Transactions/Transaction', 200, CardcomMock.CREDENTIAL_ERROR);
+    run(new List<Charge__c>{ c });
+    Charge__c r = reload(c.Id);
+    Assert.areEqual('Failed', r.Status__c);
+    Assert.areEqual('CONFIG_ERROR', r.Error_Code__c);
+    Assert.areEqual('Config', r.Error_Category__c);
+    Assert.isFalse(r.Needs_Reconciliation__c, 'nothing reached Cardcom');
+    Assert.isFalse(r.Is_Final_Failure__c, 'not counted in the failure streak');
+    Assert.areEqual(1, [SELECT COUNT() FROM Charge__c], 'no automatic retry');
+    Assert.areEqual(Date.today(), Alert_State__c.getOrgDefaults().Config_Error_Sent_On__c, 'staff alert');
+    Assert.areEqual(1, ChargeAdmin.requeueFailedConfig(WED), 'can be re-run after the fix');
+  }
+
+  @IsTest
+  static void credentialErrorWhileVerifyingIsAlsoConfig() {
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Charge__c c = TestDataFactory.pendingCharge(p, WED, 'AM', 2, 'PLG-x-A1');
+    CardcomMock.install().always('Transactions/GetTransactionByExternalUniqTran', 200, CardcomMock.CREDENTIAL_ERROR);
+    run(new List<Charge__c>{ c });
+    Assert.areEqual('CONFIG_ERROR', reload(c.Id).Error_Code__c);
+    Assert.areEqual(1, [SELECT COUNT() FROM Charge__c], 'no automatic retry');
+  }
+
+  @IsTest
+  static void timeoutIsNotMistakenForACredentialError() {
+    Assert.isFalse(ChargeQueueable.isCredentialError(new CalloutException('Read timed out')));
+    Assert.isTrue(ChargeQueueable.isCredentialError(new CalloutException(CardcomMock.CREDENTIAL_MESSAGE)));
+    Assert.isTrue(ChargeQueueable.isCredentialError(new CalloutException('Unauthorized endpoint, please check Setup')));
+  }
 }

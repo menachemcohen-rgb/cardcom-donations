@@ -56,6 +56,6 @@ public without sharing class PendingVerificationSweeper implements Schedulable {
 
   public static void scheduleAll() {
     for (Integer m : new List<Integer>{ 0, 15, 30, 45 })
-      System.schedule('Donations LP Sweeper :' + m, '0 ' + m + ' * * * ?', new PendingVerificationSweeper());
+      System.schedule(DonationSetup.jobName('LP Sweeper :' + m), '0 ' + m + ' * * * ?', new PendingVerificationSweeper());
   }
 }

@@ -144,7 +144,7 @@ and scheduling (`ChargeSettingsTest`, `DonationSetupTest`).
 | Scenario | Automated | Manual (sandbox) |
 |---|---|---|
 | Stop | `PledgeTriggerHandlerTest.stopSkipsPendingChargesAndLogs` | As a `Donations_Admin` user, on an Active pledge click "הפסקת חיובים", pick a reason: stage Stopped, Pending charges Skipped (STOPPED), change log "Stop". The button doesn't show without `Stop_Pledge_Charges`. |
-| Resume | `PledgeTriggerHandlerTest.resumeAndCancelAreLoggedAndCancelIsFinal` | "חידוש חיובים" on a Stopped pledge: Active from the next run, skipped days not made up, log "Resume". |
+| Resume | `PledgeTriggerHandlerTest.resumeAndCancelAreLoggedAndCancelIsFinal`, `resumeClearsTheReasonAndFreesTodaysAndLaterStoppedSlots` | "חידוש חיובים" on a Stopped pledge (or editing the stage to Active): Active from the next run, skipped days not made up, log "Resume". `Stop_Reason__c` and its details are cleared (the Stop log keeps them). Skipped/STOPPED charges for today or later keep Status Skipped but their `Attempt_Key__c` gets a `-STOPPED-<Id>` suffix, so the next run plans that slot normally (N87). |
 | Cancel | same | "ביטול הוראה": Cancelled, End Date today, log "Cancel"; Edit → Active is refused. |
 | Revoke links | `PledgeTriggerHandlerTest.revokingLinksIsLogged` | "ביטול קישורי תורם": `Link_Version__c` + 1, log "Link_Revoke". Old links stop working with Prompt 8. |
 | Permission | `PledgeTriggerHandlerTest.userWithoutPermissionIsBlocked`, `PledgeValidationRulesTest.stoppingWithoutPermissionIsBlocked` | A `Donations_Staff` user sees no action buttons; a direct edit of the stage is refused with "אין לך הרשאה לעצור/לחדש חיובים." |
@@ -166,9 +166,10 @@ Before the first real run go through `docs/receipt-go-live-checklist.md`.
 
 | ID | Scenario | Automated | Manual (sandbox + test terminal) |
 |---|---|---|---|
-| TC36 | Reconciliation issue, re-run without duplicates | `ReconciliationJobTest.eachIssueTypeIsReported`, `ReconciliationJobTest.reRunUpdatesIssuesInPlaceAndKeepsStaffResolution` | After a charging day (TC11), as the integration user set one Success charge's `Cardcom_Tranzaction_Id__c` to `999999999`, then run `System.enqueueJob(new ReconciliationJob(Date.today()));`. Expect one `Missing_In_Cardcom` issue (and a `Missing_In_Salesforce` for the real transaction); run it again: still the same issues. B11's "change the amount of a Success charge" is blocked by `VR_Charge_Immutable_After_Final` (B2.3), so `Amount_Mismatch` is covered by the automated test only (N76). |
+| TC36 | Reconciliation issue, re-run without duplicates | `ReconciliationJobTest.eachIssueTypeIsReported`, `ReconciliationJobTest.reRunUpdatesIssuesInPlaceAndKeepsStaffResolution` | After a charging day (TC11), as the integration user set one Success charge's `Cardcom_Tranzaction_Id__c` to `999999999`, then run `ReconciliationJob.enqueue(Date.today());`. Expect one `Missing_In_Cardcom` issue (and a `Missing_In_Salesforce` for the real transaction); run it again: still the same issues. B11's "change the amount of a Success charge" is blocked by `VR_Charge_Immutable_After_Final` (B2.3), so `Amount_Mismatch` is covered by the automated test only (N76). |
 | — | Every issue type | `ReconciliationJobTest.eachIssueTypeIsReported` (Missing_In_Cardcom, Amount_Mismatch, Status_Mismatch, Missing_In_Salesforce), `twoRealChargesForOneLogicalChargeIsADuplicate` | Report "פערי התאמה פתוחים" (folder Donations) and list view of the same name show them; staff set Status to Resolved/Ignored. |
 | — | Unknown outcome fixed automatically | `ReconciliationJobTest.unknownOutcomeConfirmedByCardcomIsFixedAutomatically`, `notFoundInCardcomClearsTheFlag`, `sameTranzactionIdOnTheRetryIsNotADuplicate` | TC20/TC21 leave a `Failed (Unknown)` attempt with `Needs_Reconciliation__c`; the next night it becomes Success `RECONCILED` (if Cardcom charged it) or the flag is cleared. |
+| — | Cardcom list unusable (N86) | `emptyListFallsBackToPerChargeLookup`, `anotherTerminalsListIsNotCompared`, `failedLookupsOpenNoIssue`, `usableListIsComparedWithoutLookups`, `fallbackIsChainedWhenTheBudgetRunsOut` | Sandbox (test terminal 1001: `ListTransactions` with `LimitForTerminal` returns no rows): `ReconciliationJob.enqueue(Date.today());` after a charging day. Expect no `Missing_In_Cardcom` for charges Cardcom has, no `Missing_In_Salesforce`, one email "התאמה לילית: רשימת העסקאות מ-Cardcom לא זמינה", and in the debug log one `GetTransactionByExternalUniqTran` per Success charge. |
 | — | Paging | `pagingContinuesWhileAPageIsFull`, `exactlyFullLastPageTriggersOneEmptyRequest` | — |
 | — | Unknown Cardcom transactions ignored | `unknownCardcomTransactionsCanBeIgnored` (`Recon_Report_Unknown__c = false`) | — |
 | — | Staff alert | `eachIssueTypeIsReported` (Alert_State__c), `cardcomErrorsAbortWithoutChanges` (config alert) | One "פערי התאמה פתוחים" email a day while issues are Open. |
@@ -191,6 +192,13 @@ Before the first real run go through `docs/receipt-go-live-checklist.md`.
 | TC38 | View source of the form and donor pages; DevTools → Network; as the Site guest call `/services/data/vXX.X/query?q=SELECT+Id+FROM+Opportunity` and `/services/apexrest/donations/pledge`. | No client secret, token or Salesforce call from the browser; the guest gets no records and 401/403 on the APIs. |
 | TC39 | After TC15 (failed charges). | No email to the donor; only the staff alert after X failures. |
 | TC40 | After TC11, Cardcom admin → documents and the donor's inbox/phone. | No receipt, email or SMS from Cardcom for the micro-charges; only the monthly receipt (TC31). |
+
+## Values to expect
+
+- `Donor_Link_Use__c.Result__c`: a valid link is logged as **`OK`** (spec B2.5 and the restricted picklist), not "Success". The other
+  values are `Revoked`, `Bad_Signature`, `Inactive`, `Bad_Verify` (N88).
+- `Opportunity.Match_Method__c`: **`New`** when no existing Contact matched and a new one was created (first signup of a new donor);
+  `Email`, `Phone`, `TaxId` or `DuplicateRule` when an existing Contact was used.
 
 ## Running the tests (only when authorized — nothing has run in an org yet)
 

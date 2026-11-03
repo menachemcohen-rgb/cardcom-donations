@@ -5,6 +5,10 @@
 @IsTest
 public class CardcomMock implements HttpCalloutMock {
   public static final String TIMEOUT = 'TIMEOUT';
+  /** Throws what the platform throws when the running user can't use the Named/External Credential. */
+  public static final String CREDENTIAL_ERROR = 'CREDENTIAL_ERROR';
+  public static final String CREDENTIAL_MESSAGE =
+    'We couldn\'t access the credential(s). You might not have the required permissions, or the external credential "Cardcom_EC" might not exist.';
   final Map<String, List<Object[]>> queued = new Map<String, List<Object[]>>();
   final Map<String, Object[]> defaults = new Map<String, Object[]>();
   public List<HttpRequest> requests = new List<HttpRequest>();
@@ -41,6 +45,8 @@ public class CardcomMock implements HttpCalloutMock {
       throw new CalloutException('CardcomMock: no response scripted for ' + path);
     if (r[1] == TIMEOUT)
       throw new CalloutException('Read timed out');
+    if (r[1] == CREDENTIAL_ERROR)
+      throw new CalloutException(CREDENTIAL_MESSAGE);
     HttpResponse res = new HttpResponse();
     res.setStatusCode((Integer) r[0]);
     res.setHeader('Content-Type', 'application/json');

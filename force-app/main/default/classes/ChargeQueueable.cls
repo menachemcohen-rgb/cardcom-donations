@@ -81,7 +81,12 @@ public without sharing class ChargeQueueable implements Queueable, Database.Allo
             : ChargeOutcomeHandler.fromException(c, 'HTTP_' + e.status, e)
         );
       } catch (System.CalloutException e) {
-        results.add(ChargeOutcomeHandler.fromException(c, 'TIMEOUT', e));
+        // No access to the Named/External Credential: nothing reached Cardcom → Config (no retry, staff alert), not TIMEOUT
+        results.add(
+          isCredentialError(e)
+            ? ChargeOutcomeHandler.fromConfigError(c, 'CONFIG_ERROR', e)
+            : ChargeOutcomeHandler.fromException(c, 'TIMEOUT', e)
+        );
       } catch (Exception e) {
         results.add(ChargeOutcomeHandler.fromException(c, 'EXCEPTION', e));
       }
@@ -96,5 +101,15 @@ public without sharing class ChargeQueueable implements Queueable, Database.Allo
     }
     if (!Test.isRunningTest())
       ChargeDispatcher.start(); // next link
+  }
+
+  /**
+   * The callout never left Salesforce because the running user can't use the credential ("We couldn't access the credential(s)…",
+   * missing Named Credential, or an unauthorized endpoint). Everything else (e.g. "Read timed out") is an unknown outcome.
+   */
+  @TestVisible
+  static Boolean isCredentialError(Exception e) {
+    String m = e.getMessage() == null ? '' : e.getMessage().toLowerCase();
+    return m.contains('credential') || m.contains('unauthorized endpoint');
   }
 }

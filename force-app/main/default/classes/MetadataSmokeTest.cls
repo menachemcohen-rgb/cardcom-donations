@@ -537,4 +537,29 @@ private class MetadataSmokeTest {
     Assert.areEqual(4, names.size(), 'Permission sets found: ' + names);
     Assert.areEqual(1, [SELECT COUNT() FROM NamedCredential WHERE DeveloperName = 'Cardcom'], 'Named Credential Cardcom');
   }
+
+  @IsTest
+  static void internalReadSetHasNoSensitiveFieldAndNoEdit() {
+    List<PermissionSet> ps = [SELECT Id FROM PermissionSet WHERE Name = 'Donations_Internal_Read'];
+    Assert.areEqual(1, ps.size(), 'Donations_Internal_Read deployed');
+    Set<String> sensitive = new Set<String>{
+      'Opportunity.Token__c',
+      'Pledge_Card_History__c.Token__c',
+      'Opportunity.Donor_Tax_Id__c',
+      'Contact.Donor_Tax_Id__c',
+      'Contact.Tax_Id_Hash__c'
+    };
+    Assert.areEqual(0, [SELECT COUNT() FROM FieldPermissions WHERE ParentId = :ps[0].Id AND Field IN :sensitive], 'no token / ID');
+    Assert.areEqual(0, [SELECT COUNT() FROM FieldPermissions WHERE ParentId = :ps[0].Id AND PermissionsEdit = TRUE], 'read only');
+    Assert.areEqual(
+      0,
+      [
+        SELECT COUNT()
+        FROM ObjectPermissions
+        WHERE ParentId = :ps[0].Id AND (PermissionsCreate = TRUE OR PermissionsEdit = TRUE OR PermissionsDelete = TRUE)
+      ],
+      'no create/edit/delete'
+    );
+    Assert.isTrue([SELECT COUNT() FROM FieldPermissions WHERE ParentId = :ps[0].Id AND Field = 'Charge__c.Error_Code__c'] == 1);
+  }
 }

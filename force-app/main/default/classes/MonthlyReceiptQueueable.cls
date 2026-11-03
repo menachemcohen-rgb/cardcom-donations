@@ -7,11 +7,17 @@ public without sharing class MonthlyReceiptQueueable implements Queueable, Datab
   static final Integer PER_JOB = 10;
   final Date period;
   final List<Id> ids;
+  final Set<Id> onlyContactIds; // null = every donor; set = test/limited run (MonthlyReceiptPlanner(period, contactIds))
 
   @TestVisible
   MonthlyReceiptQueueable(Date period, List<Id> ids) {
+    this(period, ids, null);
+  }
+
+  MonthlyReceiptQueueable(Date period, List<Id> ids, Set<Id> onlyContactIds) {
     this.period = period;
     this.ids = ids;
+    this.onlyContactIds = onlyContactIds;
   }
 
   static Integer maxAttempts() {
@@ -21,21 +27,22 @@ public without sharing class MonthlyReceiptQueueable implements Queueable, Datab
 
   /** Marks the next batch Processing (own transaction) and enqueues it. Nothing left → daily failure alert. */
   public static void start(Date period) {
+    start(period, null);
+  }
+
+  /** Same, limited to the receipts of these Contacts when onlyContactIds is not null (safe sandbox runs). */
+  public static void start(Date period, Set<Id> onlyContactIds) {
     Integer max = maxAttempts();
     Datetime retryBefore = Datetime.now().addHours(-12);
-    List<Monthly_Receipt__c> next = [
-      SELECT Id
-      FROM Monthly_Receipt__c
-      WHERE
-        Period_Month__c = :period
-        AND (Status__c = 'Pending'
-        OR (Status__c = 'Failed'
-        AND Attempt_Count__c < :max
-        AND (Last_Attempt_At__c = NULL
-        OR Last_Attempt_At__c < :retryBefore)))
-      ORDER BY CreatedDate
-      LIMIT :PER_JOB
-    ];
+    Set<Id> only = onlyContactIds;
+    Integer perJob = PER_JOB;
+    List<Monthly_Receipt__c> next = Database.query(
+      'SELECT Id FROM Monthly_Receipt__c WHERE Period_Month__c = :period' +
+        ' AND (Status__c = \'Pending\' OR (Status__c = \'Failed\' AND Attempt_Count__c < :max' +
+        ' AND (Last_Attempt_At__c = NULL OR Last_Attempt_At__c < :retryBefore)))' +
+        (only == null ? '' : ' AND Contact__c IN :only') +
+        ' ORDER BY CreatedDate LIMIT :perJob'
+    );
     if (next.isEmpty()) {
       StaffAlertService.receiptFailures();
       return;
@@ -46,7 +53,7 @@ public without sharing class MonthlyReceiptQueueable implements Queueable, Datab
       ids.add(r.Id);
     }
     update next;
-    System.enqueueJob(new MonthlyReceiptQueueable(period, ids));
+    System.enqueueJob(new MonthlyReceiptQueueable(period, ids, onlyContactIds));
   }
 
   /** Processing > 1h (crash) → Failed (re-send is safe: same ExternalId returns the same document). */
@@ -123,6 +130,6 @@ public without sharing class MonthlyReceiptQueueable implements Queueable, Datab
     if (configStop)
       StaffAlertService.configErrorOncePerDay(); // stop the chain for today
     else if (!Test.isRunningTest())
-      start(period); // chain
+      start(period, onlyContactIds); // chain
   }
 }

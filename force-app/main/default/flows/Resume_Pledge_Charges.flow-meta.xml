@@ -26,7 +26,7 @@
             <label>כן</label>
         </rules>
     </decisions>
-    <description>B6.8: resume a Stopped pledge from the next scheduled run; skipped charges are not made up. Keeps Stop_Reason for history.</description>
+    <description>B6.8: resume a Stopped pledge from the next scheduled run; skipped charges are not made up. OpportunityTrigger clears Stop_Reason (kept in the change log) and frees the keys of today's and later STOPPED charges.</description>
     <environments>Default</environments>
     <interviewLabel>חידוש חיובים {!$Flow.CurrentDateTime}</interviewLabel>
     <label>חידוש חיובים</label>

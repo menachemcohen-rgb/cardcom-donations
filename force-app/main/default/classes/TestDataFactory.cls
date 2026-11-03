@@ -87,7 +87,7 @@ public class TestDataFactory {
   public static Charge__c charge(Opportunity p, Date scheduled, String slot) {
     String ext =
       'PLG-' +
-      String.valueOf(p.Id).left(15) +
+      String.valueOf(p.Id) +
       '-' +
       Datetime.newInstance(scheduled, Time.newInstance(12, 0, 0, 0)).format('yyyyMMdd') +
       '-' +

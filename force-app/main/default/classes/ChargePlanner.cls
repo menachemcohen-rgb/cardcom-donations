@@ -44,7 +44,7 @@ public with sharing class ChargePlanner {
 
   /** One attempt per pledge × date; PM only for TwiceDaily; blank token skipped and logged (E15). */
   @TestVisible
-  static List<Charge__c> buildAll(List<Opportunity> pledges, List<Date> dates, String slot, Date runDate) {
+  public static List<Charge__c> buildAll(List<Opportunity> pledges, List<Date> dates, String slot, Date runDate) {
     List<Charge__c> out = new List<Charge__c>();
     Datetime now = ChargeCalendar.now();
     for (Opportunity p : pledges) {
@@ -71,10 +71,10 @@ public with sharing class ChargePlanner {
     return ok;
   }
 
-  /** PLG-{pledgeId15}-{yyyyMMdd}-{slot} (B2.3; spec-consistency N15: 15-character Id). */
+  /** PLG-{pledgeId18}-{yyyyMMdd}-{slot} (spec-consistency N85: 18-character Id — 15-character Ids differ only by case). */
   public static String extId(Id pledgeId, Date d, String slot) {
     return 'PLG-' +
-      String.valueOf(pledgeId).left(15) +
+      String.valueOf(pledgeId) +
       '-' +
       Datetime.newInstance(d, Time.newInstance(12, 0, 0, 0)).format('yyyyMMdd') +
       '-' +
