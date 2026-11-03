@@ -108,9 +108,25 @@ public class TestDataFactory {
 
   /** A regular (non-pledge) Opportunity, to prove pledge logic never touches it (D24). */
   public static Opportunity otherOpportunity() {
-    Opportunity o = new Opportunity(Name = 'Regular deal', StageName = 'Prospecting', CloseDate = Date.today().addDays(30));
+    Opportunity o = new Opportunity(
+      RecordTypeId = masterRecordTypeId(),
+      Name = 'Regular deal',
+      StageName = 'Prospecting',
+      CloseDate = Date.today().addDays(30)
+    );
     insert o;
     return o;
+  }
+
+  /**
+   * The Opportunity Master record type. A non-pledge test Opportunity must name it: in an org where Micro_Donation_Pledge is the
+   * running user's default (or only) record type, an Opportunity without RecordTypeId would be created as a pledge.
+   */
+  public static Id masterRecordTypeId() {
+    for (Schema.RecordTypeInfo i : Schema.SObjectType.Opportunity.getRecordTypeInfos())
+      if (i.isMaster())
+        return i.getRecordTypeId();
+    return null;
   }
 
   /** A REST context with a JSON body. */
