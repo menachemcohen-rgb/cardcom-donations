@@ -172,8 +172,9 @@
     const m = ev.data || {};
     if (m.type !== 'orgdon-cardcom') return;
     if (m.status === 'ok') {
+      // The form is sent automatically after the card is saved; "סיום" appears only if that send fails (retry without the card).
       cardSaved = true; clearTimeout(timer);
-      finishBtn.hidden = false; finishBtn.disabled = false;
+      finishBtn.disabled = false;
       submit();
     } else {
       msg.textContent = 'פרטי הכרטיס לא נקלטו. נסו שוב.';
