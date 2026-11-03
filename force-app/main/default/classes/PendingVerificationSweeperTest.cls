@@ -42,7 +42,8 @@ private class PendingVerificationSweeperTest {
     Test.startTest();
     PendingVerificationSweeper.scheduleAll();
     Test.stopTest();
-    Assert.areEqual(4, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations LP Sweeper%']);
+    String sweepers = DonationSetup.jobName('LP Sweeper%');
+    Assert.areEqual(4, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE :sweepers], 'test-run names only');
   }
 
   @IsTest

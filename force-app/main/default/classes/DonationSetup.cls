@@ -6,14 +6,25 @@
  * Donation_Setup_Command__e whose trigger runs as the integration user (N42) and calls handleCommands().
  */
 public with sharing class DonationSetup {
+  /**
+   * Every job name starts with PREFIX. Production: 'Donations ' (unchanged). In a test run: 'TEST Donations ', so tests never
+   * collide with, count or abort the org's real scheduled jobs.
+   */
+  @TestVisible
+  static final String PREFIX = Test.isRunningTest() ? 'TEST Donations ' : 'Donations ';
+
+  public static String jobName(String suffix) {
+    return PREFIX + suffix;
+  }
+
   static final List<String> TIMED = new List<String>{
-    'Donations AM',
-    'Donations PM',
-    'Donations Eve AM',
-    'Donations Eve PM',
-    'Donations Retry',
-    'Donations Receipts',
-    'Donations Reconcile'
+    jobName('AM'),
+    jobName('PM'),
+    jobName('Eve AM'),
+    jobName('Eve PM'),
+    jobName('Retry'),
+    jobName('Receipts'),
+    jobName('Reconcile')
   };
   @TestVisible
   static List<String> lastSkipped = new List<String>();
@@ -26,18 +37,18 @@ public with sharing class DonationSetup {
 
   static void scheduleTimed() {
     Charge_Settings__c s = ChargeSettings.get();
-    System.schedule('Donations AM', ChargeSettings.cron(s.AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('AM'));
-    System.schedule('Donations PM', ChargeSettings.cron(s.PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('PM'));
-    System.schedule('Donations Eve AM', ChargeSettings.cron(s.Eve_AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EveAM'));
-    System.schedule('Donations Eve PM', ChargeSettings.cron(s.Eve_PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EvePM'));
-    scheduleIfPresent('Donations Retry', '0 ' + s.Retry_Minute__c.intValue() + ' * ? * SUN-FRI', 'ChargeRetryScheduler');
-    scheduleIfPresent('Donations Receipts', ChargeSettings.cron(s.Receipt_Time__c, '*'), 'MonthlyReceiptScheduler');
-    scheduleIfPresent('Donations Reconcile', ChargeSettings.cron(s.Reconcile_Time__c, '*'), 'ReconciliationJob');
+    System.schedule(jobName('AM'), ChargeSettings.cron(s.AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('AM'));
+    System.schedule(jobName('PM'), ChargeSettings.cron(s.PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('PM'));
+    System.schedule(jobName('Eve AM'), ChargeSettings.cron(s.Eve_AM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EveAM'));
+    System.schedule(jobName('Eve PM'), ChargeSettings.cron(s.Eve_PM_Time__c, 'SUN-FRI'), new DonationChargeScheduler('EvePM'));
+    scheduleIfPresent(jobName('Retry'), '0 ' + s.Retry_Minute__c.intValue() + ' * ? * SUN-FRI', 'ChargeRetryScheduler');
+    scheduleIfPresent(jobName('Receipts'), ChargeSettings.cron(s.Receipt_Time__c, '*'), 'MonthlyReceiptScheduler');
+    scheduleIfPresent(jobName('Reconcile'), ChargeSettings.cron(s.Reconcile_Time__c, '*'), 'ReconciliationJob');
   }
   static void scheduleFixed() {
     PendingVerificationSweeper.scheduleAll();
-    scheduleIfPresent('Donations Daily Alerts', '0 0 9 ? * SUN-FRI', 'StaffAlertService.Daily');
-    scheduleIfPresent('Donations Log Cleanup', '0 0 3 ? * SUN', 'LogCleanupBatch');
+    scheduleIfPresent(jobName('Daily Alerts'), '0 0 9 ? * SUN-FRI', 'StaffAlertService.Daily');
+    scheduleIfPresent(jobName('Log Cleanup'), '0 0 3 ? * SUN', 'LogCleanupBatch');
   }
 
   /** Schedules `className` if it exists and is Schedulable; otherwise records it in lastSkipped. */
@@ -80,7 +91,8 @@ public with sharing class DonationSetup {
   }
 
   public static void unscheduleAll() {
-    for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'])
+    String pattern = PREFIX + '%';
+    for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name LIKE :pattern])
       System.abortJob(ct.Id);
   }
 

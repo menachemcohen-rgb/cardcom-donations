@@ -29,12 +29,25 @@ private class DonationSetupTest {
     return u;
   }
 
+  /** Jobs this test created: DonationSetup uses the 'TEST Donations ' prefix in a test run, so the org's real jobs never count. */
   static Integer donationJobs() {
-    return [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'];
+    String pattern = DonationSetup.jobName('%');
+    return [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE :pattern];
   }
 
-  static String cronOf(String name) {
+  static String cronOf(String suffix) {
+    String name = DonationSetup.jobName(suffix);
     return [SELECT CronExpression FROM CronTrigger WHERE CronJobDetail.Name = :name].CronExpression;
+  }
+
+  @IsTest
+  static void testRunsUseTheirOwnJobNames() {
+    Assert.areEqual('TEST Donations AM', DonationSetup.jobName('AM'), 'production keeps "Donations AM"; tests never touch it');
+    Integer realJobs = [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'];
+    ChargeSettings.overrideValue = ChargeSettings.defaults();
+    DonationSetup.scheduleAll();
+    DonationSetup.unscheduleAll();
+    Assert.areEqual(realJobs, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations %'], 'real jobs untouched');
   }
 
   @IsTest
@@ -44,18 +57,18 @@ private class DonationSetupTest {
     Integer missing = DonationSetup.lastSkipped.size();
     Assert.isTrue(missing <= LATER_JOBS, String.valueOf(DonationSetup.lastSkipped));
     Assert.areEqual(4 + 4 + (LATER_JOBS - missing), donationJobs(), '4 charge runs + 4 LP sweepers + later jobs that exist');
-    Assert.areEqual('0 0 8 ? * SUN-FRI', cronOf('Donations AM'));
-    Assert.areEqual('0 0 20 ? * SUN-FRI', cronOf('Donations PM'), 'PM is scheduled even when Runs_Per_Day__c = 1 (B9)');
-    Assert.areEqual('0 0 6 ? * SUN-FRI', cronOf('Donations Eve AM'));
-    Assert.areEqual('0 0 11 ? * SUN-FRI', cronOf('Donations Eve PM'));
+    Assert.areEqual('0 0 8 ? * SUN-FRI', cronOf('AM'));
+    Assert.areEqual('0 0 20 ? * SUN-FRI', cronOf('PM'), 'PM is scheduled even when Runs_Per_Day__c = 1 (B9)');
+    Assert.areEqual('0 0 6 ? * SUN-FRI', cronOf('Eve AM'));
+    Assert.areEqual('0 0 11 ? * SUN-FRI', cronOf('Eve PM'));
     DonationSetup.unscheduleAll();
     Assert.areEqual(0, donationJobs());
   }
 
   @IsTest
   static void missingOrNonSchedulableClassesAreSkipped() {
-    Assert.isFalse(DonationSetup.scheduleIfPresent('Donations X', '0 0 1 * * ?', 'NoSuchClassAnywhere'));
-    Assert.isFalse(DonationSetup.scheduleIfPresent('Donations Y', '0 0 1 * * ?', 'MicroPledges'));
+    Assert.isFalse(DonationSetup.scheduleIfPresent(DonationSetup.jobName('X'), '0 0 1 * * ?', 'NoSuchClassAnywhere'));
+    Assert.isFalse(DonationSetup.scheduleIfPresent(DonationSetup.jobName('Y'), '0 0 1 * * ?', 'MicroPledges'));
     Assert.areEqual(2, DonationSetup.lastSkipped.size());
   }
 
@@ -68,8 +81,9 @@ private class DonationSetupTest {
       ChargeSettings.overrideValue.AM_Time__c = '07:15';
       List<String> errs = DonationSetup.reschedule();
       Assert.isTrue(errs.isEmpty(), String.valueOf(errs));
-      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('Donations AM'));
-      Assert.areEqual(4, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations LP Sweeper%'], 'fixed jobs untouched');
+      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('AM'));
+      String sweepers = DonationSetup.jobName('LP Sweeper%');
+      Assert.areEqual(4, [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name LIKE :sweepers], 'fixed jobs untouched');
     }
     Assert.isNotNull(Charge_Settings__c.getOrgDefaults().Schedule_Applied_At__c);
   }
@@ -124,10 +138,11 @@ private class DonationSetupTest {
       TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
       DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'SCHEDULE_ALL') });
       Assert.areEqual(4 + 4 + LATER_JOBS, donationJobs());
-      Assert.areEqual(UserInfo.getUserId(), [SELECT OwnerId FROM CronTrigger WHERE CronJobDetail.Name = 'Donations AM'].OwnerId);
+      String amJob = DonationSetup.jobName('AM');
+      Assert.areEqual(UserInfo.getUserId(), [SELECT OwnerId FROM CronTrigger WHERE CronJobDetail.Name = :amJob].OwnerId);
       ChargeSettings.overrideValue.AM_Time__c = '07:15';
       DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'RESCHEDULE') });
-      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('Donations AM'));
+      Assert.areEqual('0 15 7 ? * SUN-FRI', cronOf('AM'));
       DonationSetup.handleCommands(new List<Donation_Setup_Command__e>{ new Donation_Setup_Command__e(Command__c = 'UNSCHEDULE_ALL') });
       Assert.areEqual(0, donationJobs());
     }
