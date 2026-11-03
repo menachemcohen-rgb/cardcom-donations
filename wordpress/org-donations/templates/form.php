@@ -36,7 +36,7 @@
         <?php foreach ($presets as $i => $p): ?>
           <label class="orgdon-chip"><input type="radio" name="amount_preset" value="<?= esc_attr($p) ?>" <?= $i === 0 ? 'checked' : '' ?>><span><?= esc_html($p) ?> ₪</span></label>
         <?php endforeach; ?>
-        <label class="orgdon-chip"><input type="radio" name="amount_preset" value="other"><span>סכום אחר</span></label>
+        <label class="orgdon-chip orgdon-chip-other"><input type="radio" name="amount_preset" value="other"><span>סכום אחר</span></label>
       </div>
       <input id="od-amount-other" name="amount_other" type="number" min="<?= esc_attr(Org_Form::MIN) ?>" max="<?= esc_attr(Org_Form::MAX) ?>" step="0.01" dir="ltr" hidden aria-label="סכום אחר">
       <span class="orgdon-err" data-for="amount" role="alert"></span>
@@ -53,7 +53,7 @@
 
     <div class="orgdon-row orgdon-terms">
       <label><input type="checkbox" name="terms" value="1" required>
-        אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת.<?php if ($terms_url !== ''): ?> <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php endif; ?></label>
+        <span>אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת.<?php if ($terms_url !== ''): ?> <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php endif; ?></span></label>
       <span class="orgdon-err" data-for="terms" role="alert"></span>
     </div>
 
