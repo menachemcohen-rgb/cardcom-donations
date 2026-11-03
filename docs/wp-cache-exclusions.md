@@ -68,7 +68,7 @@ then tells the form to submit. Without `'self'` the browser blocks that page and
 other host name to the canonical one.
 
 ## Security plugins / WAF (Wordfence, Sucuri, iThemes, ModSecurity)
-- Allow `POST /wp-admin/admin-ajax.php` with the actions `org_donation_submit`, `org_donation_refresh`, `org_portal_context`,
+- Allow `POST /wp-admin/admin-ajax.php` with the actions `org_donation_submit`, `org_donation_lp`, `org_donation_refresh`, `org_portal_context`,
   `org_portal_amount`, `org_portal_card`, `org_portal_card_status`.
 - Don't rate-limit those actions harder than the plugin does (10 iframe loads / 5 submits per 10 minutes per IP); the portal polls the
   card status every 3 seconds for up to a minute.

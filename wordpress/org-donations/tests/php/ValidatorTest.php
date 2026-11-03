@@ -81,4 +81,13 @@ final class ValidatorTest extends TestCase
             Org_Form::sf_fields(['firstName', 'termsAccepted', 'lowProfileId', 'unknown', 42])
         );
     }
+
+    public function testCardIsNotRequiredBeforeTheCardSession(): void
+    {
+        $in = ['first_name' => 'א', 'last_name' => 'ב', 'email' => 'a@example.com', 'phone' => '0521234567',
+               'amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'];
+        $this->assertSame([], Org_Validator::signup($in, 1, 50, false)['errors']);
+        $this->assertArrayHasKey('card', Org_Validator::signup($in, 1, 50)['errors']);
+        $this->assertArrayHasKey('amount', Org_Validator::signup(['amount' => '51'] + $in, 1, 50, false)['errors']);
+    }
 }
