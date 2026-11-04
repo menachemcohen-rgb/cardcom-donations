@@ -129,18 +129,24 @@ Deploy to an org that already runs 0.1.x:
 
 1. `DonationSetup.request('UNSCHEDULE_ALL');` and wait until no `Donations …` job is left (as in step 3).
 2. Deploy in this order (or as one deploy):
-   - `objects/Cardcom_Setting__mdt/fields/Receipt_Payment_Mode__c.field-meta.xml` (new picklist; the `Default` record is not changed,
-     so the mode stays blank = Cash);
+   - `objects/Cardcom_Setting__mdt/fields/Receipt_Payment_Mode__c.field-meta.xml` (new picklist), then the record
+     `customMetadata/Cardcom_Setting.Default` (`Receipt_Payment_Mode__c = CreditCardLines`, D33) and the field
+     `Charge_Settings__c.Receipt_Day_Of_Month__c` (default 2);
    - classes `MonthlyReceiptPlanner`, `MonthlyReceiptService`, `MonthlyReceiptQueueable`, `MonthlyReceiptScheduler`,
      `MonthlyReceiptRetryAction`, the new `MonthlyReceiptPlanAction`, and `MonthlyReceiptTest`;
-   - permission sets `Donations_Admin` and `Donations_Integration` (class access to `MonthlyReceiptPlanAction`).
-3. Run `MonthlyReceiptTest` and `MetadataSmokeTest`.
+   - flows `Plan_Contact_Monthly_Receipt` and `Plan_Monthly_Receipts_All`, quick action `Contact.Plan_Monthly_Receipt`;
+   - permission sets `Donations_Admin` (class + both flows) and `Donations_Integration` (class access to `MonthlyReceiptPlanAction`).
+3. Run `MonthlyReceiptTest`, `ChargeSettingsTest` and `MetadataSmokeTest`.
+   Then by hand: Setup → Custom Settings → Charge Settings → Manage → Org Default: `Receipt Day Of Month` = **2** (the field default
+   only applies to new records). Add the action "הפקת קבלה חודשית" to the Contact page layout(s) (Mobile & Lightning Actions) or
+   the Contact Lightning page, and the flow `Plan_Monthly_Receipts_All` to the admins' app utility bar (like `Apply_Charge_Schedule`,
+   README 24).
 4. `DonationSetup.request('SCHEDULE_ALL');` and expect 13 jobs again.
 5. Receipts that already exist keep their old `Deal_Numbers__c` (plain numbers): Cash and DealNumbers still work for them;
    `CreditCardLines` marks them `Failed` / `NO_CHARGE_LINES` instead of sending them.
-6. Sandbox: the 1–10 December run now plans every November charge that has no receipt, including avi@fried.com's (left out on purpose on
-   4.11). Link those charges to a receipt by hand, or point that Contact's email to a test address, before 1.12.
-7. Leave `Receipt_Payment_Mode__c` blank (Cash) until receipt check 6 passes (`docs/receipt-go-live-checklist.md`).
+6. Sandbox: the 2–10 December run now plans every November charge that has no receipt, including avi@fried.com's (left out on purpose on
+   4.11). Link those charges to a receipt by hand, or point that Contact's email to a test address, before 2.12.
+7. Receipt check 6 (`docs/receipt-go-live-checklist.md`) must pass before the first run on the 2nd: the default is credit card lines.
 
 ## Rollback
 

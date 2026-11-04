@@ -46,11 +46,14 @@ public without sharing class MonthlyReceiptService {
     return out;
   }
 
-  /** Receipt_Payment_Mode__c; blank → the older checkbox Receipt_Link_Deal_Numbers__c (true = DealNumbers, false = Cash). */
+  /**
+   * Receipt_Payment_Mode__c. Blank → credit card lines (every donation is a card charge; client, 4.11.2026), unless the older
+   * checkbox Receipt_Link_Deal_Numbers__c is on (→ DealNumbers). Cash only when chosen explicitly.
+   */
   public static String paymentMode(Cardcom_Setting__mdt s) {
     if (String.isNotBlank(s.Receipt_Payment_Mode__c))
       return s.Receipt_Payment_Mode__c;
-    return s.Receipt_Link_Deal_Numbers__c == true ? MODE_DEAL_NUMBERS : MODE_CASH;
+    return s.Receipt_Link_Deal_Numbers__c == true ? MODE_DEAL_NUMBERS : MODE_CARD_LINES;
   }
 
   /**
@@ -127,9 +130,9 @@ public without sharing class MonthlyReceiptService {
     r.Email_Sent_To__c = email;
     Map<String, Object> body = new Map<String, Object>{ 'Document' => doc }; // ApiName/ApiPassword added by CardcomService
     // One product line = donor's monthly total; the payment block must equal it or Cardcom returns 6311 (U7).
-    // Cash (default, D28): the only block that passed on test terminal 1001 (2.11.2026), but the receipt then shows cash.
-    // CreditCardLines: CustomFields, one credit card line per charge — not yet verified with Cardcom (9996 on 2.11 with foreign
-    // transactions; Q15). DealNumbers: on 1001 alone → 6311, only [0] linked (U8).
+    // CreditCardLines (default, D33): CustomFields, one credit card line per charge — verify with Cardcom before the first run
+    // (9996 on 2.11 with transactions of another company; Q15). Cash: passed on 1001 (2.11.2026), but the receipt shows cash.
+    // DealNumbers: on 1001 alone → 6311, only [0] linked (U8).
     String mode = paymentMode(s);
     if (mode == MODE_CARD_LINES)
       body.put('CustomFields', cardLines(r, charges));

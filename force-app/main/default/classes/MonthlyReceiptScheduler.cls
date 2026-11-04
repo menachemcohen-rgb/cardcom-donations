@@ -1,6 +1,6 @@
 /**
  * Daily at Charge_Settings__c.Receipt_Time__c (B6.11, B9). Runs from Receipt_Day_Of_Month__c to the 10th, skipping rest days
- * (so a 1st on Shabbat issues on Sunday, E16 of B6.13). A run plans whenever last month still has charges waiting for a receipt
+ * (so a 2nd on Shabbat issues on Sunday, E16 of B6.13; the day is the 2nd by default). A run plans whenever last month still has charges waiting for a receipt
  * (not "whenever no receipt exists": one hand-made or partial receipt must not stop the whole month); otherwise it retries Failed ones.
  */
 public without sharing class MonthlyReceiptScheduler implements Schedulable {
@@ -20,7 +20,7 @@ public without sharing class MonthlyReceiptScheduler implements Schedulable {
   static String run(Date today) {
     Date prev = today.toStartOfMonth().addMonths(-1);
     Decimal day = ChargeSettings.get().Receipt_Day_Of_Month__c;
-    Integer targetDay = day == null ? 1 : day.intValue();
+    Integer targetDay = day == null ? 2 : day.intValue(); // the 2nd of the month by default (client, 4.11.2026)
     if (today.day() > 10 || today.day() < targetDay || ChargeCalendar.isRestDay(today))
       return 'skipped'; // window: target day .. 10th
     MonthlyReceiptQueueable.resetStale();

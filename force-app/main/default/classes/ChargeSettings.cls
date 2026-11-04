@@ -22,7 +22,7 @@ public with sharing class ChargeSettings {
       Max_Retries__c = 3,
       Retry_Delays_Minutes__c = '60,240',
       Max_Consecutive_Failures__c = 3,
-      Receipt_Day_Of_Month__c = 1,
+      Receipt_Day_Of_Month__c = 2,
       Receipt_Time__c = '07:00',
       Receipt_Max_Attempts__c = 5,
       Reconcile_Time__c = '02:30',

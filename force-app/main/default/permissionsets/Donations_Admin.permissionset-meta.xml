@@ -618,6 +618,14 @@
     </flowAccesses>
     <flowAccesses>
         <enabled>true</enabled>
+        <flow>Plan_Contact_Monthly_Receipt</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
+        <flow>Plan_Monthly_Receipts_All</flow>
+    </flowAccesses>
+    <flowAccesses>
+        <enabled>true</enabled>
         <flow>Cancel_Pledge</flow>
     </flowAccesses>
     <flowAccesses>

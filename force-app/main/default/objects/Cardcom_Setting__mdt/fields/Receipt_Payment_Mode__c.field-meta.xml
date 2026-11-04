@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Receipt_Payment_Mode__c</fullName>
-    <description>Payment block of the monthly receipt: Cash = top-level Cash (default, D28); CreditCardLines = CustomFields, one credit card line per charge; DealNumbers = DealNumbers[]. Blank = Receipt_Link_Deal_Numbers__c decides (true = DealNumbers, false = Cash). Turn on CreditCardLines only after a manual test on terminal 1001 and Cardcom's approval for the production terminal (Q15).</description>
+    <description>Payment block of the monthly receipt: CreditCardLines = CustomFields, one credit card line per charge (default, D33: every donation is a card charge); Cash = top-level Cash; DealNumbers = DealNumbers[]. Blank = CreditCardLines, or DealNumbers when Receipt_Link_Deal_Numbers__c is on. Verify CreditCardLines on terminal 1001 and with Cardcom for production (Q15) before the first receipt run.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>Cash = מזומן (ברירת מחדל); CreditCardLines = שורת אשראי לכל חיוב; DealNumbers = קישור מספרי עסקאות. ריק = לפי Receipt Link Deal Numbers.</inlineHelpText>
+    <inlineHelpText>CreditCardLines = שורת אשראי לכל חיוב (ברירת מחדל); Cash = מזומן; DealNumbers = קישור מספרי עסקאות. ריק = אשראי.</inlineHelpText>
     <label>Receipt Payment Mode</label>
     <required>false</required>
     <type>Picklist</type>

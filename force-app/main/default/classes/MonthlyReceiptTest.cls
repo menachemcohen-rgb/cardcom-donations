@@ -30,11 +30,22 @@ private class MonthlyReceiptTest {
       Status__c = status,
       Total_Amount__c = total,
       Charge_Count__c = 2,
-      Deal_Numbers__c = '[7000,7001]',
+      Deal_Numbers__c = twoCharges(total),
       Attempt_Count__c = attempts
     );
     insert r;
     return r;
+  }
+
+  /** Deal_Numbers__c of two October charges (deals 7000, 7001) adding up to total (planner format). */
+  static String twoCharges(Decimal total) {
+    Decimal half = (total / 2).setScale(2);
+    return JSON.serialize(
+      new List<Object>{
+        new Map<String, Object>{ 'd' => 7000, 'sum' => half, 'date' => '2026-10-01', 'auth' => '0654321' },
+        new Map<String, Object>{ 'd' => 7001, 'sum' => total - half, 'date' => '2026-10-02', 'auth' => '0654322' }
+      }
+    );
   }
 
   static Map<String, Object> issued(Long docNumber) {
@@ -138,8 +149,10 @@ private class MonthlyReceiptTest {
   @IsTest
   static void schedulerWindowAndRestDays() {
     setup();
-    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 1)), '1st on Shabbat');
-    Assert.areEqual('retried', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 2)), 'next working day; nothing to plan');
+    Assert.areEqual(2, ChargeSettings.get().Receipt_Day_Of_Month__c.intValue(), 'receipts on the 2nd by default');
+    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 11, 1)), 'before the 2nd');
+    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2027, 1, 2)), '2nd on Shabbat');
+    Assert.areEqual('retried', MonthlyReceiptScheduler.run(Date.newInstance(2027, 1, 3)), 'next working day; nothing to plan');
     Opportunity july = TestDataFactory.activePledges(1, 'OnceDaily')[0];
     success(july, Date.newInstance(2026, 7, 20), 'AM', 3);
     Assert.areEqual('planned', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 2)), 'July has a charge without a receipt');
@@ -165,9 +178,10 @@ private class MonthlyReceiptTest {
 
   // ---------------------------------------------------------------- queueable / service
   @IsTest
-  static void issuesReceiptWithCashByDefault() {
-    // TC31
+  static void issuesReceiptWithCashWhenChosen() {
+    // TC31 with Receipt_Payment_Mode__c = Cash (the default is credit card lines, D33)
     setup();
+    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'Cash';
     Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
     update new Contact(Id = p.Donor_Contact__c, Donor_Tax_Id__c = '123456782');
     Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 6, 0);
@@ -199,7 +213,8 @@ private class MonthlyReceiptTest {
 
     Map<String, Object> body = m.lastBody(DOC_PATH);
     Map<String, Object> doc = (Map<String, Object>) body.get('Document');
-    Assert.areEqual(6, num(body.get('Cash')), 'Cash = total (B5.10 default)');
+    Assert.areEqual(6, num(body.get('Cash')), 'Cash = total');
+    Assert.isFalse(body.containsKey('CustomFields'));
     Assert.isFalse(body.containsKey('DealNumbers'));
     Assert.isFalse(body.containsKey('TerminalNumber'), 'CreateDocument has no TerminalNumber (B5.7)');
     Assert.areEqual('{!$Credential.Cardcom_EC.ApiName}', body.get('ApiName'));
@@ -430,19 +445,30 @@ private class MonthlyReceiptTest {
   }
 
   @IsTest
-  static void defaultModeIsCash() {
+  static void defaultModeIsCreditCardLines() {
     Cardcom_Setting__mdt s = TestDataFactory.settings();
-    Assert.areEqual('Cash', MonthlyReceiptService.paymentMode(s), 'blank mode + checkbox off = Cash (D28)');
+    Assert.areEqual('CreditCardLines', MonthlyReceiptService.paymentMode(s), 'blank mode = credit card (D33)');
     s.Receipt_Link_Deal_Numbers__c = true;
-    Assert.areEqual('DealNumbers', MonthlyReceiptService.paymentMode(s), 'blank mode falls back to the checkbox');
-    s.Receipt_Payment_Mode__c = 'CreditCardLines';
-    Assert.areEqual('CreditCardLines', MonthlyReceiptService.paymentMode(s), 'the picklist wins');
+    Assert.areEqual('DealNumbers', MonthlyReceiptService.paymentMode(s), 'blank mode + the old checkbox on = DealNumbers');
+    s.Receipt_Payment_Mode__c = 'Cash';
+    Assert.areEqual('Cash', MonthlyReceiptService.paymentMode(s), 'the picklist wins');
+  }
+
+  @IsTest
+  static void defaultReceiptSendsCreditCardLines() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    receipt(p.Donor_Contact__c, 'Pending', 6, 0);
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(50140));
+    issue();
+    Map<String, Object> body = m.lastBody(DOC_PATH);
+    Assert.isFalse(body.containsKey('Cash'));
+    Assert.areEqual(2, ((List<Object>) body.get('CustomFields')).size());
   }
 
   @IsTest
   static void creditCardLinesOneLinePerChargeAndNoCash() {
     setup();
-    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'CreditCardLines';
     Opportunity p = TestDataFactory.activePledges(1, 'TwiceDaily')[0];
     Charge__c a = success(p, Date.newInstance(2026, 10, 5), 'AM', 3);
     Charge__c b = success(p, Date.newInstance(2026, 10, 5), 'PM', 2.5);
@@ -476,9 +502,10 @@ private class MonthlyReceiptTest {
   static void creditCardLinesNeedPerChargeDetails() {
     // receipts planned before the change hold plain deal numbers: fail, never fall back to cash
     setup();
-    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'CreditCardLines';
     Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
-    Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 6, 0); // '[7000,7001]'
+    Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 6, 0);
+    r.Deal_Numbers__c = '[7000,7001]'; // old format
+    update r;
     CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(1));
     issue();
     Monthly_Receipt__c after = [SELECT Status__c, Error_Code__c, Attempt_Count__c FROM Monthly_Receipt__c WHERE Id = :r.Id];
@@ -641,7 +668,48 @@ private class MonthlyReceiptTest {
     }
     Assert.isTrue(r.ok, r.message);
     Assert.isNotNull(r.batchJobId);
+    Assert.areEqual(1, r.donorCount);
     Assert.areEqual(1, [SELECT COUNT() FROM Monthly_Receipt__c]);
     Assert.areEqual(a.Donor_Contact__c, [SELECT Contact__c FROM Monthly_Receipt__c].Contact__c);
+  }
+
+  @IsTest
+  static void planActionForAllDonors() {
+    // the general button: every micro-pledge donor with an October charge waiting for a receipt
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity b = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity done = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(a, Date.newInstance(2026, 10, 5), 'AM', 3);
+    success(b, Date.newInstance(2026, 10, 6), 'AM', 3);
+    receipt(done.Donor_Contact__c, 'Issued', 6, 1);
+    success(done, Date.newInstance(2026, 10, 20), 'AM', 3); // already has an issued receipt: not counted (N78)
+    MonthlyReceiptPlanAction.Request q = new MonthlyReceiptPlanAction.Request();
+    q.periodMonth = Date.newInstance(2026, 10, 9);
+    q.allDonors = true;
+    q.contactIds = new List<Id>{ a.Donor_Contact__c }; // ignored with allDonors
+    MonthlyReceiptPlanAction.Result r;
+    System.runAs(admin(true)) {
+      Test.startTest();
+      r = MonthlyReceiptPlanAction.plan(new List<MonthlyReceiptPlanAction.Request>{ q })[0];
+      Test.stopTest();
+    }
+    Assert.isTrue(r.ok, r.message);
+    Assert.areEqual(2, r.donorCount);
+    Assert.isTrue(r.message.contains('אוקטובר 2026'), r.message);
+    Assert.areEqual(2, [SELECT COUNT() FROM Monthly_Receipt__c WHERE Status__c = 'Pending']);
+  }
+
+  @IsTest
+  static void planActionWithNothingWaitingStartsNothing() {
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    MonthlyReceiptPlanAction.Result r;
+    System.runAs(admin(true)) {
+      r = planAction(OCT, new List<Id>{ a.Donor_Contact__c });
+    }
+    Assert.isFalse(r.ok);
+    Assert.areEqual(0, r.donorCount);
+    Assert.isNull(r.batchJobId);
   }
 }

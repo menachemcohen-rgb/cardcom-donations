@@ -33,6 +33,7 @@ only), a thank-you email with signed donor links (card change / amount change), 
 | E14 | The 5 stages are **added** to the org's existing `OpportunityStage` StandardValueSet; a partial set is never deployed. |
 | E15/E16 | Encrypted fields (`Token__c`, `Donor_Tax_Id__c`) are never used in SOQL filters, report/list-view filters or matching rules. ID matching uses `Contact.Tax_Id_Hash__c`. |
 | D28 | Monthly receipt (Q14, Q15, decided 2026-11-02): document type `DonationReceipt`; the Israeli ID stays optional (sent when known); payment block = top-level `Cash` = total, `Receipt_Link_Deal_Numbers__c = false`. Section 46 validity is the client's question to Cardcom, outside the Salesforce scope. |
+| D33 | Monthly receipt defaults (client, 2026-11-04): receipts are created and sent on the **2nd** of each month (`Receipt_Day_Of_Month__c = 2`), and the payment block is **credit card** — one `CustomFields` line per charge (`Receipt_Payment_Mode__c = CreditCardLines`), replacing D28's `Cash`. Buttons: "הפקת קבלה חודשית" on the Contact and "הפקת קבלות חודשיות לכל התורמים" (N99). |
 | E1–E13 | Canonical names for fields and methods that were inconsistent in Parts A/B (see `CLAUDE.md` C3). |
 
 ## Repository layout
