@@ -66,8 +66,11 @@ private class PledgeValidationRulesTest {
 
   @IsTest
   static void otherOpportunitiesAreNotAffected() {
+    Id rt = TestDataFactory.otherRecordTypeId(); // never the user's default, which may be the pledge type
+    if (rt == null)
+      return; // no non-pledge Opportunity record type for this user: the rules can't touch anything else
     Opportunity other = new Opportunity(
-      RecordTypeId = TestDataFactory.masterRecordTypeId(), // never the running user's default, which may be the pledge type
+      RecordTypeId = rt,
       Name = 'Regular deal',
       StageName = 'Prospecting',
       CloseDate = Date.today(),

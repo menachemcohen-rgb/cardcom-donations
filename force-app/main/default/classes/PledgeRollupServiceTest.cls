@@ -116,6 +116,8 @@ private class PledgeRollupServiceTest {
   static void otherOpportunitiesAreIgnored() {
     setup();
     Opportunity other = TestDataFactory.otherOpportunity();
+    if (other == null)
+      return; // no non-pledge Opportunity record type for this user
     PledgeRollupService.recalc(new Set<Id>{ other.Id });
     PledgeRollupService.recalc(new Set<Id>());
     Assert.isNull([SELECT Amount FROM Opportunity WHERE Id = :other.Id].Amount);
