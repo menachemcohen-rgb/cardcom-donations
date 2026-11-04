@@ -123,6 +123,25 @@ Then `Cardcom_Setting__mdt.Default.Allowed_Return_Hosts__c` = the site host.
 `docs/receipt-go-live-checklist.md`. Production go-live only after the open questions marked "blocks go-live" in
 `docs/open-questions.md` are answered.
 
+## Release 0.2.0 — monthly receipt payment mode (N94–N97)
+
+Deploy to an org that already runs 0.1.x:
+
+1. `DonationSetup.request('UNSCHEDULE_ALL');` and wait until no `Donations …` job is left (as in step 3).
+2. Deploy in this order (or as one deploy):
+   - `objects/Cardcom_Setting__mdt/fields/Receipt_Payment_Mode__c.field-meta.xml` (new picklist; the `Default` record is not changed,
+     so the mode stays blank = Cash);
+   - classes `MonthlyReceiptPlanner`, `MonthlyReceiptService`, `MonthlyReceiptQueueable`, `MonthlyReceiptScheduler`,
+     `MonthlyReceiptRetryAction`, the new `MonthlyReceiptPlanAction`, and `MonthlyReceiptTest`;
+   - permission sets `Donations_Admin` and `Donations_Integration` (class access to `MonthlyReceiptPlanAction`).
+3. Run `MonthlyReceiptTest` and `MetadataSmokeTest`.
+4. `DonationSetup.request('SCHEDULE_ALL');` and expect 13 jobs again.
+5. Receipts that already exist keep their old `Deal_Numbers__c` (plain numbers): Cash and DealNumbers still work for them;
+   `CreditCardLines` marks them `Failed` / `NO_CHARGE_LINES` instead of sending them.
+6. Sandbox: the 1–10 December run now plans every November charge that has no receipt, including avi@fried.com's (left out on purpose on
+   4.11). Link those charges to a receipt by hand, or point that Contact's email to a test address, before 1.12.
+7. Leave `Receipt_Payment_Mode__c` blank (Cash) until receipt check 6 passes (`docs/receipt-go-live-checklist.md`).
+
 ## Rollback
 
 Nothing below deletes data; pledges, charges and receipts stay for audit.

@@ -4,6 +4,9 @@
  * A receipt that already left Pending is never touched again (N78): late charges stay unlinked for the "Success without receipt" report.
  * MonthlyReceiptPlanner(period, contactIds) limits planning and sending to those Contacts, so a sandbox run can't send documents
  * to real donors (the scheduled run always passes null = everyone).
+ * Deal_Numbers__c holds one entry per charge: {"d": deal number, "sum": amount, "date": yyyy-MM-dd (Israel), "auth": approval
+ * number}, so the receipt can carry one credit card line per charge (Receipt_Payment_Mode__c = CreditCardLines). Receipts planned
+ * before this format hold plain deal numbers; MonthlyReceiptService reads both.
  */
 public without sharing class MonthlyReceiptPlanner implements Database.Batchable<SObject>, Database.Stateful {
   final Date period;
@@ -39,7 +42,7 @@ public without sharing class MonthlyReceiptPlanner implements Database.Batchable
     Set<Id> contactIds = new Map<Id, Contact>(scope).keySet();
     Map<Id, List<Charge__c>> byContact = new Map<Id, List<Charge__c>>();
     for (Charge__c ch : [
-      SELECT Id, Contact__c, Amount__c, Cardcom_Deal_Number__c
+      SELECT Id, Contact__c, Amount__c, Cardcom_Deal_Number__c, Cardcom_Approval_Number__c, Executed_At__c, Run_Date__c
       FROM Charge__c
       WHERE
         Contact__c IN :contactIds
@@ -71,7 +74,7 @@ public without sharing class MonthlyReceiptPlanner implements Database.Batchable
       List<Object> deals = new List<Object>();
       for (Charge__c ch : byContact.get(cid)) {
         total += ch.Amount__c;
-        deals.add(Long.valueOf(ch.Cardcom_Deal_Number__c));
+        deals.add(entry(ch));
       }
       rs.add(
         new Monthly_Receipt__c(
@@ -93,6 +96,21 @@ public without sharing class MonthlyReceiptPlanner implements Database.Batchable
       for (Charge__c ch : byContact.get(r.Contact__c))
         link.add(new Charge__c(Id = ch.Id, Monthly_Receipt__c = r.Id));
     update link;
+  }
+
+  /** One charge in Deal_Numbers__c (see the class comment). */
+  @TestVisible
+  static Map<String, Object> entry(Charge__c ch) {
+    Map<String, Object> e = new Map<String, Object>{
+      'd' => Long.valueOf(ch.Cardcom_Deal_Number__c),
+      'sum' => ch.Amount__c,
+      'date' => ch.Executed_At__c != null
+        ? ch.Executed_At__c.format('yyyy-MM-dd', 'Asia/Jerusalem')
+        : Datetime.newInstance(ch.Run_Date__c, Time.newInstance(12, 0, 0, 0)).format('yyyy-MM-dd')
+    };
+    if (String.isNotBlank(ch.Cardcom_Approval_Number__c))
+      e.put('auth', ch.Cardcom_Approval_Number__c);
+    return e;
   }
 
   public void finish(Database.BatchableContext bc) {

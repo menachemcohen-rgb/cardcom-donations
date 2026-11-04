@@ -1,7 +1,7 @@
 {
   "name": "cardcom-donations",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cardcom ↔ WordPress ↔ Salesforce micro-donations",
   "scripts": {
     "prettier": "prettier --write \"force-app/**/*.{cls,trigger,xml,json}\" \"wordpress/**/*.{js,css}\"",
