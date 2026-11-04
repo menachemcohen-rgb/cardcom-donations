@@ -75,6 +75,10 @@
         <value xsi:type="xsd:boolean">false</value>
     </values>
     <values>
+        <field>Receipt_Payment_Mode__c</field>
+        <value xsi:type="xsd:string">CreditCardLines</value>
+    </values>
+    <values>
         <field>Receipt_Product_Description__c</field>
         <value xsi:type="xsd:string">תרומות חודש {MONTH}</value>
     </values>

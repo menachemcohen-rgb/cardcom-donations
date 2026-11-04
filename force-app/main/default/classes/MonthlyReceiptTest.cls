@@ -16,6 +16,7 @@ private class MonthlyReceiptTest {
     String tid = String.valueOf(dealSeq++);
     c.Cardcom_Tranzaction_Id__c = tid;
     c.Cardcom_Deal_Number__c = tid;
+    c.Cardcom_Approval_Number__c = '06' + tid;
     c.Executed_At__c = Datetime.newInstance(runDate, Time.newInstance(8, 0, 0, 0));
     insert c;
     return c;
@@ -29,11 +30,22 @@ private class MonthlyReceiptTest {
       Status__c = status,
       Total_Amount__c = total,
       Charge_Count__c = 2,
-      Deal_Numbers__c = '[7000,7001]',
+      Deal_Numbers__c = twoCharges(total),
       Attempt_Count__c = attempts
     );
     insert r;
     return r;
+  }
+
+  /** Deal_Numbers__c of two October charges (deals 7000, 7001) adding up to total (planner format). */
+  static String twoCharges(Decimal total) {
+    Decimal half = (total / 2).setScale(2);
+    return JSON.serialize(
+      new List<Object>{
+        new Map<String, Object>{ 'd' => 7000, 'sum' => half, 'date' => '2026-10-01', 'auth' => '0654321' },
+        new Map<String, Object>{ 'd' => 7001, 'sum' => total - half, 'date' => '2026-10-02', 'auth' => '0654322' }
+      }
+    );
   }
 
   static Map<String, Object> issued(Long docNumber) {
@@ -91,7 +103,13 @@ private class MonthlyReceiptTest {
     Assert.areEqual('Pending', r.Status__c);
     Assert.areEqual(11, r.Total_Amount__c.intValue(), 'both pledges, Success, October, not flagged');
     Assert.areEqual(3, r.Charge_Count__c.intValue());
-    Assert.areEqual(3, ((List<Object>) JSON.deserializeUntyped(r.Deal_Numbers__c)).size());
+    List<Object> entries = (List<Object>) JSON.deserializeUntyped(r.Deal_Numbers__c);
+    Assert.areEqual(3, entries.size());
+    Map<String, Object> first = (Map<String, Object>) entries[0];
+    Assert.areEqual(Long.valueOf(a.Cardcom_Deal_Number__c), Long.valueOf(String.valueOf(first.get('d'))));
+    Assert.areEqual(3, num(first.get('sum')));
+    Assert.areEqual('2026-10-01', first.get('date'));
+    Assert.areEqual('06' + a.Cardcom_Deal_Number__c, first.get('auth'));
     Assert.areEqual(3, [SELECT COUNT() FROM Charge__c WHERE Monthly_Receipt__c = :r.Id]);
     Assert.isNull([SELECT Monthly_Receipt__c FROM Charge__c WHERE Id = :nov.Id].Monthly_Receipt__c);
     Assert.isNull([SELECT Monthly_Receipt__c FROM Charge__c WHERE Id = :recon.Id].Monthly_Receipt__c);
@@ -131,8 +149,13 @@ private class MonthlyReceiptTest {
   @IsTest
   static void schedulerWindowAndRestDays() {
     setup();
-    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 1)), '1st on Shabbat');
-    Assert.areEqual('planned', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 2)), 'next working day');
+    Assert.areEqual(2, ChargeSettings.get().Receipt_Day_Of_Month__c.intValue(), 'receipts on the 2nd by default');
+    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 11, 1)), 'before the 2nd');
+    Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2027, 1, 2)), '2nd on Shabbat');
+    Assert.areEqual('retried', MonthlyReceiptScheduler.run(Date.newInstance(2027, 1, 3)), 'next working day; nothing to plan');
+    Opportunity july = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(july, Date.newInstance(2026, 7, 20), 'AM', 3);
+    Assert.areEqual('planned', MonthlyReceiptScheduler.run(Date.newInstance(2026, 8, 2)), 'July has a charge without a receipt');
     Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 11, 11)), 'after the 10th');
     ChargeSettings.overrideValue.Receipt_Day_Of_Month__c = 3;
     Assert.areEqual('skipped', MonthlyReceiptScheduler.run(Date.newInstance(2026, 11, 2)), 'before Receipt_Day_Of_Month__c');
@@ -155,9 +178,10 @@ private class MonthlyReceiptTest {
 
   // ---------------------------------------------------------------- queueable / service
   @IsTest
-  static void issuesReceiptWithCashByDefault() {
-    // TC31
+  static void issuesReceiptWithCashWhenChosen() {
+    // TC31 with Receipt_Payment_Mode__c = Cash (the default is credit card lines, D33)
     setup();
+    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'Cash';
     Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
     update new Contact(Id = p.Donor_Contact__c, Donor_Tax_Id__c = '123456782');
     Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 6, 0);
@@ -189,7 +213,8 @@ private class MonthlyReceiptTest {
 
     Map<String, Object> body = m.lastBody(DOC_PATH);
     Map<String, Object> doc = (Map<String, Object>) body.get('Document');
-    Assert.areEqual(6, num(body.get('Cash')), 'Cash = total (B5.10 default)');
+    Assert.areEqual(6, num(body.get('Cash')), 'Cash = total');
+    Assert.isFalse(body.containsKey('CustomFields'));
     Assert.isFalse(body.containsKey('DealNumbers'));
     Assert.isFalse(body.containsKey('TerminalNumber'), 'CreateDocument has no TerminalNumber (B5.7)');
     Assert.areEqual('{!$Credential.Cardcom_EC.ApiName}', body.get('ApiName'));
@@ -410,5 +435,281 @@ private class MonthlyReceiptTest {
       [SELECT Status__c FROM Monthly_Receipt__c WHERE Contact__c = :a.Donor_Contact__c].Status__c,
       'the given donor is sent'
     );
+  }
+
+  // ---------------------------------------------------------------- payment mode (cash vs credit card lines)
+  /** Plans October for one donor in this transaction (no batch), so the test can still issue() afterwards. */
+  static Monthly_Receipt__c planNow(Id contactId) {
+    new MonthlyReceiptPlanner(OCT).execute(null, [SELECT Id FROM Contact WHERE Id = :contactId]);
+    return [SELECT Id, Total_Amount__c FROM Monthly_Receipt__c WHERE Contact__c = :contactId];
+  }
+
+  @IsTest
+  static void defaultModeIsCreditCardLines() {
+    Cardcom_Setting__mdt s = TestDataFactory.settings();
+    Assert.areEqual('CreditCardLines', MonthlyReceiptService.paymentMode(s), 'blank mode = credit card (D33)');
+    s.Receipt_Link_Deal_Numbers__c = true;
+    Assert.areEqual('DealNumbers', MonthlyReceiptService.paymentMode(s), 'blank mode + the old checkbox on = DealNumbers');
+    s.Receipt_Payment_Mode__c = 'Cash';
+    Assert.areEqual('Cash', MonthlyReceiptService.paymentMode(s), 'the picklist wins');
+  }
+
+  @IsTest
+  static void defaultReceiptSendsCreditCardLines() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    receipt(p.Donor_Contact__c, 'Pending', 6, 0);
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(50140));
+    issue();
+    Map<String, Object> body = m.lastBody(DOC_PATH);
+    Assert.isFalse(body.containsKey('Cash'));
+    Assert.areEqual(2, ((List<Object>) body.get('CustomFields')).size());
+  }
+
+  @IsTest
+  static void creditCardLinesOneLinePerChargeAndNoCash() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'TwiceDaily')[0];
+    Charge__c a = success(p, Date.newInstance(2026, 10, 5), 'AM', 3);
+    Charge__c b = success(p, Date.newInstance(2026, 10, 5), 'PM', 2.5);
+    Charge__c c = success(p, Date.newInstance(2026, 10, 30), 'AM', 3);
+    Monthly_Receipt__c r = planNow(p.Donor_Contact__c);
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(50130));
+    issue();
+
+    Assert.areEqual('Issued', [SELECT Status__c FROM Monthly_Receipt__c WHERE Id = :r.Id].Status__c);
+    Map<String, Object> body = m.lastBody(DOC_PATH);
+    Assert.isFalse(body.containsKey('Cash'), 'no silent cash block');
+    Assert.isFalse(body.containsKey('DealNumbers'));
+    List<Object> lines = (List<Object>) body.get('CustomFields');
+    Assert.areEqual(3, lines.size(), 'one credit card line per charge');
+    Decimal total = 0;
+    for (Object o : lines)
+      total += Decimal.valueOf(String.valueOf(((Map<String, Object>) o).get('Sum')));
+    Assert.isTrue(total == 8.5, 'lines add up to the total: ' + total);
+    Assert.isTrue(total == r.Total_Amount__c, 'equals Total_Amount__c');
+    Map<String, Object> first = (Map<String, Object>) lines[0];
+    Assert.areEqual(Long.valueOf(a.Cardcom_Deal_Number__c), Long.valueOf(String.valueOf(first.get('TransactionID'))));
+    Assert.areEqual('05/10/2026', first.get('TranDate'));
+    Assert.areEqual('06' + a.Cardcom_Deal_Number__c, first.get('asmacta'));
+    Assert.areEqual('תרומה בכרטיס אשראי', first.get('Description'));
+    Map<String, Object> doc = (Map<String, Object>) body.get('Document');
+    Object unitCost = ((Map<String, Object>) ((List<Object>) doc.get('Products'))[0]).get('UnitCost');
+    Assert.isTrue(Decimal.valueOf(String.valueOf(unitCost)) == 8.5, 'one product line = the total');
+  }
+
+  @IsTest
+  static void creditCardLinesNeedPerChargeDetails() {
+    // receipts planned before the change hold plain deal numbers: fail, never fall back to cash
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 6, 0);
+    r.Deal_Numbers__c = '[7000,7001]'; // old format
+    update r;
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(1));
+    issue();
+    Monthly_Receipt__c after = [SELECT Status__c, Error_Code__c, Attempt_Count__c FROM Monthly_Receipt__c WHERE Id = :r.Id];
+    Assert.areEqual('Failed', after.Status__c);
+    Assert.areEqual('NO_CHARGE_LINES', after.Error_Code__c);
+    Assert.areEqual(5, after.Attempt_Count__c.intValue(), 'no automatic retry');
+    Assert.areEqual(0, m.requestsTo(DOC_PATH).size(), 'nothing sent to Cardcom');
+  }
+
+  @IsTest
+  static void creditCardLinesMustMatchTheTotal() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Monthly_Receipt__c r = receipt(p.Donor_Contact__c, 'Pending', 7, 0);
+    r.Deal_Numbers__c = '[{"d":7000,"sum":3,"date":"2026-10-01"},{"d":7001,"sum":3,"date":"2026-10-02"}]';
+    try {
+      MonthlyReceiptService.cardLines(r, MonthlyReceiptService.chargeLines(r.Deal_Numbers__c));
+      Assert.fail('expected LINES_MISMATCH');
+    } catch (MonthlyReceiptService.ReceiptException e) {
+      Assert.areEqual('LINES_MISMATCH', e.code);
+    }
+    try {
+      MonthlyReceiptService.cardLines(r, new List<MonthlyReceiptService.ChargeLine>());
+      Assert.fail('expected NO_CHARGE_LINES');
+    } catch (MonthlyReceiptService.ReceiptException e) {
+      Assert.areEqual('NO_CHARGE_LINES', e.code);
+    }
+  }
+
+  @IsTest
+  static void creditCardLinesRejectedByCardcomIsFinalAndNotResentAsCash() {
+    setup();
+    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'CreditCardLines';
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(p, Date.newInstance(2026, 10, 5), 'AM', 3);
+    Monthly_Receipt__c r = planNow(p.Donor_Contact__c);
+    CardcomMock m = CardcomMock.install()
+      .always(DOC_PATH, 200, new Map<String, Object>{ 'ResponseCode' => 9996, 'Description' => 'מזהה תשלום לא קיים עבור חברה זו' });
+    issue();
+    Monthly_Receipt__c after = [SELECT Status__c, Error_Code__c, Attempt_Count__c FROM Monthly_Receipt__c WHERE Id = :r.Id];
+    Assert.areEqual('Failed', after.Status__c);
+    Assert.areEqual('9996', after.Error_Code__c);
+    Assert.areEqual(5, after.Attempt_Count__c.intValue());
+    Assert.areEqual(1, m.requestsTo(DOC_PATH).size());
+    Assert.isFalse(m.lastBody(DOC_PATH).containsKey('Cash'));
+  }
+
+  @IsTest
+  static void dealNumbersModeReadsTheNewFormat() {
+    setup();
+    CardcomService.settingsOverride.Receipt_Payment_Mode__c = 'DealNumbers';
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Charge__c a = success(p, Date.newInstance(2026, 10, 5), 'AM', 3);
+    planNow(p.Donor_Contact__c);
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(50131));
+    issue();
+    Map<String, Object> body = m.lastBody(DOC_PATH);
+    Assert.isFalse(body.containsKey('Cash'));
+    List<Object> deals = (List<Object>) body.get('DealNumbers');
+    Assert.areEqual(1, deals.size());
+    Assert.areEqual(Long.valueOf(a.Cardcom_Deal_Number__c), Long.valueOf(String.valueOf(((Map<String, Object>) deals[0]).get('DealNumber'))));
+  }
+
+  // ---------------------------------------------------------------- bugs from the 4.11 sandbox run
+  @IsTest
+  static void retryActionSendsOnlyTheChosenReceipt() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity q = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Monthly_Receipt__c chosen = receipt(p.Donor_Contact__c, 'Failed', 6, 5);
+    Monthly_Receipt__c other = receipt(q.Donor_Contact__c, 'Pending', 6, 0);
+    CardcomMock m = CardcomMock.install().always(DOC_PATH, 200, issued(50127));
+    Test.startTest();
+    MonthlyReceiptRetryAction.retry(new List<MonthlyReceiptRetryAction.Request>{ request(chosen.Id) });
+    Test.stopTest();
+    Assert.areEqual('Issued', [SELECT Status__c FROM Monthly_Receipt__c WHERE Id = :chosen.Id].Status__c);
+    Assert.areEqual('Pending', [SELECT Status__c FROM Monthly_Receipt__c WHERE Id = :other.Id].Status__c, 'other donors untouched');
+    Assert.areEqual(1, m.requestsTo(DOC_PATH).size());
+  }
+
+  @IsTest
+  static void aHandMadeReceiptDoesNotStopPlanningTheMonth() {
+    setup();
+    Opportunity done = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity waiting = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    receipt(done.Donor_Contact__c, 'Issued', 6, 1);
+    success(done, Date.newInstance(2026, 10, 20), 'AM', 3); // late charge of an issued receipt: never planned (N78)
+    Assert.isFalse(MonthlyReceiptScheduler.hasUnplannedCharges(OCT), 'a late charge alone does not re-run the planner');
+    success(waiting, Date.newInstance(2026, 10, 20), 'AM', 3);
+    Assert.isTrue(MonthlyReceiptScheduler.hasUnplannedCharges(OCT));
+    Test.startTest();
+    Assert.areEqual('planned', MonthlyReceiptScheduler.run(Date.newInstance(2026, 11, 2)));
+    Test.stopTest();
+    Assert.areEqual(1, [SELECT COUNT() FROM Monthly_Receipt__c WHERE Contact__c = :waiting.Donor_Contact__c]);
+  }
+
+  static User admin(Boolean withPermission) {
+    User u;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      String uniq = String.valueOf(Crypto.getRandomInteger()).replace('-', '');
+      u = new User(
+        ProfileId = UserInfo.getProfileId(),
+        Username = 'rcpt-admin-' + uniq + '@example.com.test',
+        Email = 'rcpt-admin@example.com',
+        LastName = 'Admin',
+        Alias = 'rcptadm',
+        TimeZoneSidKey = 'Asia/Jerusalem',
+        LocaleSidKey = 'iw_IL',
+        EmailEncodingKey = 'UTF-8',
+        LanguageLocaleKey = 'en_US'
+      );
+      insert u;
+      if (withPermission) {
+        PermissionSet ps = new PermissionSet(Name = 'Test_Receipt_Plan_' + uniq, Label = 'Test Receipt Plan ' + uniq);
+        insert ps;
+        CustomPermission cp = [SELECT Id FROM CustomPermission WHERE DeveloperName = 'Manage_Charge_Schedule'];
+        insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = cp.Id);
+        insert new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+      }
+    }
+    return u;
+  }
+
+  static MonthlyReceiptPlanAction.Result planAction(Date period, List<Id> contactIds) {
+    MonthlyReceiptPlanAction.Request q = new MonthlyReceiptPlanAction.Request();
+    q.periodMonth = period;
+    q.contactIds = contactIds;
+    return MonthlyReceiptPlanAction.plan(new List<MonthlyReceiptPlanAction.Request>{ q })[0];
+  }
+
+  @IsTest
+  static void planActionNeedsPermissionAFinishedMonthAndContacts() {
+    setup();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    System.runAs(admin(false)) {
+      Assert.areEqual('אין הרשאה', planAction(OCT, new List<Id>{ p.Donor_Contact__c }).message);
+    }
+    System.runAs(admin(true)) {
+      MonthlyReceiptPlanAction.Result r = planAction(Date.today(), new List<Id>{ p.Donor_Contact__c });
+      Assert.isFalse(r.ok, 'current month is not finished');
+      r = planAction(OCT, new List<Id>());
+      Assert.isFalse(r.ok, 'contacts are required');
+      r = planAction(OCT, new List<Id>{ p.Id });
+      Assert.isFalse(r.ok, 'only Contact Ids count');
+    }
+  }
+
+  @IsTest
+  static void planActionPlansOnlyTheGivenContacts() {
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity b = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(a, Date.newInstance(2026, 10, 5), 'AM', 3);
+    success(b, Date.newInstance(2026, 10, 5), 'AM', 3);
+    MonthlyReceiptPlanAction.Result r;
+    System.runAs(admin(true)) {
+      Test.startTest();
+      r = planAction(Date.newInstance(2026, 10, 17), new List<Id>{ a.Donor_Contact__c });
+      Test.stopTest();
+    }
+    Assert.isTrue(r.ok, r.message);
+    Assert.isNotNull(r.batchJobId);
+    Assert.areEqual(1, r.donorCount);
+    Assert.areEqual(1, [SELECT COUNT() FROM Monthly_Receipt__c]);
+    Assert.areEqual(a.Donor_Contact__c, [SELECT Contact__c FROM Monthly_Receipt__c].Contact__c);
+  }
+
+  @IsTest
+  static void planActionForAllDonors() {
+    // the general button: every micro-pledge donor with an October charge waiting for a receipt
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity b = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity done = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    success(a, Date.newInstance(2026, 10, 5), 'AM', 3);
+    success(b, Date.newInstance(2026, 10, 6), 'AM', 3);
+    receipt(done.Donor_Contact__c, 'Issued', 6, 1);
+    success(done, Date.newInstance(2026, 10, 20), 'AM', 3); // already has an issued receipt: not counted (N78)
+    MonthlyReceiptPlanAction.Request q = new MonthlyReceiptPlanAction.Request();
+    q.periodMonth = Date.newInstance(2026, 10, 9);
+    q.allDonors = true;
+    q.contactIds = new List<Id>{ a.Donor_Contact__c }; // ignored with allDonors
+    MonthlyReceiptPlanAction.Result r;
+    System.runAs(admin(true)) {
+      Test.startTest();
+      r = MonthlyReceiptPlanAction.plan(new List<MonthlyReceiptPlanAction.Request>{ q })[0];
+      Test.stopTest();
+    }
+    Assert.isTrue(r.ok, r.message);
+    Assert.areEqual(2, r.donorCount);
+    Assert.isTrue(r.message.contains('אוקטובר 2026'), r.message);
+    Assert.areEqual(2, [SELECT COUNT() FROM Monthly_Receipt__c WHERE Status__c = 'Pending']);
+  }
+
+  @IsTest
+  static void planActionWithNothingWaitingStartsNothing() {
+    setup();
+    Opportunity a = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    MonthlyReceiptPlanAction.Result r;
+    System.runAs(admin(true)) {
+      r = planAction(OCT, new List<Id>{ a.Donor_Contact__c });
+    }
+    Assert.isFalse(r.ok);
+    Assert.areEqual(0, r.donorCount);
+    Assert.isNull(r.batchJobId);
   }
 }

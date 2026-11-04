@@ -1,6 +1,60 @@
 /** Builds the CreateDocument body (B5.7, B6.11.1) and applies Cardcom's answer to a Monthly_Receipt__c. */
 public without sharing class MonthlyReceiptService {
   static final String DEFAULT_DESCRIPTION = 'תרומות חודש {MONTH}';
+  static final String CARD_LINE_DESCRIPTION = 'תרומה בכרטיס אשראי';
+
+  public static final String MODE_CASH = 'Cash';
+  public static final String MODE_CARD_LINES = 'CreditCardLines';
+  public static final String MODE_DEAL_NUMBERS = 'DealNumbers';
+
+  /** The receipt can't be built as configured (e.g. CreditCardLines without per-charge amounts). Final: no automatic retry. */
+  public class ReceiptException extends Exception {
+    public String code;
+  }
+
+  static ReceiptException fail(String code, String message) {
+    ReceiptException e = new ReceiptException(message);
+    e.code = code;
+    return e;
+  }
+
+  /** One charge of the receipt, from Deal_Numbers__c. Old receipts hold plain deal numbers: sum/date/auth are then null. */
+  public class ChargeLine {
+    public Long deal;
+    public Decimal sum;
+    public Date tranDate;
+    public String auth;
+  }
+
+  public static List<ChargeLine> chargeLines(String dealNumbersJson) {
+    List<ChargeLine> out = new List<ChargeLine>();
+    if (String.isBlank(dealNumbersJson))
+      return out;
+    for (Object o : (List<Object>) JSON.deserializeUntyped(dealNumbersJson)) {
+      ChargeLine l = new ChargeLine();
+      if (o instanceof Map<String, Object>) {
+        Map<String, Object> m = (Map<String, Object>) o;
+        l.deal = Long.valueOf(String.valueOf(m.get('d')));
+        l.sum = m.get('sum') == null ? null : Decimal.valueOf(String.valueOf(m.get('sum')));
+        l.tranDate = m.get('date') == null ? null : Date.valueOf(String.valueOf(m.get('date')));
+        l.auth = m.get('auth') == null ? null : String.valueOf(m.get('auth'));
+      } else {
+        l.deal = Long.valueOf(String.valueOf(o));
+      }
+      out.add(l);
+    }
+    return out;
+  }
+
+  /**
+   * Receipt_Payment_Mode__c. Blank → credit card lines (every donation is a card charge; client, 4.11.2026), unless the older
+   * checkbox Receipt_Link_Deal_Numbers__c is on (→ DealNumbers). Cash only when chosen explicitly.
+   */
+  public static String paymentMode(Cardcom_Setting__mdt s) {
+    if (String.isNotBlank(s.Receipt_Payment_Mode__c))
+      return s.Receipt_Payment_Mode__c;
+    return s.Receipt_Link_Deal_Numbers__c == true ? MODE_DEAL_NUMBERS : MODE_CARD_LINES;
+  }
 
   /**
    * Fallback donor data from the donor's pledges (record-type guarded, newest activation first) for receipts whose Contact lacks
@@ -37,17 +91,17 @@ public without sharing class MonthlyReceiptService {
     return buildRequest(r, new Donors(new List<Monthly_Receipt__c>{ r }));
   }
 
-  /** Body per B5.7. Returns null if there is no e-mail to send to. */
+  /**
+   * Body per B5.7. Returns null if there is no e-mail to send to. Throws ReceiptException when the payment mode can't be honoured
+   * (never falls back to Cash: Cardcom returns the first document for a known ExternalId, so a wrong first send can't be fixed).
+   */
   public static Map<String, Object> buildRequest(Monthly_Receipt__c r, Donors donors) {
     Contact c = r.Contact__r;
     String email = String.isNotBlank(c.Email) ? c.Email : donors.email.get(r.Contact__c);
     if (String.isBlank(email))
       return null;
     String taxId = String.isNotBlank(c.Donor_Tax_Id__c) ? c.Donor_Tax_Id__c : donors.taxId.get(r.Contact__c);
-    List<Object> deals = new List<Object>();
-    if (String.isNotBlank(r.Deal_Numbers__c))
-      for (Object d : (List<Object>) JSON.deserializeUntyped(r.Deal_Numbers__c))
-        deals.add(new Map<String, Object>{ 'DealNumber' => Long.valueOf(String.valueOf(d)) });
+    List<ChargeLine> charges = chargeLines(r.Deal_Numbers__c);
     String monthHe = monthNameHe(r.Period_Month__c.month()) + ' ' + r.Period_Month__c.year();
     Cardcom_Setting__mdt s = CardcomService.settings();
     String description = String.isBlank(s.Receipt_Product_Description__c) ? DEFAULT_DESCRIPTION : s.Receipt_Product_Description__c;
@@ -75,14 +129,47 @@ public without sharing class MonthlyReceiptService {
       doc.put('TaxId', taxId);
     r.Email_Sent_To__c = email;
     Map<String, Object> body = new Map<String, Object>{ 'Document' => doc }; // ApiName/ApiPassword added by CardcomService
-    // One line = donor's monthly total; the payment block must equal it or Cardcom returns 6311 (U7).
-    // Default: Cash = total (only block that passed on test terminal 1001, 2.11.2026).
-    // Optional (flag on, verify in production first): DealNumbers instead (on 1001: alone → 6311; only [0] linked — U8).
-    if (s.Receipt_Link_Deal_Numbers__c == true && !deals.isEmpty())
+    // One product line = donor's monthly total; the payment block must equal it or Cardcom returns 6311 (U7).
+    // CreditCardLines (default, D33): CustomFields, one credit card line per charge — verify with Cardcom before the first run
+    // (9996 on 2.11 with transactions of another company; Q15). Cash: passed on 1001 (2.11.2026), but the receipt shows cash.
+    // DealNumbers: on 1001 alone → 6311, only [0] linked (U8).
+    String mode = paymentMode(s);
+    if (mode == MODE_CARD_LINES)
+      body.put('CustomFields', cardLines(r, charges));
+    else if (mode == MODE_DEAL_NUMBERS && !charges.isEmpty()) {
+      List<Object> deals = new List<Object>();
+      for (ChargeLine l : charges)
+        deals.add(new Map<String, Object>{ 'DealNumber' => l.deal });
       body.put('DealNumbers', deals);
-    else
+    } else
       body.put('Cash', r.Total_Amount__c);
     return body;
+  }
+
+  /** One credit card payment line per charge; together they must equal Total_Amount__c exactly. */
+  @TestVisible
+  static List<Object> cardLines(Monthly_Receipt__c r, List<ChargeLine> charges) {
+    if (charges.isEmpty())
+      throw fail('NO_CHARGE_LINES', 'אין חיובים לקבלה');
+    List<Object> lines = new List<Object>();
+    Decimal total = 0;
+    for (ChargeLine l : charges) {
+      if (l.sum == null || l.tranDate == null)
+        throw fail('NO_CHARGE_LINES', 'לקבלה אין פירוט סכום ותאריך לכל חיוב (תוכננה לפני השינוי)');
+      Map<String, Object> line = new Map<String, Object>{
+        'TransactionID' => l.deal,
+        'TranDate' => Datetime.newInstance(l.tranDate, Time.newInstance(12, 0, 0, 0)).format('dd/MM/yyyy'),
+        'Description' => CARD_LINE_DESCRIPTION,
+        'Sum' => l.sum.setScale(2)
+      };
+      if (String.isNotBlank(l.auth))
+        line.put('asmacta', l.auth);
+      lines.add(line);
+      total += l.sum;
+    }
+    if (total.setScale(2) != r.Total_Amount__c.setScale(2))
+      throw fail('LINES_MISMATCH', ('סכום שורות האשראי ' + total.setScale(2) + ' שונה מסכום הקבלה ' + r.Total_Amount__c.setScale(2)));
+    return lines;
   }
 
   public static void apply(Monthly_Receipt__c r, Map<String, Object> resp, Integer max) {

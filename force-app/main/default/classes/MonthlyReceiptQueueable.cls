@@ -100,7 +100,16 @@ public without sharing class MonthlyReceiptQueueable implements Queueable, Datab
         r.Attempt_Count__c -= 1; // not attempted
         continue;
       }
-      Map<String, Object> req = MonthlyReceiptService.buildRequest(r, donors);
+      Map<String, Object> req;
+      try {
+        req = MonthlyReceiptService.buildRequest(r, donors);
+      } catch (MonthlyReceiptService.ReceiptException e) {
+        r.Status__c = 'Failed'; // never falls back to Cash (see buildRequest)
+        r.Error_Code__c = e.code;
+        r.Error_Message__c = e.getMessage().left(255);
+        r.Attempt_Count__c = max;
+        continue;
+      }
       if (req == null) {
         r.Status__c = 'Failed';
         r.Error_Code__c = 'NO_EMAIL';
