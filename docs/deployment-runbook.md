@@ -148,6 +148,14 @@ Deploy to an org that already runs 0.1.x:
    4.11). Link those charges to a receipt by hand, or point that Contact's email to a test address, before 2.12.
 7. Receipt check 6 (`docs/receipt-go-live-checklist.md`) must pass before the first run on the 2nd: the default is credit card lines.
 
+## Opportunity record type for regular deals (N100)
+
+`objects/Opportunity/businessProcesses/General_Opportunity_Process` and `objects/Opportunity/recordTypes/General_Opportunity`.
+Deploy them (`sf project deploy start --metadata BusinessProcess:Opportunity.General_Opportunity_Process RecordType:Opportunity.General_Opportunity`),
+then on every profile that creates Opportunities: Record Type Settings → Opportunity → make `הזדמנות רגילה` available and **Default**;
+`הוראת תרומה יומית` may stay available but must not be the default anywhere. Afterwards the D24 tests ("other Opportunities are not
+affected") run instead of being skipped.
+
 ## Rollback
 
 Nothing below deletes data; pledges, charges and receipts stay for audit.

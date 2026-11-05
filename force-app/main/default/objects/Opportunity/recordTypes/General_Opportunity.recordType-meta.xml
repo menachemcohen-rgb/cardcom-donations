@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>General_Opportunity</fullName>
+    <active>true</active>
+    <businessProcess>General_Opportunity_Process</businessProcess>
+    <description>Regular Opportunities (not daily-donation pledges). Default record type for the org's profiles, so adding Micro_Donation_Pledge does not turn every new Opportunity into a pledge (N100).</description>
+    <label>הזדמנות רגילה</label>
+</RecordType>
