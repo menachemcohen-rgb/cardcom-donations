@@ -1,17 +1,14 @@
 /**
  * Behaviour tests for the Prompt 1 validation rules (B2.1 VR_Tax_Id_Format; Part C C2 Opportunity rules).
- * Every Opportunity rule is guarded by record type Micro_Donation_Pledge, so other Opportunities are never affected (D24).
+ * Every Opportunity rule is guarded by Type = 'Daily Donation Pledge', so other Opportunities are never affected (D24, D34).
  * Messages are asserted on the Hebrew text from the spec.
  */
 @IsTest
 private class PledgeValidationRulesTest {
-  private static final Id RT_ID = Schema.SObjectType.Opportunity.getRecordTypeInfosByDeveloperName()
-    .get('Micro_Donation_Pledge')
-    .getRecordTypeId();
 
   private static Opportunity pledge(String stage, Decimal amount) {
     return new Opportunity(
-      RecordTypeId = RT_ID,
+      Type = MicroPledges.TYPE,
       Name = 'תרומה יומית – test',
       StageName = stage,
       CloseDate = Date.today(),
@@ -66,11 +63,8 @@ private class PledgeValidationRulesTest {
 
   @IsTest
   static void otherOpportunitiesAreNotAffected() {
-    Id rt = TestDataFactory.otherRecordTypeId(); // never the user's default, which may be the pledge type
-    if (rt == null)
-      return; // no non-pledge Opportunity record type for this user: the rules can't touch anything else
     Opportunity other = new Opportunity(
-      RecordTypeId = rt,
+      Type = 'New Business',
       Name = 'Regular deal',
       StageName = 'Prospecting',
       CloseDate = Date.today(),
@@ -129,5 +123,16 @@ private class PledgeValidationRulesTest {
     o.StageName = 'Cancelled';
     insert o;
     assertFails(Database.update(new Opportunity(Id = o.Id, StageName = 'Active'), false), 'הוראה שבוטלה אינה ניתנת לשינוי סטטוס');
+  }
+
+  @IsTest
+  static void pledgeTypeIsLocked() {
+    // D34: the Type value is what makes a record a pledge; it can't be switched on or off by hand
+    Opportunity o = activePledge();
+    insert o;
+    assertFails(Database.update(new Opportunity(Id = o.Id, Type = 'New Business'), false), 'לא ניתן לשנות את סוג ההזדמנות');
+    Opportunity other = new Opportunity(Type = 'New Business', Name = 'Regular deal', StageName = 'Prospecting', CloseDate = Date.today());
+    insert other;
+    assertFails(Database.update(new Opportunity(Id = other.Id, Type = MicroPledges.TYPE), false), 'לא ניתן לשנות את סוג ההזדמנות');
   }
 }

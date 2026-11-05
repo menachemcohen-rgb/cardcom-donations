@@ -12,7 +12,7 @@ public without sharing class ChargeDispatcher {
     }
     Decimal bs = CardcomService.settings().Batch_Size__c;
     Integer size = bs == null ? 30 : bs.intValue();
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Id> ids = new List<Id>();
     for (Charge__c c : [
       SELECT Id
@@ -20,7 +20,7 @@ public without sharing class ChargeDispatcher {
       WHERE
         Status__c = 'Pending'
         AND Pledge__r.StageName = :MicroPledges.STAGE_ACTIVE
-        AND Pledge__r.RecordTypeId = :rt
+        AND Pledge__r.Type = :pledgeType
         AND (Not_Before__c = NULL
         OR Not_Before__c <= :now)
       ORDER BY Scheduled_Date__c, Attempt_Number__c, CreatedDate

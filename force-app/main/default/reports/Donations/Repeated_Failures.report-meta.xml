@@ -28,11 +28,11 @@
     <description>Active pledges with 3+ consecutive failed logical charges (default of Max_Consecutive_Failures__c; edit the filter if X changes). Decide: call the donor or stop.</description>
     <filter>
         <criteriaItems>
-            <column>RECORDTYPE</column>
+            <column>TYPE</column>
             <columnToColumn>false</columnToColumn>
             <isUnlocked>true</isUnlocked>
             <operator>equals</operator>
-            <value>Opportunity.Micro_Donation_Pledge</value>
+            <value>Daily Donation Pledge</value>
         </criteriaItems>
         <criteriaItems>
             <column>STAGE_NAME</column>

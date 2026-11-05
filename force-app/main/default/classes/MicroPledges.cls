@@ -1,9 +1,12 @@
 /**
- * Shared helpers for the pledge Opportunity (CLAUDE.md Part C C1/C2, D23/D24).
- * Every query, insert and trigger on Opportunity goes through recordTypeId() so other Opportunities are never touched.
+ * Shared helpers for the pledge Opportunity (CLAUDE.md Part C C1/C2, D23/D24; D34).
+ * A pledge is an Opportunity whose standard Type field is TYPE ('Daily Donation Pledge', label "הוראת תרומה יומית"). There is
+ * no pledge record type (D34): every query, insert and trigger on Opportunity filters on Type so other Opportunities are never
+ * touched.
  */
 public without sharing class MicroPledges {
-  public static final String RECORD_TYPE = 'Micro_Donation_Pledge';
+  /** Opportunity.Type value that marks a pledge (D34). */
+  public static final String TYPE = 'Daily Donation Pledge';
   public static final String STAGE_PENDING = 'Pending_Verification';
   public static final String STAGE_ACTIVE = 'Active';
   public static final String STAGE_STOPPED = 'Stopped';
@@ -12,24 +15,14 @@ public without sharing class MicroPledges {
   public static final String DONOR_ROLE = 'Donor';
   static final String NAME_PREFIX = 'תרומה יומית';
 
-  static Id rtId;
-
-  /** Cached Id of record type Micro_Donation_Pledge (Part C rule 1). */
-  public static Id recordTypeId() {
-    if (rtId == null) {
-      rtId = Schema.SObjectType.Opportunity.getRecordTypeInfosByDeveloperName().get(RECORD_TYPE).getRecordTypeId();
-    }
-    return rtId;
-  }
-
   public static Boolean isPledge(Opportunity o) {
-    return o != null && o.RecordTypeId == recordTypeId();
+    return o != null && o.Type == TYPE;
   }
 
   /** A new pending pledge, keyed by LowProfileId (C1: Name, CloseDate, StageName, AccountId). */
   public static Opportunity newPending(String lowProfileId) {
     Opportunity o = new Opportunity(
-      RecordTypeId = recordTypeId(),
+      Type = TYPE,
       LowProfileId__c = lowProfileId,
       StageName = STAGE_PENDING,
       CloseDate = Date.today(),

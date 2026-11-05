@@ -1,5 +1,5 @@
 /**
- * Charge planning (B6.5 rules 1–3, Part C C2 rule 2, E15). For every Active pledge (record type Micro_Donation_Pledge) and every
+ * Charge planning (B6.5 rules 1–3, Part C C2 rule 2, E15). For every Active pledge (Type = Daily Donation Pledge) and every
  * logical date of the run, one Pending Charge__c (attempt 1) with the pledge's Charge_Amount__c snapshot (D16).
  * Token__c is never in the SOQL filter; a blank token is skipped in Apex (E15).
  * Up to SYNC_MAX pledges are planned in this transaction; above that a ChargePlannerBatch plans in chunks (spec-consistency N50).
@@ -13,11 +13,11 @@ public with sharing class ChargePlanner {
     List<Date> dates = ChargeCalendar.logicalDatesFor(runDate);
     if (dates.isEmpty())
       return 0; // rest day: no records at all
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Integer pledges = [
       SELECT COUNT()
       FROM Opportunity
-      WHERE RecordTypeId = :rt AND StageName = :MicroPledges.STAGE_ACTIVE AND (End_Date__c = NULL OR End_Date__c >= :runDate)
+      WHERE Type = :pledgeType AND StageName = :MicroPledges.STAGE_ACTIVE AND (End_Date__c = NULL OR End_Date__c >= :runDate)
     ];
     if (pledges > SYNC_MAX) {
       Database.executeBatch(new ChargePlannerBatch(runDate, slot), 200); // its finish() starts the dispatcher
@@ -31,10 +31,10 @@ public with sharing class ChargePlanner {
 
   /** Active pledges of the record type (C2 rule 2). No Token__c condition (E15). */
   public static List<Opportunity> queryPledges(Date runDate, Set<Id> onlyIds) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     String q =
       'SELECT Id, Donor_Contact__c, Charge_Amount__c, Frequency__c, Token__c FROM Opportunity' +
-      ' WHERE RecordTypeId = :rt AND StageName = \'' +
+      ' WHERE Type = :pledgeType AND StageName = \'' +
       MicroPledges.STAGE_ACTIVE +
       '\'' +
       ' AND (End_Date__c = null OR End_Date__c >= :runDate)' +

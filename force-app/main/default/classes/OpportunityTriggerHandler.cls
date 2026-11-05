@@ -1,5 +1,5 @@
 /**
- * Pledge Opportunity trigger logic (B6.8, Part C C2 rule 3). Only records of record type Micro_Donation_Pledge are touched (D24).
+ * Pledge Opportunity trigger logic (B6.8, Part C C2 rule 3). Only records of Type = Daily Donation Pledge are touched (D24).
  * - Stage → Stopped or Cancelled: Pending Charge__c of the pledge become Skipped (STOPPED).
  * - Stopped → Active (resume, by the flow or a direct edit): Stop_Reason__c / Stop_Reason_Details__c are cleared (the Stop entry
  *   in Pledge_Change_Log__c and field history keep them), and Skipped/STOPPED charges for today or later give up their
@@ -11,9 +11,9 @@ public without sharing class OpportunityTriggerHandler {
   public static String sourceOverride;
 
   public static void beforeUpdate(List<Opportunity> news, Map<Id, Opportunity> olds) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     for (Opportunity n : news) {
-      if (n.RecordTypeId == rt && isResume(olds.get(n.Id).StageName, n.StageName)) {
+      if (n.Type == pledgeType && isResume(olds.get(n.Id).StageName, n.StageName)) {
         n.Stop_Reason__c = null;
         n.Stop_Reason_Details__c = null;
       }
@@ -21,13 +21,13 @@ public without sharing class OpportunityTriggerHandler {
   }
 
   public static void afterUpdate(List<Opportunity> news, Map<Id, Opportunity> olds) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Set<Id> halted = new Set<Id>();
     Set<Id> resumed = new Set<Id>();
     List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
     String source = sourceOverride != null ? sourceOverride : (isIntegrationUser() ? 'System' : 'Staff');
     for (Opportunity n : news) {
-      if (n.RecordTypeId != rt)
+      if (n.Type != pledgeType)
         continue;
       Opportunity o = olds.get(n.Id);
       if (n.StageName != o.StageName) {

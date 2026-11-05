@@ -61,7 +61,7 @@
             <label>כן</label>
         </rules>
     </decisions>
-    <description>N96: general button. Plans and sends the monthly receipts of a finished month for every daily-donation (Micro_Donation_Pledge) donor with a charge waiting for a receipt (MonthlyReceiptPlanAction, allDonors = true) — the same as the scheduled run on Receipt_Day_Of_Month__c. Gated by Manage_Charge_Schedule (also checked in Apex).</description>
+    <description>N96: general button. Plans and sends the monthly receipts of a finished month for every daily-donation (Type = Daily Donation Pledge) donor with a charge waiting for a receipt (MonthlyReceiptPlanAction, allDonors = true) — the same as the scheduled run on Receipt_Day_Of_Month__c. Gated by Manage_Charge_Schedule (also checked in Apex).</description>
     <environments>Default</environments>
     <formulas>
         <name>fLastMonth</name>

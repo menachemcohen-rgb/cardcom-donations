@@ -12,9 +12,9 @@
     <columns>Failure_Alert_Sent_At__c</columns>
     <filterScope>Everything</filterScope>
     <filters>
-        <field>OPPORTUNITY.RECORDTYPE</field>
+        <field>OPPORTUNITY.TYPE</field>
         <operation>equals</operation>
-        <value>Opportunity.Micro_Donation_Pledge</value>
+        <value>Daily Donation Pledge</value>
     </filters>
     <filters>
         <field>Consecutive_Failures__c</field>

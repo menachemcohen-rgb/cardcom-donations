@@ -76,10 +76,10 @@
             </value>
         </filters>
         <filters>
-            <field>RecordTypeId</field>
+            <field>Type</field>
             <operator>EqualTo</operator>
             <value>
-                <elementReference>Get_Record_Type.Id</elementReference>
+                <stringValue>Daily Donation Pledge</stringValue>
             </value>
         </filters>
         <getFirstRecordOnly>true</getFirstRecordOnly>
@@ -87,35 +87,6 @@
         <queriedFields>Id</queriedFields>
         <queriedFields>StageName</queriedFields>
         <queriedFields>Link_Version__c</queriedFields>
-        <storeOutputAutomatically>true</storeOutputAutomatically>
-    </recordLookups>
-    <recordLookups>
-        <name>Get_Record_Type</name>
-        <label>Get pledge record type</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
-        <connector>
-            <targetReference>Get_Pledge</targetReference>
-        </connector>
-        <filterLogic>and</filterLogic>
-        <filters>
-            <field>SobjectType</field>
-            <operator>EqualTo</operator>
-            <value>
-                <stringValue>Opportunity</stringValue>
-            </value>
-        </filters>
-        <filters>
-            <field>DeveloperName</field>
-            <operator>EqualTo</operator>
-            <value>
-                <stringValue>Micro_Donation_Pledge</stringValue>
-            </value>
-        </filters>
-        <getFirstRecordOnly>true</getFirstRecordOnly>
-        <object>RecordType</object>
-        <queriedFields>Id</queriedFields>
         <storeOutputAutomatically>true</storeOutputAutomatically>
     </recordLookups>
     <recordUpdates>
@@ -254,7 +225,7 @@
         <locationX>0</locationX>
         <locationY>0</locationY>
         <connector>
-            <targetReference>Get_Record_Type</targetReference>
+            <targetReference>Get_Pledge</targetReference>
         </connector>
     </start>
     <status>Active</status>

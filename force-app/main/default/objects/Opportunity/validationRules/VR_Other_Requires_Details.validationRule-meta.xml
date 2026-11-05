@@ -4,7 +4,7 @@
     <active>true</active>
     <description>B2.2 via Part C C2. The spec gives no message; this Hebrew text was added in Prompt 1.</description>
     <errorConditionFormula>AND(
-    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISPICKVAL(Type, 'Daily Donation Pledge'),
     ISPICKVAL(Stop_Reason__c, 'Other'),
     ISBLANK(Stop_Reason_Details__c)
 )</errorConditionFormula>

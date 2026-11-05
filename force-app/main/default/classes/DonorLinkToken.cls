@@ -80,7 +80,7 @@ public without sharing class DonorLinkToken {
     return r == 0;
   }
 
-  /** Full check used by DonorPortalResource. Only pledges of record type Micro_Donation_Pledge (D24), Active only. */
+  /** Full check used by DonorPortalResource. Only pledges of Type = Daily Donation Pledge (D24), Active only. */
   public static Opportunity verify(String token, Set<String> allowedActions, String clientIp) {
     Claims c;
     try {
@@ -93,7 +93,7 @@ public without sharing class DonorLinkToken {
       DonorLinkLog.write(c.pledgeId, c.action, c.version, 'Bad_Signature', clientIp);
       throw new LinkException('invalid');
     }
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Opportunity> ps = [
       SELECT
         Id,
@@ -108,7 +108,7 @@ public without sharing class DonorLinkToken {
         Donor_Contact__r.Email,
         Donor_Phone__c
       FROM Opportunity
-      WHERE Id = :c.pledgeId AND RecordTypeId = :rt
+      WHERE Id = :c.pledgeId AND Type = :pledgeType
     ];
     if (ps.isEmpty())
       throw new LinkException('invalid');

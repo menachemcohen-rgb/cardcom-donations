@@ -511,8 +511,4 @@
         <object>Reconciliation_Issue__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
-    <recordTypeVisibilities>
-        <recordType>Opportunity.Micro_Donation_Pledge</recordType>
-        <visible>true</visible>
-    </recordTypeVisibilities>
 </PermissionSet>

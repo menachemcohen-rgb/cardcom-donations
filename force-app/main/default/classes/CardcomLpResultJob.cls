@@ -19,7 +19,7 @@ public without sharing class CardcomLpResultJob implements Queueable, Database.A
 
   @TestVisible
   void run() {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     // 1) reads + callouts first (no DML before them)
     Set<String> cardChange = new Set<String>();
     for (Card_Change_Request__c c : [SELECT LowProfileId__c FROM Card_Change_Request__c WHERE LowProfileId__c IN :lpIds])
@@ -28,7 +28,7 @@ public without sharing class CardcomLpResultJob implements Queueable, Database.A
     for (Opportunity p : [
       SELECT LowProfileId__c
       FROM Opportunity
-      WHERE LowProfileId__c IN :lpIds AND RecordTypeId = :rt AND Lp_Processed__c = TRUE
+      WHERE LowProfileId__c IN :lpIds AND Type = :pledgeType AND Lp_Processed__c = TRUE
     ])
       done.add(p.LowProfileId__c.toLowerCase());
     Map<String, Map<String, Object>> results = new Map<String, Map<String, Object>>();
@@ -51,7 +51,7 @@ public without sharing class CardcomLpResultJob implements Queueable, Database.A
     List<Opportunity> locked = [
       SELECT Id, LowProfileId__c, StageName, Lp_Check_Count__c
       FROM Opportunity
-      WHERE LowProfileId__c IN :results.keySet() AND RecordTypeId = :rt
+      WHERE LowProfileId__c IN :results.keySet() AND Type = :pledgeType
       FOR UPDATE
     ];
     for (Opportunity p : locked)

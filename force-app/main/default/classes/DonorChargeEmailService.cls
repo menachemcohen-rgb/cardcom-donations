@@ -21,7 +21,7 @@ public without sharing class DonorChargeEmailService {
   public static void send(List<Id> chargeIds) {
     if (chargeIds == null || chargeIds.isEmpty())
       return;
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Charge__c> charges = [
       SELECT
         Id,
@@ -37,7 +37,7 @@ public without sharing class DonorChargeEmailService {
         Pledge__r.Last4__c,
         Pledge__r.Link_Version__c
       FROM Charge__c
-      WHERE Id IN :chargeIds AND Status__c = 'Success' AND Donor_Email_Status__c = NULL AND Pledge__r.RecordTypeId = :rt
+      WHERE Id IN :chargeIds AND Status__c = 'Success' AND Donor_Email_Status__c = NULL AND Pledge__r.Type = :pledgeType
       ORDER BY Pledge__c, Scheduled_Date__c, Slot__c
     ];
     if (charges.isEmpty())

@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>LowProfileId__c</fullName>
     <caseSensitive>false</caseSensitive>
-    <description>Unique External Id, case-insensitive. Required for Micro_Donation_Pledge via Apex, not at field level (D24).</description>
+    <description>Unique External Id, case-insensitive. Required for pledges (Type = Daily Donation Pledge) via Apex, not at field level (D24).</description>
     <externalId>true</externalId>
     <label>LowProfileId</label>
     <length>64</length>

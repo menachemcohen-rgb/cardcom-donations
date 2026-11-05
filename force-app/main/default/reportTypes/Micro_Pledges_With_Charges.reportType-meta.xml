@@ -4,7 +4,7 @@
     <baseObject>Opportunity</baseObject>
     <category>opportunities</category>
     <deployed>true</deployed>
-    <description>Pledge Opportunities with their charge attempts (Prompt 11). Reports on it must filter Record Type = Micro_Donation_Pledge (Part C D24).</description>
+    <description>Pledge Opportunities with their charge attempts (Prompt 11). Reports on it must filter Type = Daily Donation Pledge (D24, D34).</description>
     <join>
         <outerJoin>true</outerJoin>
         <relationship>Charges__r</relationship>
@@ -43,7 +43,7 @@
         </columns>
         <columns>
             <checkedByDefault>false</checkedByDefault>
-            <field>RecordTypeId</field>
+            <field>Type</field>
             <table>Opportunity</table>
         </columns>
         <columns>

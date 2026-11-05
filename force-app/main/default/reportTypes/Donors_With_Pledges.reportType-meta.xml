@@ -4,7 +4,7 @@
     <baseObject>Contact</baseObject>
     <category>contacts</category>
     <deployed>true</deployed>
-    <description>Donor Contacts with their pledge Opportunities via Donor_Contact__c (Prompt 11). Filter Record Type = Micro_Donation_Pledge.</description>
+    <description>Donor Contacts with their pledge Opportunities via Donor_Contact__c (Prompt 11). Filter Type = Daily Donation Pledge (D34).</description>
     <join>
         <outerJoin>false</outerJoin>
         <relationship>Donor_Pledges__r</relationship>
@@ -86,7 +86,7 @@
         </columns>
         <columns>
             <checkedByDefault>false</checkedByDefault>
-            <field>RecordTypeId</field>
+            <field>Type</field>
             <table>Contact.Donor_Pledges__r</table>
         </columns>
         <columns>

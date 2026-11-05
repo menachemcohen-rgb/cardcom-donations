@@ -28,11 +28,11 @@ private class CardcomWebhookResourceTest {
     Assert.areEqual('application/json', log.Content_Type__c);
     Assert.isTrue(log.Processed__c);
     Opportunity p = [
-      SELECT StageName, Lp_Processed__c, Token__c, CardExpirationMMYY__c, Token_Expiry_Date__c, RecordTypeId
+      SELECT StageName, Lp_Processed__c, Token__c, CardExpirationMMYY__c, Token_Expiry_Date__c, Type
       FROM Opportunity
       WHERE LowProfileId__c = 'lp-0000000001'
     ];
-    Assert.areEqual(MicroPledges.recordTypeId(), p.RecordTypeId);
+    Assert.areEqual(MicroPledges.TYPE, p.Type);
     Assert.areEqual('Pending_Verification', p.StageName, 'not active until the donor submits the form');
     Assert.isTrue(p.Lp_Processed__c);
     Assert.areEqual('tok-lp-0000000001', p.Token__c);

@@ -1,6 +1,6 @@
 @IsTest
 private class CardcomLpResultJobTest {
-  static final Id PLEDGE_RT = MicroPledges.recordTypeId();
+  static final String PLEDGE_TYPE = MicroPledges.TYPE;
 
   static void runJob(List<String> lps) {
     Test.startTest();
@@ -22,7 +22,7 @@ private class CardcomLpResultJobTest {
         Verified_At__c,
         Activated_At__c
       FROM Opportunity
-      WHERE LowProfileId__c = :lp AND RecordTypeId = :PLEDGE_RT
+      WHERE LowProfileId__c = :lp AND Type = :PLEDGE_TYPE
     ];
   }
 
@@ -114,14 +114,14 @@ private class CardcomLpResultJobTest {
     Datetime before = [SELECT LastModifiedDate FROM Opportunity WHERE Id = :other.Id].LastModifiedDate;
     CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-0000000009', 'SIGNUP-x'));
     runJob(new List<String>{ 'lp-0000000009' });
-    Opportunity after = [SELECT StageName, Token__c, Lp_Processed__c, LastModifiedDate, RecordTypeId FROM Opportunity WHERE Id = :other.Id];
+    Opportunity after = [SELECT StageName, Token__c, Lp_Processed__c, LastModifiedDate, Type FROM Opportunity WHERE Id = :other.Id];
     Assert.areEqual('Prospecting', after.StageName);
     Assert.isNull(after.Token__c);
     Assert.isFalse(after.Lp_Processed__c);
     Assert.areEqual(before, after.LastModifiedDate);
     Assert.areEqual(
       0,
-      [SELECT COUNT() FROM Opportunity WHERE RecordTypeId = :PLEDGE_RT],
+      [SELECT COUNT() FROM Opportunity WHERE Type = :PLEDGE_TYPE],
       'the unique LowProfileId blocks a pledge copy; the insert failure is swallowed'
     );
   }

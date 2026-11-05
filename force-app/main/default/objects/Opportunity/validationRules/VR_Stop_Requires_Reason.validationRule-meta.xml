@@ -4,7 +4,7 @@
     <active>true</active>
     <description>B2.2 via Part C C2.</description>
     <errorConditionFormula>AND(
-    RecordType.DeveloperName = 'Micro_Donation_Pledge',
+    ISPICKVAL(Type, 'Daily Donation Pledge'),
     ISPICKVAL(StageName, 'Stopped'),
     ISBLANK(TEXT(Stop_Reason__c))
 )</errorConditionFormula>

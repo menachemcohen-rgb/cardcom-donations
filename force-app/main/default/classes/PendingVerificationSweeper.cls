@@ -13,13 +13,13 @@ public without sharing class PendingVerificationSweeper implements Schedulable {
 
   @TestVisible
   static void sweep() {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Datetime cutoff = (nowOverride == null ? Datetime.now() : nowOverride).addMinutes(-10);
     List<String> lpIds = new List<String>();
     for (Opportunity p : [
       SELECT LowProfileId__c
       FROM Opportunity
-      WHERE RecordTypeId = :rt AND StageName = :MicroPledges.STAGE_PENDING AND Lp_Processed__c = FALSE AND CreatedDate <= :cutoff
+      WHERE Type = :pledgeType AND StageName = :MicroPledges.STAGE_PENDING AND Lp_Processed__c = FALSE AND CreatedDate <= :cutoff
       ORDER BY CreatedDate
       LIMIT 50
     ])
@@ -40,7 +40,7 @@ public without sharing class PendingVerificationSweeper implements Schedulable {
       SELECT Id
       FROM Opportunity
       WHERE
-        RecordTypeId = :rt
+        Type = :pledgeType
         AND StageName = :MicroPledges.STAGE_PENDING
         AND Lp_Processed__c = TRUE
         AND Donor_Submitted__c = TRUE
