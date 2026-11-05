@@ -9,7 +9,6 @@
  */
 @IsTest
 private class MetadataSmokeTest {
-  private static final String RT = 'Micro_Donation_Pledge';
 
   private class F {
     String name;
@@ -206,15 +205,13 @@ private class MetadataSmokeTest {
   }
 
   @IsTest
-  static void recordTypeAndStagesExist() {
-    Schema.RecordTypeInfo info = Schema.SObjectType.Opportunity.getRecordTypeInfosByDeveloperName().get(RT);
-    Assert.isNotNull(info, 'Record type ' + RT + ' is missing');
-    Assert.isTrue(info.isActive(), 'Record type ' + RT + ' must be active');
-
-    RecordType rt = [SELECT BusinessProcessId FROM RecordType WHERE SobjectType = 'Opportunity' AND DeveloperName = :RT];
-    BusinessProcess bp = [SELECT Name, IsActive FROM BusinessProcess WHERE Id = :rt.BusinessProcessId];
-    Assert.areEqual('Micro_Donation_Process', bp.Name, 'Sales process of ' + RT);
-    Assert.isTrue(bp.IsActive, 'Sales process must be active');
+  static void pledgeTypeAndStagesExist() {
+    // D34: a pledge is Opportunity.Type = MicroPledges.TYPE (no record type)
+    Boolean typeFound = false;
+    for (Schema.PicklistEntry e : Opportunity.Type.getDescribe().getPicklistValues())
+      if (e.getValue() == MicroPledges.TYPE && e.isActive())
+        typeFound = true;
+    Assert.isTrue(typeFound, 'Opportunity.Type value ' + MicroPledges.TYPE + ' is missing (StandardValueSet OpportunityType)');
 
     // value => IsClosed, IsWon, probability (Part C C1)
     Map<String, List<Object>> expected = new Map<String, List<Object>>{

@@ -4,7 +4,7 @@
     <active>true</active>
     <businessProcess>Micro_Donation_Process</businessProcess>
     <compactLayoutAssignment>Micro_Donation_Pledge_Compact</compactLayoutAssignment>
-    <description>Micro-donation pledge (donation instruction), CLAUDE.md Part C D23. All pledge logic is scoped to this record type (D24).</description>
+    <description>Legacy (D34): pledges created before 5.11.2026 carry this record type. The code no longer uses it: a pledge is Opportunity.Type = Daily Donation Pledge. Not assigned to any profile or permission set, so users keep the Master record type.</description>
     <label>הוראת תרומה יומית</label>
     <picklistValues>
         <picklist>Frequency__c</picklist>

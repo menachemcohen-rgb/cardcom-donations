@@ -10,7 +10,7 @@ public without sharing class PledgeActivationService {
 
   /** @return true if the pledge was activated by this call. */
   public static Boolean tryActivate(Id pledgeId) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Opportunity> ps = [
       SELECT
         Id,
@@ -25,7 +25,7 @@ public without sharing class PledgeActivationService {
         Donor_Phone__c,
         Donor_Tax_Id__c
       FROM Opportunity
-      WHERE Id = :pledgeId AND RecordTypeId = :rt
+      WHERE Id = :pledgeId AND Type = :pledgeType
       FOR UPDATE
     ];
     if (ps.isEmpty())

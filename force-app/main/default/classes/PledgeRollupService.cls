@@ -6,13 +6,13 @@
  *   failed finally (Is_Final_Failure__c), up to the first Success. Logical charges still Pending are not counted; Skipped and non-final
  *   failures (Config) are neutral: they neither count nor break the streak.
  * - When the streak reaches Max_Consecutive_Failures__c: one staff alert per streak (Failure_Alert_Sent_At__c). A Success re-arms it.
- * - Never changes StageName (D9). Only pledges of record type Micro_Donation_Pledge are touched (D24).
+ * - Never changes StageName (D9). Only pledges of Type = Daily Donation Pledge are touched (D24).
  */
 public without sharing class PledgeRollupService {
   public static void recalc(Set<Id> pledgeIds) {
     if (pledgeIds == null || pledgeIds.isEmpty())
       return;
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Map<Id, Opportunity> pledges = new Map<Id, Opportunity>(
       [
         SELECT
@@ -25,7 +25,7 @@ public without sharing class PledgeRollupService {
           Consecutive_Failures__c,
           Failure_Alert_Sent_At__c
         FROM Opportunity
-        WHERE Id IN :pledgeIds AND RecordTypeId = :rt
+        WHERE Id IN :pledgeIds AND Type = :pledgeType
         FOR UPDATE
       ]
     );

@@ -5,7 +5,7 @@
  */
 public without sharing class ChargeAdmin {
   public static Integer requeueFailedConfig(Date runDate) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Charge__c> failed = [
       SELECT Id, Pledge__c, Contact__c, Amount__c, Scheduled_Date__c, Slot__c, Attempt_Number__c, ExternalUniqTranId__c, Attempt_Key__c
       FROM Charge__c
@@ -14,7 +14,7 @@ public without sharing class ChargeAdmin {
         AND Error_Category__c = 'Config'
         AND Run_Date__c = :runDate
         AND Pledge__r.StageName = :MicroPledges.STAGE_ACTIVE
-        AND Pledge__r.RecordTypeId = :rt
+        AND Pledge__r.Type = :pledgeType
     ];
     Set<String> logical = new Set<String>();
     for (Charge__c c : failed)

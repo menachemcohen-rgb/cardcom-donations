@@ -20,11 +20,11 @@
     <description>Active pledges by frequency, with the amount per charge and the total collected (dashboard tile).</description>
     <filter>
         <criteriaItems>
-            <column>RECORDTYPE</column>
+            <column>TYPE</column>
             <columnToColumn>false</columnToColumn>
             <isUnlocked>true</isUnlocked>
             <operator>equals</operator>
-            <value>Opportunity.Micro_Donation_Pledge</value>
+            <value>Daily Donation Pledge</value>
         </criteriaItems>
         <criteriaItems>
             <column>STAGE_NAME</column>

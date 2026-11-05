@@ -71,11 +71,11 @@ public without sharing class MonthlyReceiptService {
           need.add(r.Contact__c);
       if (need.isEmpty())
         return;
-      Id rt = MicroPledges.recordTypeId();
+      String pledgeType = MicroPledges.TYPE;
       for (Opportunity p : [
         SELECT Donor_Contact__c, Donor_Email__c, Donor_Tax_Id__c
         FROM Opportunity
-        WHERE RecordTypeId = :rt AND Donor_Contact__c IN :need
+        WHERE Type = :pledgeType AND Donor_Contact__c IN :need
         ORDER BY Activated_At__c DESC NULLS LAST
       ]) {
         if (!email.containsKey(p.Donor_Contact__c) && String.isNotBlank(p.Donor_Email__c))

@@ -10,7 +10,7 @@
                         <valueListItems>
                             <value>Opportunity.Stop_Charges</value>
                             <visibilityRule>
-                                <booleanFilter>1 AND 2</booleanFilter>
+                                <booleanFilter>(1 AND 2) AND 3</booleanFilter>
                                 <criteria>
                                     <leftValue>{!Record.StageName}</leftValue>
                                     <operator>EQUAL</operator>
@@ -20,13 +20,18 @@
                                     <leftValue>{!$Permission.CustomPermission.Stop_Pledge_Charges}</leftValue>
                                     <operator>EQUAL</operator>
                                     <rightValue>true</rightValue>
+                                </criteria>
+                                <criteria>
+                                    <leftValue>{!Record.Type}</leftValue>
+                                    <operator>EQUAL</operator>
+                                    <rightValue>Daily Donation Pledge</rightValue>
                                 </criteria>
                             </visibilityRule>
                         </valueListItems>
                         <valueListItems>
                             <value>Opportunity.Resume_Charges</value>
                             <visibilityRule>
-                                <booleanFilter>1 AND 2</booleanFilter>
+                                <booleanFilter>(1 AND 2) AND 3</booleanFilter>
                                 <criteria>
                                     <leftValue>{!Record.StageName}</leftValue>
                                     <operator>EQUAL</operator>
@@ -36,13 +41,18 @@
                                     <leftValue>{!$Permission.CustomPermission.Stop_Pledge_Charges}</leftValue>
                                     <operator>EQUAL</operator>
                                     <rightValue>true</rightValue>
+                                </criteria>
+                                <criteria>
+                                    <leftValue>{!Record.Type}</leftValue>
+                                    <operator>EQUAL</operator>
+                                    <rightValue>Daily Donation Pledge</rightValue>
                                 </criteria>
                             </visibilityRule>
                         </valueListItems>
                         <valueListItems>
                             <value>Opportunity.Cancel_Pledge</value>
                             <visibilityRule>
-                                <booleanFilter>(1 OR 2) AND 3</booleanFilter>
+                                <booleanFilter>((1 OR 2) AND 3) AND 4</booleanFilter>
                                 <criteria>
                                     <leftValue>{!Record.StageName}</leftValue>
                                     <operator>EQUAL</operator>
@@ -57,13 +67,18 @@
                                     <leftValue>{!$Permission.CustomPermission.Stop_Pledge_Charges}</leftValue>
                                     <operator>EQUAL</operator>
                                     <rightValue>true</rightValue>
+                                </criteria>
+                                <criteria>
+                                    <leftValue>{!Record.Type}</leftValue>
+                                    <operator>EQUAL</operator>
+                                    <rightValue>Daily Donation Pledge</rightValue>
                                 </criteria>
                             </visibilityRule>
                         </valueListItems>
                         <valueListItems>
                             <value>Opportunity.Revoke_Donor_Links</value>
                             <visibilityRule>
-                                <booleanFilter>(1 OR 2) AND 3</booleanFilter>
+                                <booleanFilter>((1 OR 2) AND 3) AND 4</booleanFilter>
                                 <criteria>
                                     <leftValue>{!Record.StageName}</leftValue>
                                     <operator>EQUAL</operator>
@@ -78,6 +93,11 @@
                                     <leftValue>{!$Permission.CustomPermission.Stop_Pledge_Charges}</leftValue>
                                     <operator>EQUAL</operator>
                                     <rightValue>true</rightValue>
+                                </criteria>
+                                <criteria>
+                                    <leftValue>{!Record.Type}</leftValue>
+                                    <operator>EQUAL</operator>
+                                    <rightValue>Daily Donation Pledge</rightValue>
                                 </criteria>
                             </visibilityRule>
                         </valueListItems>
@@ -289,6 +309,11 @@
                         <leftValue>{!Record.Consecutive_Failures__c}</leftValue>
                         <operator>GE</operator>
                         <rightValue>3</rightValue>
+                    </criteria>
+                    <criteria>
+                        <leftValue>{!Record.Type}</leftValue>
+                        <operator>EQUAL</operator>
+                        <rightValue>Daily Donation Pledge</rightValue>
                     </criteria>
                 </visibilityRule>
             </componentInstance>

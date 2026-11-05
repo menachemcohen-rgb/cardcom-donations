@@ -2,7 +2,7 @@
  * Admin action: plan and send the monthly receipts of a finished month (MonthlyReceiptPlanner). Two uses:
  *  - given Contacts only (allDonors = false): the Contact button "הפקת קבלה חודשית", REST, safe sandbox runs (N96);
  *  - every donor (allDonors = true): the general button "הפקת קבלות חודשיות לכל התורמים". Receipts only cover Charge__c records,
- *    which exist only for daily-donation pledges (record type Micro_Donation_Pledge), so "every donor" = every micro-pledge donor.
+ *    which exist only for daily-donation pledges (Type = Daily Donation Pledge), so "every donor" = every micro-pledge donor.
  * Only donors with a charge of that month still waiting for a receipt are counted and planned; a donor whose receipt already left
  * Pending is skipped (N78; use "שליחה חוזרת" on a Failed receipt). Needs the custom permission Manage_Charge_Schedule.
  * The scheduled run (MonthlyReceiptScheduler) is unchanged.

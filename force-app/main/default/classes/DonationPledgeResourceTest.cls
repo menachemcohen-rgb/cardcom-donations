@@ -67,7 +67,7 @@ private class DonationPledgeResourceTest {
     Id pledgeId = (Id) out.get('pledgeId');
     Opportunity p = [
       SELECT
-        RecordTypeId,
+        Type,
         Name,
         StageName,
         CloseDate,
@@ -82,7 +82,7 @@ private class DonationPledgeResourceTest {
       FROM Opportunity
       WHERE Id = :pledgeId
     ];
-    Assert.areEqual(MicroPledges.recordTypeId(), p.RecordTypeId);
+    Assert.areEqual(MicroPledges.TYPE, p.Type);
     Assert.areEqual(3.00, p.Charge_Amount__c);
     Assert.areEqual('TwiceDaily', p.Frequency__c);
     Assert.areEqual('donor@example.com', p.Donor_Email__c);

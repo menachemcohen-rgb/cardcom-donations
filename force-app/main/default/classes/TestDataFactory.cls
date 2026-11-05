@@ -1,4 +1,4 @@
-/** Test data for the donations project (B8). Pledges are Opportunities of record type Micro_Donation_Pledge (Part C). */
+/** Test data for the donations project (B8). Pledges are Opportunities with Type = MicroPledges.TYPE (Part C, D34). */
 @IsTest
 public class TestDataFactory {
   public static final String HOST = 'www.example.org.il';
@@ -106,35 +106,11 @@ public class TestDataFactory {
     );
   }
 
-  /**
-   * A regular (non-pledge) Opportunity, to prove pledge logic never touches it (D24). Inserted with a record type other than
-   * Micro_Donation_Pledge that the running user may use. Returns null when there is none (an org whose only Opportunity record
-   * type for this user is the pledge type, like atosandbox): then no regular Opportunity can exist and the caller skips the check.
-   */
+  /** A regular (non-pledge) Opportunity: Type is not the pledge value, so pledge logic must never touch it (D24, D34). */
   public static Opportunity otherOpportunity() {
-    Id rt = otherRecordTypeId();
-    if (rt == null)
-      return null;
-    Opportunity o = new Opportunity(
-      RecordTypeId = rt,
-      Name = 'Regular deal',
-      StageName = 'Prospecting',
-      CloseDate = Date.today().addDays(30)
-    );
+    Opportunity o = new Opportunity(Name = 'Regular deal', Type = 'New Business', StageName = 'Prospecting', CloseDate = Date.today().addDays(30));
     insert o;
     return o;
-  }
-
-  /**
-   * A custom Opportunity record type the running user may use that is not Micro_Donation_Pledge, or null. Master is never
-   * returned: describe reports it as available even when the user's profile has record types assigned, and the insert is then
-   * rejected (INVALID_CROSS_REFERENCE_KEY). Never rely on the user's default either: it may be the pledge type.
-   */
-  public static Id otherRecordTypeId() {
-    for (Schema.RecordTypeInfo i : Schema.SObjectType.Opportunity.getRecordTypeInfos())
-      if (!i.isMaster() && i.isAvailable() && i.isActive() && i.getDeveloperName() != 'Micro_Donation_Pledge')
-        return i.getRecordTypeId();
-    return null;
   }
 
   /** A REST context with a JSON body. */

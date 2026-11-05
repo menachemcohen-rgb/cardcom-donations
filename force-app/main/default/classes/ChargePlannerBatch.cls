@@ -8,13 +8,13 @@ public with sharing class ChargePlannerBatch implements Database.Batchable<SObje
   }
 
   public Database.QueryLocator start(Database.BatchableContext bc) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Date rd = runDate;
     return Database.getQueryLocator(
       [
         SELECT Id
         FROM Opportunity
-        WHERE RecordTypeId = :rt AND StageName = :MicroPledges.STAGE_ACTIVE AND (End_Date__c = NULL OR End_Date__c >= :rd)
+        WHERE Type = :pledgeType AND StageName = :MicroPledges.STAGE_ACTIVE AND (End_Date__c = NULL OR End_Date__c >= :rd)
       ]
     );
   }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Pledge_Type_Locked</fullName>
+    <active>true</active>
+    <description>D34: Type = 'Daily Donation Pledge' marks a pledge. It can't be changed on a pledge, and a regular Opportunity can't become one by hand (only the integration creates pledges).</description>
+    <errorConditionFormula>AND(
+    NOT(ISNEW()),
+    ISCHANGED(Type),
+    OR(ISPICKVAL(PRIORVALUE(Type), 'Daily Donation Pledge'), ISPICKVAL(Type, 'Daily Donation Pledge'))
+)</errorConditionFormula>
+    <errorDisplayField>Type</errorDisplayField>
+    <errorMessage>לא ניתן לשנות את סוג ההזדמנות של הוראת תרומה יומית.</errorMessage>
+</ValidationRule>

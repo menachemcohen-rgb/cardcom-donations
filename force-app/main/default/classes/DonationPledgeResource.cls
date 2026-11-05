@@ -1,6 +1,6 @@
 /**
  * POST /donations/pledge (B4, B6.2), adapted to the pledge Opportunity (Part C C1/C2):
- * the pledge is an Opportunity of record type Micro_Donation_Pledge, amount per charge is Charge_Amount__c, status is StageName.
+ * the pledge is an Opportunity of Type = Daily Donation Pledge, amount per charge is Charge_Amount__c, status is StageName.
  */
 @RestResource(urlMapping='/donations/pledge')
 global without sharing class DonationPledgeResource {
@@ -18,11 +18,11 @@ global without sharing class DonationPledgeResource {
         out = new Map<String, Object>{ 'error' => 'VALIDATION', 'fields' => bad };
       } else {
         String lp = (String) q.get('lowProfileId');
-        Id rt = MicroPledges.recordTypeId();
+        String pledgeType = MicroPledges.TYPE;
         List<Opportunity> ex = [
           SELECT Id, StageName, Donor_Submitted__c, Lp_Processed__c, Pledge_Number__c
           FROM Opportunity
-          WHERE LowProfileId__c = :lp AND RecordTypeId = :rt
+          WHERE LowProfileId__c = :lp AND Type = :pledgeType
           FOR UPDATE
         ];
         if (!ex.isEmpty() && ex[0].Donor_Submitted__c) {
@@ -48,7 +48,7 @@ global without sharing class DonationPledgeResource {
               res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'LP_ALREADY_USED' }));
               return;
             }
-            String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt].Pledge_Number__c;
+            String num = [SELECT Pledge_Number__c FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType].Pledge_Number__c;
             update new Opportunity(Id = p.Id, Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, num));
           } else {
             p.Name = MicroPledges.fullName(p.Donor_Last_Name__c, p.Donor_First_Name__c, ex[0].Pledge_Number__c);
@@ -59,7 +59,7 @@ global without sharing class DonationPledgeResource {
           res.statusCode = 200;
           out = new Map<String, Object>{
             'pledgeId' => p.Id,
-            'status' => [SELECT StageName FROM Opportunity WHERE Id = :p.Id AND RecordTypeId = :rt]
+            'status' => [SELECT StageName FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType]
             .StageName
           };
         }

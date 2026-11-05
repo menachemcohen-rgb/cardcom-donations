@@ -22,11 +22,11 @@
     <description>New pledges by activation week (last 90 days): amount per charge and frequency. Also the trend tile of the dashboard.</description>
     <filter>
         <criteriaItems>
-            <column>RECORDTYPE</column>
+            <column>TYPE</column>
             <columnToColumn>false</columnToColumn>
             <isUnlocked>true</isUnlocked>
             <operator>equals</operator>
-            <value>Opportunity.Micro_Donation_Pledge</value>
+            <value>Daily Donation Pledge</value>
         </criteriaItems>
     </filter>
     <format>Summary</format>

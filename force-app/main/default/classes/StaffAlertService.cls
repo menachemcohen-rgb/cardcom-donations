@@ -13,7 +13,7 @@ public without sharing class StaffAlertService {
 
   // ---------------------------------------------------------------- B6.9.4: consecutive failures
   public static void failureStreak(Set<Id> pledgeIds) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
     for (Opportunity p : [
       SELECT
@@ -38,7 +38,7 @@ public without sharing class StaffAlertService {
           LIMIT 10
         )
       FROM Opportunity
-      WHERE Id IN :pledgeIds AND RecordTypeId = :rt
+      WHERE Id IN :pledgeIds AND Type = :pledgeType
     ]) {
       String donor = p.Donor_Contact__r != null
         ? p.Donor_Contact__r.Name
@@ -244,13 +244,13 @@ public without sharing class StaffAlertService {
   public static Boolean pendingVerificationStale() {
     if (sentToday('Daily_Summary_Sent_On__c'))
       return false;
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Datetime dayAgo = Datetime.now().addHours(-24);
     List<Opportunity> ps = [
       SELECT Id, Name, StageName, CreatedDate, Donor_First_Name__c, Donor_Last_Name__c, Donor_Email__c, Lp_Check_Count__c
       FROM Opportunity
       WHERE
-        RecordTypeId = :rt
+        Type = :pledgeType
         AND ((StageName = :MicroPledges.STAGE_PENDING
         AND CreatedDate <= :dayAgo)
         OR (StageName = :MicroPledges.STAGE_VERIFICATION_FAILED
@@ -351,11 +351,11 @@ public without sharing class StaffAlertService {
 
   /** The donor stopped the pledge from the donor page. Sent every time (one per stop). */
   public static void donorStopped(Id pledgeId) {
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     List<Opportunity> ps = [
       SELECT Id, Pledge_Number__c, Charge_Amount__c, Frequency__c, Donor_Contact__r.Name, Donor_Contact__r.Email, Donor_Contact__r.MobilePhone
       FROM Opportunity
-      WHERE Id = :pledgeId AND RecordTypeId = :rt
+      WHERE Id = :pledgeId AND Type = :pledgeType
     ];
     if (ps.isEmpty())
       return;

@@ -16,7 +16,7 @@ public with sharing class ChargeRetryScheduler implements Schedulable {
       return false; // Shabbat / holiday / Friday after cutoff
     if (ChargeRunLock.isChainActive())
       return false; // overlapping run guard
-    Id rt = MicroPledges.recordTypeId();
+    String pledgeType = MicroPledges.TYPE;
     Datetime stuck = now.addMinutes(-30);
     Integer due = [
       SELECT COUNT()
@@ -24,7 +24,7 @@ public with sharing class ChargeRetryScheduler implements Schedulable {
       WHERE
         Status__c = 'Pending'
         AND Pledge__r.StageName = :MicroPledges.STAGE_ACTIVE
-        AND Pledge__r.RecordTypeId = :rt
+        AND Pledge__r.Type = :pledgeType
         AND ((Attempt_Number__c > 1
         AND Not_Before__c <= :now)
         OR (Attempt_Number__c = 1
