@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Record page for Opportunity record type Micro_Donation_Pledge (B2.8, Part C C2 rule 6). Activate for that record type only. Dynamic actions (B2.8): Stop/Resume/Cancel/Revoke shown by stage and $Permission.Stop_Pledge_Charges.</description>
+    <description>Pledge record page (B2.8, D34). Actions and the failure banner show only when Type = Daily Donation Pledge; Stop/Resume/Cancel/Revoke also need the stage and $Permission.Stop_Pledge_Charges.</description>
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

@@ -1,7 +1,7 @@
 # Deployment runbook (B10, adjusted for Part C)
 
 Order follows `CLAUDE.md` B10 with the Opportunity changes of Part C: the `OpportunityStage` set is merged first (E14), then the
-record type and sales process, then the Opportunity fields, before any object whose `Pledge__c` lookup points to Opportunity.
+record type and sales process (all stages, README 15), the `OpportunityType` value set (D34), then the Opportunity fields, before any object whose `Pledge__c` lookup points to Opportunity.
 Every command below is a **real change to the org** — run it only when you mean to. Details of each manual step are in
 `docs/README.md` ("Manual Setup steps"); the step numbers are referenced as **README n**.
 
@@ -65,7 +65,7 @@ made up; if one was missed, run `ChargePlanner.plan(Date.today(), 'AM')` (or `'P
 | d | 7 | `externalCredentials`, `namedCredentials` | No secrets in the files; ApiName/ApiPassword in README 7. |
 | e | 8 | `classes`, `triggers`, `email`, `staticresources` | `--test-level RunLocalTests`. |
 | f | 10 | `permissionsets` (incl. the optional read-only `Donations_Internal_Read`) | Then assign (README 14). |
-| g | 11 | `flows`, `quickActions`, `layouts`, `flexipages` | Activate the record page for the record type only (README 17). |
+| g | 11 | `flows`, `quickActions`, `layouts`, `flexipages` | Activate the record page for the Opportunity record type (README 17; actions are gated by Type, D34). |
 | h | 12 | `matchingRules`, `duplicateRules` | Deployed **inactive**; activate after step 5.3. |
 | i | 15 | `reportTypes`, `reports`, `dashboards` | |
 
@@ -159,7 +159,7 @@ Nothing below deletes data; pledges, charges and receipts stay for audit.
    `org-donations` plugin). Donor links then show WordPress's page without the portal.
 4. **Stop new intake in Salesforce:** deactivate the External Client App `WP_Donations` policies (or revoke its consumer secret), and set
    the Site `cardcom` inactive (webhooks get 404; Cardcom retries for 24 h, the sweeper is unscheduled).
-5. **Hide the pledges:** deactivate the record type `Micro_Donation_Pledge` (existing records keep it); remove the `Donations_*`
+5. **Hide the pledges:** pledges are `Type = Daily Donation Pledge` (D34): deactivate that `OpportunityType` value, or remove the `Donations_*`
    permission-set assignments if needed. Deactivate the matching/duplicate rules if they bother other processes.
 6. **Code rollback** of a single release: redeploy the previous Git tag (`git checkout <tag>` → step 3). Metadata removed in the new
    release needs a destructive-changes deploy; never delete fields that hold data without exporting it first.
