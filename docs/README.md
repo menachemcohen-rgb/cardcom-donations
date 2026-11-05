@@ -10,7 +10,7 @@ A custom WordPress plugin (`org-donations`, shortcode `[org_donation_form]`) ren
 Salesforce Apex REST endpoint (External Client App, OAuth 2.0 JWT Bearer) that asks Cardcom (`LowProfile/Create`, `CreateTokenOnly`) for a
 hosted card iframe. Terminal credentials exist only in Salesforce (External/Named Credential `Cardcom`). When the donor submits, the
 iframe's return page posts a message to the parent, JS sends amount, frequency and donor details plus the `LowProfileId` to PHP, and PHP
-posts them to Salesforce, which stores them on a **pledge Opportunity** (Record Type `Micro_Donation_Pledge`, stage
+posts them to Salesforce, which stores them on a **pledge Opportunity** (`Type = Daily Donation Pledge`, stage
 `Pending_Verification`). Cardcom's webhook to a Salesforce Site and a server-side `GetLpResult` call are the source of truth for the
 card token. Once both the form data and the verified token exist, an integration-user job matches or creates the donor Contact and
 activates the pledge (stage `Active`).
@@ -26,7 +26,8 @@ only), a thank-you email with signed donor links (card change / amount change), 
 | # | Decision |
 |---|---|
 | D23 | The pledge is a standard **Opportunity** with Record Type `Micro_Donation_Pledge`; no `Recurring_Pledge__c` object. |
-| D24 | Every trigger, flow, validation rule, query, list view and page is scoped to that Record Type. Other Opportunities are never touched. |
+| D24 | Every trigger, flow, validation rule, query, list view and page is scoped to pledges. Other Opportunities are never touched. |
+| D34 | Pledges are identified by `Opportunity.Type = Daily Donation Pledge` ("הוראת תרומה יומית"), replacing the record type of D23/D24. |
 | D25 | Standard `Amount` mirrors `Total_Collected__c`; the per-charge amount is `Charge_Amount__c`. |
 | D26 | NPSP is **not installed** in the target org. |
 | C1 | Own Sales Process `Micro_Donation_Process` with 5 stages: `Pending_Verification`, `Active`, `Stopped`, `Cancelled`, `Verification_Failed`. |
@@ -138,21 +139,24 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
 14. **Permission sets** (B2.7): assign `Donations_Integration` to the integration user, `Donations_Admin` to the data/finance managers,
       `Donations_Staff` to fundraising staff, and `Donations_Site_Guest` to the guest user of Site `cardcom` (Prompt 3).
     `Donations_Internal_Read` (optional) is for internal users who only need to look at the data (support, BI, auditors): read on
-    pledge Opportunities (record type `Micro_Donation_Pledge`), Contact donor fields, `Charge__c`, `Monthly_Receipt__c`,
+    pledge Opportunities (`Type = Daily Donation Pledge`), Contact donor fields, `Charge__c`, `Monthly_Receipt__c`,
     `Card_Change_Request__c`, `Pledge_Card_History__c`, `Pledge_Change_Log__c`, `Donor_Link_Use__c`, `Reconciliation_Issue__c` and
     `Cardcom_Webhook_Log__c`; nothing editable, no actions. It never includes `Token__c` (pledge and card history), the Israeli ID
     (`Donor_Tax_Id__c`) or its hash, and no settings, custom metadata or the donor-link secret. Give the
     integration user the "Salesforce API Integration" permission set license first, then check it can be assigned `Donations_Integration`.
-15. **Record type access.** `Micro_Donation_Pledge` is the org's first Opportunity record type. It is deployed without profile
-    assignments (profiles are never deployed). Check that no profile's default Opportunity record type changed (org-discovery R3).
-    Access to the record type comes from the `Donations_*` permission sets (Prompt 2).
-16. **Page layout assignment.** Setup → Object Manager → Opportunity → Page Layouts → Page Layout Assignment: assign
-    "Micro Donation Pledge Layout" to record type `Micro_Donation_Pledge` for every profile that will see pledges (at least System
-    Administrator). Layout assignments live in profiles, which this repo doesn't deploy.
+15. **Opportunity record type and sales process (D34).** Pledges are identified by `Type = Daily Donation Pledge`, not by a record type.
+    The org's only Opportunity record type is the former `Micro_Donation_Pledge` (renamed "הזדמנות"; Salesforce won't deactivate the
+    last active one), so every Opportunity uses it. Its sales process `Micro_Donation_Process` must list **every** stage: Setup →
+    Object Manager → Opportunity → Sales Processes → `Micro_Donation_Process` → Edit → move the standard stages (Prospecting … Closed
+    Won/Lost) into Selected Values next to the 5 pledge stages, default Prospecting. The API can't change a sales process (manual).
+    In a new org: either reuse an existing record type or deploy `Micro_Donation_Pledge` with a process that has all stages.
+16. **Page layout assignment.** Setup → Object Manager → Opportunity → Page Layouts → Page Layout Assignment: the layout assigned to
+    the record type is shown for every Opportunity. Use a layout that has both the pledge fields and the regular deal fields (or keep
+    the org's layout and add the pledge section). Layout assignments live in profiles, which this repo doesn't deploy.
 17. **Activate the record page.** Lightning App Builder → `Pledge_Record_Page` (label "עמוד הוראת תרומה יומית") → Activation →
-    App, Record Type and Profile: assign it to record type `Micro_Donation_Pledge` only (C2 rule 6). Don't make it the org default.
-    The page carries the dynamic actions הפסקת חיובים / חידוש חיובים / ביטול הוראה / ביטול קישורי תורם, shown by stage and only to
-    users with `Stop_Pledge_Charges` (`Donations_Admin`).
+    assign it to the Opportunity record type (D34). The actions הפסקת חיובים / חידוש חיובים / ביטול הוראה / ביטול קישורי תורם and the
+    failure banner show only when `Type = Daily Donation Pledge`, by stage, and only to users with `Stop_Pledge_Charges`
+    (`Donations_Admin`). Regular Opportunities see the details and tabs only.
 18. **Field history on `StageName`** (optional). Part C lists it, but Opportunity already records every stage change in Stage History
     (`OpportunityHistory`) automatically. Turn on Field History for `StageName` in Setup only if you also want it in the field-history
     list; it counts toward the limit of 20.
@@ -208,6 +212,9 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
     - **Duplicate contacts report** ("רשומות כפולות"): Reports → New → report type "רשומות כפולות" (`Duplicate_Contacts`) → filter
       Duplicate Rule = `Donor_Contact_Duplicate`, group by Duplicate Record Set → save in `Donations`. Not shipped as metadata because
       columns of reports on custom report types can't be checked without the org (N83).
+    - **Report types `Micro_Pledges_With_Charges` and `Donors_With_Pledges` (D34):** they now offer the Opportunity `Type` column
+      instead of `RecordTypeId`. The API can't update a report type, so deploy them with `sf project deploy start` or add `Type` to
+      the Opportunity section by hand (Setup → Report Types → Edit Layout). Reports built on them must filter `Type = Daily Donation Pledge`.
     - **Repeated failures threshold:** the report and list view use 3 (the default of `Max_Consecutive_Failures__c`); change their filter if X changes.
     - **Dashboard on the home page / app:** optional, Lightning App Builder → Dashboard component → "תרומות מיקרו".
 
