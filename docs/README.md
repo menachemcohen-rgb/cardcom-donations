@@ -59,6 +59,8 @@ only), a thank-you email with signed donor links (card change / amount change), 
 This list grows with every prompt. Steps are grouped by the B10 deployment order.
 
 ### Before the first deploy
+Production: the full path (build, validate, quick deploy, manual steps) is in [`docs/production-deployment.md`](production-deployment.md).
+
 1. Run the read-only discovery in [`docs/org-discovery.md`](org-discovery.md) and resolve its risk list (existing Opportunity automation,
    required fields, validation rules, duplicate rules). Sandbox: done 2026-11-02; production: still to do.
 2. **Standard value sets (E14).** The repo's `OpportunityStage` and `ContactRole` sets were built from the Ato Dev sandbox's live values

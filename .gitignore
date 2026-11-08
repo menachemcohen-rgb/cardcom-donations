@@ -35,3 +35,7 @@ wp-config*.php
 
 # Python
 __pycache__/
+
+# Production build output and local values (scripts/prod)
+build/
+config/*.local.json
