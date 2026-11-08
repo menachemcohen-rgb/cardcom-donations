@@ -4,7 +4,7 @@
     <baseObject>DuplicateRecordSet</baseObject>
     <category>other</category>
     <deployed>true</deployed>
-    <description>Duplicate record sets of Contacts found by Donor_Contact_Duplicate (Alert+Report). The report on it is created by hand (README).</description>
+    <description>Duplicate record sets of Contacts found by Donor_Contact_Duplicate (Alert+Report). The report on it is created by hand (README). Polymorphic/standard lookups (DuplicateRecordItem.Record, DuplicateRecordSet.DuplicateRule) are not allowed as report-type columns; the standard "Duplicate Record Sets with Duplicate Record Items" report type shows them.</description>
     <join>
         <outerJoin>false</outerJoin>
         <relationship>DuplicateRecordItems</relationship>
@@ -23,11 +23,6 @@
         </columns>
         <columns>
             <checkedByDefault>true</checkedByDefault>
-            <field>DuplicateRule</field>
-            <table>DuplicateRecordSet</table>
-        </columns>
-        <columns>
-            <checkedByDefault>true</checkedByDefault>
             <field>CreatedDate</field>
             <table>DuplicateRecordSet</table>
         </columns>
@@ -37,11 +32,6 @@
         <columns>
             <checkedByDefault>true</checkedByDefault>
             <field>Name</field>
-            <table>DuplicateRecordSet.DuplicateRecordItems</table>
-        </columns>
-        <columns>
-            <checkedByDefault>true</checkedByDefault>
-            <field>Record</field>
             <table>DuplicateRecordSet.DuplicateRecordItems</table>
         </columns>
         <columns>
