@@ -4,6 +4,7 @@
     <types>
         <members>ContactRole</members>
         <members>OpportunityStage</members>
+        <members>OpportunityType</members>
         <name>StandardValueSet</name>
     </types>
     <version>62.0</version>

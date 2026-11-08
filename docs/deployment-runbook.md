@@ -5,6 +5,8 @@ record type and sales process (all stages, README 15), the `OpportunityType` val
 Every command below is a **real change to the org** — run it only when you mean to. Details of each manual step are in
 `docs/README.md` ("Manual Setup steps"); the step numbers are referenced as **README n**.
 
+**Production:** follow `docs/production-deployment.md` (build `scripts/prod/build-prod.py`, validate/quick deploy `scripts/prod/deploy-prod.sh`); Hebrew checklist `docs/production-checklist-he.md`.
+
 `<alias>` = the target org alias. `<int-user>` = the integration username (README 6).
 
 ## 0. Before the first deploy (each org: sandbox first, then production)
