@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <StandardValueSetTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <valueTranslation>
-        <masterLabel>Pending Verification</masterLabel>
+        <masterLabel>Pending_Verification</masterLabel>
         <translation>ממתינה לאימות</translation>
     </valueTranslation>
     <valueTranslation>
@@ -17,7 +17,7 @@
         <translation>בוטלה</translation>
     </valueTranslation>
     <valueTranslation>
-        <masterLabel>Verification Failed</masterLabel>
+        <masterLabel>Verification_Failed</masterLabel>
         <translation>הכרטיס לא אומת</translation>
     </valueTranslation>
 </StandardValueSetTranslation>
