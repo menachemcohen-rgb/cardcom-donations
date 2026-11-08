@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Retry_Delays_Minutes__c</fullName>
     <defaultValue>"60,240"</defaultValue>
-    <description>המתנה לפני ניסיון 2, 3</description>
+    <description>Wait before attempts 2 and 3</description>
     <externalId>false</externalId>
     <label>Retry Delays Minutes</label>
     <length>50</length>

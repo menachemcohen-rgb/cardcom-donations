@@ -5,5 +5,5 @@
     <description>B2.3.</description>
     <errorConditionFormula>AND(NOT(ISNEW()), OR(ISPICKVAL(PRIORVALUE(Status__c),'Success')), ISCHANGED(Amount__c))</errorConditionFormula>
     <errorDisplayField>Amount__c</errorDisplayField>
-    <errorMessage>לא ניתן לשנות סכום של חיוב שהצליח.</errorMessage>
+    <errorMessage>The amount of a successful charge can't be changed.</errorMessage>
 </ValidationRule>

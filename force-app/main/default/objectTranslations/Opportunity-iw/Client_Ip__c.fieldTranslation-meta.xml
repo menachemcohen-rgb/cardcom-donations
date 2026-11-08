@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>לתיעוד הסכמה</help>
+    <label>IP מגיש</label>
+    <name>Client_Ip__c</name>
+</CustomFieldTranslation>

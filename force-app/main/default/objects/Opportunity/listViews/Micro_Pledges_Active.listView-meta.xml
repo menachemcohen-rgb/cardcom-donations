@@ -20,5 +20,5 @@
         <operation>equals</operation>
         <value>Active</value>
     </filters>
-    <label>הוראות פעילות</label>
+    <label>Active Pledges</label>
 </ListView>

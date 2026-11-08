@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Verified_At__c</fullName>
     <externalId>false</externalId>
-    <label>אומת ב</label>
+    <label>Verified At</label>
     <required>false</required>
     <type>DateTime</type>
 </CustomField>

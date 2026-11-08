@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Last4__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>תצוגה בלבד, אופציונלי — מתמלא מהחיוב המוצלח הראשון אם Cardcom מחזיר; שום לוגיקה לא תלויה בו (ריק → "הכרטיס השמור")</inlineHelpText>
-    <label>4 ספרות</label>
+    <inlineHelpText>Display only, optional — filled from the first successful charge if Cardcom returns it; no logic depends on it (blank → "saved card")</inlineHelpText>
+    <label>Last 4 Digits</label>
     <length>4</length>
     <required>false</required>
     <trackHistory>true</trackHistory>

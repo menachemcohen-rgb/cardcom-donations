@@ -3,8 +3,8 @@
     <fullName>Charge_Amount__c</fullName>
     <description>Replaces Recurring_Pledge__c.Amount__c (Part C C2). Snapshot into Charge__c.Amount__c. Required via layout and Apex, not at field level (D24).</description>
     <externalId>false</externalId>
-    <inlineHelpText>הסכום לכל חיוב בודד</inlineHelpText>
-    <label>סכום לחיוב</label>
+    <inlineHelpText>The amount of each single charge</inlineHelpText>
+    <label>Charge Amount</label>
     <precision>8</precision>
     <required>false</required>
     <scale>2</scale>

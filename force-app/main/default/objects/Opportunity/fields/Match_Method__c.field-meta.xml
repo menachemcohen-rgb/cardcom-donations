@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Match_Method__c</fullName>
     <externalId>false</externalId>
-    <label>אופן זיהוי</label>
+    <label>Match Method</label>
     <required>false</required>
     <type>Picklist</type>
     <valueSet>

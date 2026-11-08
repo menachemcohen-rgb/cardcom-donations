@@ -28,6 +28,7 @@ only), a thank-you email with signed donor links (card change / amount change), 
 | D23 | The pledge is a standard **Opportunity** with Record Type `Micro_Donation_Pledge`; no `Recurring_Pledge__c` object. |
 | D24 | Every trigger, flow, validation rule, query, list view and page is scoped to pledges. Other Opportunities are never touched. |
 | D34 | Pledges are identified by `Opportunity.Type = Daily Donation Pledge` ("הוראת תרומה יומית"), replacing the record type of D23/D24. |
+| D35 | Labels are **English**; Hebrew is an `iw` translation (Translation Workbench). Hebrew-language users see Hebrew (N101). |
 | D25 | Standard `Amount` mirrors `Total_Collected__c`; the per-charge amount is `Charge_Amount__c`. |
 | D26 | NPSP is **not installed** in the target org. |
 | C1 | Own Sales Process `Micro_Donation_Process` with 5 stages: `Pending_Verification`, `Active`, `Stopped`, `Cancelled`, `Verification_Failed`. |
@@ -67,8 +68,9 @@ This list grows with every prompt. Steps are grouped by the B10 deployment order
    "Enable Opportunity Field History"). It is off in the sandbox, and the fields Part C tracks (`Charge_Amount__c`, `Frequency__c`,
    `Stop_Reason__c`, `Link_Version__c`, `Last4__c`) fail to deploy with `trackHistory=true` until it is on. Limit 20 tracked fields
    (sandbox: 0 tracked before this project).
-4. Enable **Translation Workbench** and add Hebrew (`iw`) as an active language. The stage and contact-role translations
-   (`standardValueSetTranslations/*-iw`) fail to deploy without it.
+4. Enable **Translation Workbench** and add Hebrew (`iw`) as an active language. All labels are English (D35); the Hebrew text is
+   the `iw` translation in `objectTranslations/*-iw`, `translations/iw.translation-meta.xml` and `standardValueSetTranslations/*-iw`,
+   and it fails to deploy without this step. Users who should see Hebrew need **Language = Hebrew** on their user record.
 5. Check the action of `Standard_Contact_Duplicate_Rule` in Setup: it must not **Block** (org-discovery R5).
 
 ### Integration user

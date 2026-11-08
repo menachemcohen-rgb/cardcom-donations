@@ -2,10 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Monthly_Receipt__c</fullName>
     <deleteConstraint>Restrict</deleteConstraint>
-    <inlineHelpText>רק Success</inlineHelpText>
-    <label>קבלה חודשית</label>
+    <inlineHelpText>Success only</inlineHelpText>
+    <label>Monthly Receipt</label>
     <referenceTo>Monthly_Receipt__c</referenceTo>
-    <relationshipLabel>ניסיונות חיוב</relationshipLabel>
+    <relationshipLabel>Charge Attempts</relationshipLabel>
     <relationshipName>Charges</relationshipName>
     <required>false</required>
     <type>Lookup</type>

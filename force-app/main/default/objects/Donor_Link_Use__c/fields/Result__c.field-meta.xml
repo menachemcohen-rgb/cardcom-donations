@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Result__c</fullName>
     <description>Bad_Verify added per spec-consistency N3 (used by B6.9.6).</description>
-    <label>תוצאה</label>
+    <label>Result</label>
     <required>false</required>
     <type>Picklist</type>
     <valueSet>

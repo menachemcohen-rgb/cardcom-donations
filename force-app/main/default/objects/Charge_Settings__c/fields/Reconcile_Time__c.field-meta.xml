@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Reconcile_Time__c</fullName>
     <defaultValue>"02:30"</defaultValue>
-    <description>התאמה לילית</description>
+    <description>Nightly reconciliation</description>
     <externalId>false</externalId>
     <label>Reconcile Time</label>
     <length>5</length>

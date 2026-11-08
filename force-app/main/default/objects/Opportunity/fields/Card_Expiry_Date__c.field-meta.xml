@@ -3,6 +3,6 @@
     <fullName>Card_Expiry_Date__c</fullName>
     <formula>IF(LEN(CardExpirationMMYY__c)=4, ADDMONTHS(DATE(2000+VALUE(RIGHT(CardExpirationMMYY__c,2)),VALUE(LEFT(CardExpirationMMYY__c,2)),1),1)-1, null)</formula>
     <formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs>
-    <label>תאריך תוקף</label>
+    <label>Card Expiry Date</label>
     <type>Date</type>
 </CustomField>

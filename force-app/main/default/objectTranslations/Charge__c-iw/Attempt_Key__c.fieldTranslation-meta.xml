@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>{ExternalUniqTranId}-A{n} — זה הערך שנשלח ל-Cardcom כ-ExternalUniqTranId (B5.4)</help>
+    <label>מפתח ניסיון</label>
+    <name>Attempt_Key__c</name>
+</CustomFieldTranslation>

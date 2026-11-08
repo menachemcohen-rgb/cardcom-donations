@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Eve_AM_Time__c</fullName>
     <defaultValue>"06:00"</defaultValue>
-    <description>ריצה 1 בשישי/ערב חג</description>
+    <description>Run 1 on Friday / holiday eve</description>
     <externalId>false</externalId>
     <label>Eve AM Time</label>
     <length>5</length>

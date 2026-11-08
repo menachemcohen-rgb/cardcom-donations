@@ -15,5 +15,5 @@
         <operation>equals</operation>
         <value>Open</value>
     </filters>
-    <label>פערי התאמה פתוחים</label>
+    <label>Open Reconciliation Issues</label>
 </ListView>

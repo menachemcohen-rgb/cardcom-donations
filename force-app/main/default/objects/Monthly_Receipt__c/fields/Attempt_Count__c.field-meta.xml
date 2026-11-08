@@ -3,7 +3,7 @@
     <fullName>Attempt_Count__c</fullName>
     <defaultValue>0</defaultValue>
     <externalId>false</externalId>
-    <label>ניסיונות</label>
+    <label>Attempts</label>
     <precision>2</precision>
     <required>false</required>
     <scale>0</scale>

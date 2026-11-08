@@ -3,7 +3,7 @@
     <fullName>Token_Expiry_Date__c</fullName>
     <externalId>false</externalId>
     <inlineHelpText>TokenInfo.TokenExDate</inlineHelpText>
-    <label>תאריך מחיקת טוקן</label>
+    <label>Token Expiry Date</label>
     <required>false</required>
     <type>Date</type>
 </CustomField>

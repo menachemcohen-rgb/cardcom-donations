@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Receipt_Link_Deal_Numbers__c</fullName>
     <defaultValue>false</defaultValue>
-    <description>false → Cash = הסכום החודשי; true → DealNumbers[] (רק אחרי אימות בטרמינל הייצור — U8/Q15)</description>
+    <description>false → Cash = the monthly total; true → DealNumbers[] (only after verifying on the production terminal — U8/Q15)</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Receipt Link Deal Numbers</label>
     <type>Checkbox</type>

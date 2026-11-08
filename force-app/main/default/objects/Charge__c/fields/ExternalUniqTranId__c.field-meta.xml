@@ -3,8 +3,8 @@
     <fullName>ExternalUniqTranId__c</fullName>
     <description>Indexed through External Id (non-unique). See spec-consistency N15 for the Id15/Id18 question.</description>
     <externalId>true</externalId>
-    <inlineHelpText>PLG-{pledgeId18}-{yyyyMMdd}-{AM/PM} — מזהה פנימי של החיוב הלוגי (לא נשלח כמות שהוא)</inlineHelpText>
-    <label>מזהה חיוב לוגי</label>
+    <inlineHelpText>PLG-{pledgeId18}-{yyyyMMdd}-{AM/PM} — internal id of the logical charge (not sent as is)</inlineHelpText>
+    <label>Logical Charge Id</label>
     <length>100</length>
     <required>true</required>
     <type>Text</type>

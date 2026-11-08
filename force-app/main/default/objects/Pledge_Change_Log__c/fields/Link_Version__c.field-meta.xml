@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Link_Version__c</fullName>
     <externalId>false</externalId>
-    <label>גרסת קישורים</label>
+    <label>Link Version</label>
     <precision>4</precision>
     <required>false</required>
     <scale>0</scale>

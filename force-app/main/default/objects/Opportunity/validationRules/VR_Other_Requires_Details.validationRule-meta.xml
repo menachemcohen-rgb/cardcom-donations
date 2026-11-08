@@ -9,5 +9,5 @@
     ISBLANK(Stop_Reason_Details__c)
 )</errorConditionFormula>
     <errorDisplayField>Stop_Reason_Details__c</errorDisplayField>
-    <errorMessage>כשסיבת ההפסקה היא "אחר" חובה למלא פירוט.</errorMessage>
+    <errorMessage>When the stop reason is "Other", details are required.</errorMessage>
 </ValidationRule>

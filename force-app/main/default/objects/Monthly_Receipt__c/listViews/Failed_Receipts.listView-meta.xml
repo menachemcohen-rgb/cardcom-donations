@@ -16,5 +16,5 @@
         <operation>equals</operation>
         <value>Failed,Needs_Verification</value>
     </filters>
-    <label>קבלות שנכשלו</label>
+    <label>Failed Receipts</label>
 </ListView>

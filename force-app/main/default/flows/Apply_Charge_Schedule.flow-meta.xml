@@ -2,7 +2,7 @@
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionCalls>
         <name>Apply_Schedule</name>
-        <label>החלת זמני חיוב</label>
+        <label>Apply Charge Schedule</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <actionName>DonationSetup</actionName>
@@ -26,13 +26,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Has_Permission</name>
-        <label>יש הרשאה?</label>
+        <label>Has permission?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>No_Permission_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>and</conditionLogic>
@@ -46,7 +46,7 @@
             <connector>
                 <targetReference>Current_Settings_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B9.1/B9.2: shows the current charge times from Charge_Settings__c and re-schedules the Donations jobs (DonationSetup.applyScheduleInvocable). Gated by Custom Permission Manage_Charge_Schedule (also checked in Apex).</description>
@@ -87,7 +87,7 @@
         <expression>TEXT({!$Setup.Charge_Settings__c.Retry_Minute__c})</expression>
     </formulas>
     <interviewLabel>Apply Charge Schedule {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>החלת זמני חיוב</label>
+    <label>Apply Charge Schedule</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

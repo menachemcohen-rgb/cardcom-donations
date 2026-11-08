@@ -31,7 +31,7 @@
         <field>Pledge_Change_Log__c.Change_Type__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>שינויים ע"י תורמים</name>
+    <name>Changes by Donors</name>
     <params>
         <name>co</name>
         <value>1</value>

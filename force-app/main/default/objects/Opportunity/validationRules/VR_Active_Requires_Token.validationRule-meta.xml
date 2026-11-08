@@ -8,5 +8,5 @@
     ISPICKVAL(StageName, 'Active'),
     OR(ISBLANK(Token__c), ISBLANK(Donor_Contact__c))
 )</errorConditionFormula>
-    <errorMessage>הוראה פעילה חייבת אסימון כרטיס ותורם משויך.</errorMessage>
+    <errorMessage>An active pledge needs a card token and a linked donor.</errorMessage>
 </ValidationRule>

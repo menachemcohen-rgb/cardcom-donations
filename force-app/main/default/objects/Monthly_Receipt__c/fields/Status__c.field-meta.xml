@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Status__c</fullName>
-    <label>סטטוס</label>
+    <label>Status</label>
     <required>true</required>
     <type>Picklist</type>
     <valueSet>
@@ -11,7 +11,7 @@
             <value>
                 <fullName>Pending</fullName>
                 <default>true</default>
-                <label>ממתינה</label>
+                <label>Pending</label>
             </value>
             <value>
                 <fullName>Processing</fullName>
@@ -21,17 +21,17 @@
             <value>
                 <fullName>Issued</fullName>
                 <default>false</default>
-                <label>הופקה ונשלחה</label>
+                <label>Issued and Sent</label>
             </value>
             <value>
                 <fullName>Failed</fullName>
                 <default>false</default>
-                <label>נכשלה</label>
+                <label>Failed</label>
             </value>
             <value>
                 <fullName>Needs_Verification</fullName>
                 <default>false</default>
-                <label>תשובה לא ידועה</label>
+                <label>Unknown Response</label>
             </value>
             <value>
                 <fullName>Skipped_No_Charges</fullName>

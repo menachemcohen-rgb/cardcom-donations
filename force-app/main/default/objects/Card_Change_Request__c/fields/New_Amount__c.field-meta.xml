@@ -3,7 +3,7 @@
     <fullName>New_Amount__c</fullName>
     <description>Amount per charge the donor chose together with the new card (donor page). Applied to the pledge only when the card change completes; empty = no change.</description>
     <externalId>false</externalId>
-    <label>סכום חדש</label>
+    <label>New Amount</label>
     <precision>8</precision>
     <required>false</required>
     <scale>2</scale>

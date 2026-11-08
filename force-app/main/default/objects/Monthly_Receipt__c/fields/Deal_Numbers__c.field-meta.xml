@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Deal_Numbers__c</fullName>
-    <inlineHelpText>JSON array שנשלח</inlineHelpText>
+    <inlineHelpText>JSON array that was sent</inlineHelpText>
     <label>DealNumbers</label>
     <length>131072</length>
     <required>false</required>

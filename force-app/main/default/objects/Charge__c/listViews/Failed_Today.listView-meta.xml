@@ -23,5 +23,5 @@
         <operation>equals</operation>
         <value>TODAY</value>
     </filters>
-    <label>חיובים שנכשלו היום</label>
+    <label>Charges Failed Today</label>
 </ListView>

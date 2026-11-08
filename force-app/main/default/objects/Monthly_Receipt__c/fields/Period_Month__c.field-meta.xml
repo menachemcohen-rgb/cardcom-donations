@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Period_Month__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>היום הראשון בחודש (2026-11-01)</inlineHelpText>
-    <label>חודש</label>
+    <inlineHelpText>First day of the month (2026-11-01)</inlineHelpText>
+    <label>Month</label>
     <required>true</required>
     <type>Date</type>
 </CustomField>

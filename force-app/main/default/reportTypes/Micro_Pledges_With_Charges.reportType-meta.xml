@@ -9,7 +9,7 @@
         <outerJoin>true</outerJoin>
         <relationship>Charges__r</relationship>
     </join>
-    <label>הוראות תרומה עם חיובים</label>
+    <label>Donation Pledges with Charges</label>
     <sections>
         <columns>
             <checkedByDefault>true</checkedByDefault>
@@ -101,7 +101,7 @@
             <field>Match_Method__c</field>
             <table>Opportunity</table>
         </columns>
-        <masterLabel>הוראת תרומה</masterLabel>
+        <masterLabel>Donation Pledge</masterLabel>
     </sections>
     <sections>
         <columns>
@@ -184,6 +184,6 @@
             <field>Monthly_Receipt__c</field>
             <table>Opportunity.Charges__r</table>
         </columns>
-        <masterLabel>חיוב</masterLabel>
+        <masterLabel>Charge</masterLabel>
     </sections>
 </ReportType>

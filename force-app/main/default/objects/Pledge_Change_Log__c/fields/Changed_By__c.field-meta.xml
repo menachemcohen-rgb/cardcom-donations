@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Changed_By__c</fullName>
-    <label>שונה ע"י</label>
+    <label>Changed By</label>
     <referenceTo>User</referenceTo>
-    <relationshipLabel>יומני שינויים</relationshipLabel>
+    <relationshipLabel>Change Logs</relationshipLabel>
     <relationshipName>Pledge_Change_Logs</relationshipName>
     <required>false</required>
     <type>Lookup</type>

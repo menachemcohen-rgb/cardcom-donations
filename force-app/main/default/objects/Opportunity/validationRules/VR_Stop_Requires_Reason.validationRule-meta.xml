@@ -9,5 +9,5 @@
     ISBLANK(TEXT(Stop_Reason__c))
 )</errorConditionFormula>
     <errorDisplayField>Stop_Reason__c</errorDisplayField>
-    <errorMessage>חובה לבחור סיבת הפסקה.</errorMessage>
+    <errorMessage>A stop reason is required.</errorMessage>
 </ValidationRule>

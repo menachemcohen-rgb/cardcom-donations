@@ -3,7 +3,7 @@
     <fullName>Cardcom_Approval_Number__c</fullName>
     <externalId>false</externalId>
     <inlineHelpText>ApprovalNumber</inlineHelpText>
-    <label>מספר אישור</label>
+    <label>Approval Number</label>
     <length>20</length>
     <required>false</required>
     <type>Text</type>

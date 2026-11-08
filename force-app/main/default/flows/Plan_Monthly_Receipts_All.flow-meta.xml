@@ -2,7 +2,7 @@
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionCalls>
         <name>Plan_Receipts</name>
-        <label>הפקת קבלות חודשיות לכל התורמים</label>
+        <label>Create Monthly Receipts for All Donors</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <actionName>MonthlyReceiptPlanAction</actionName>
@@ -38,13 +38,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Has_Permission</name>
-        <label>יש הרשאה?</label>
+        <label>Has permission?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>No_Permission_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>and</conditionLogic>
@@ -58,7 +58,7 @@
             <connector>
                 <targetReference>Choose_Month_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>N96: general button. Plans and sends the monthly receipts of a finished month for every daily-donation (Type = Daily Donation Pledge) donor with a charge waiting for a receipt (MonthlyReceiptPlanAction, allDonors = true) — the same as the scheduled run on Receipt_Day_Of_Month__c. Gated by Manage_Charge_Schedule (also checked in Apex).</description>
@@ -68,8 +68,8 @@
         <dataType>Date</dataType>
         <expression>DATE(YEAR(ADDMONTHS({!$Flow.CurrentDate}, -1)), MONTH(ADDMONTHS({!$Flow.CurrentDate}, -1)), 1)</expression>
     </formulas>
-    <interviewLabel>הפקת קבלות חודשיות לכל התורמים {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>הפקת קבלות חודשיות לכל התורמים</label>
+    <interviewLabel>Create Monthly Receipts for All Donors {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Create Monthly Receipts for All Donors</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

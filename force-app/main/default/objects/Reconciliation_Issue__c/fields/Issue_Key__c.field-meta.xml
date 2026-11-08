@@ -3,7 +3,7 @@
     <fullName>Issue_Key__c</fullName>
     <caseSensitive>false</caseSensitive>
     <externalId>true</externalId>
-    <label>מפתח פער</label>
+    <label>Issue Key</label>
     <length>120</length>
     <required>false</required>
     <type>Text</type>

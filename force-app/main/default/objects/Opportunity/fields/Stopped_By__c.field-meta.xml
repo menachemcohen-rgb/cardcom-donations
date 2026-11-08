@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Stopped_By__c</fullName>
-    <label>הופסק ע"י</label>
+    <label>Stopped By</label>
     <referenceTo>User</referenceTo>
-    <relationshipLabel>הוראות שהופסקו</relationshipLabel>
+    <relationshipLabel>Stopped Pledges</relationshipLabel>
     <relationshipName>Micro_Pledges_Stopped</relationshipName>
     <required>false</required>
     <type>Lookup</type>

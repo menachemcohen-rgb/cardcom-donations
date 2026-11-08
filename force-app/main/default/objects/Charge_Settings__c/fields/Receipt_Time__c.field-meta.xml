@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Receipt_Time__c</fullName>
     <defaultValue>"07:00"</defaultValue>
-    <description>שעת הפקת קבלה</description>
+    <description>Receipt run time</description>
     <externalId>false</externalId>
     <label>Receipt Time</label>
     <length>5</length>

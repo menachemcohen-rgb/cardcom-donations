@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>CreditCardLines = שורת אשראי לכל חיוב (ברירת מחדל); Cash = מזומן; DealNumbers = קישור מספרי עסקאות. ריק = אשראי.</help>
+    <name>Receipt_Payment_Mode__c</name>
+</CustomFieldTranslation>

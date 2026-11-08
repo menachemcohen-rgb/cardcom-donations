@@ -2,7 +2,7 @@
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionCalls>
         <name>Plan_Receipts</name>
-        <label>הפקת קבלה חודשית</label>
+        <label>Create Monthly Receipt</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <actionName>MonthlyReceiptPlanAction</actionName>
@@ -44,7 +44,7 @@
     <apiVersion>62.0</apiVersion>
     <assignments>
         <name>Add_Contact</name>
-        <label>איש הקשר הנוכחי</label>
+        <label>Current Contact</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <assignmentItems>
@@ -60,13 +60,13 @@
     </assignments>
     <decisions>
         <name>Has_Permission</name>
-        <label>יש הרשאה?</label>
+        <label>Has permission?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>No_Permission_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>and</conditionLogic>
@@ -80,7 +80,7 @@
             <connector>
                 <targetReference>Choose_Month_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>N96: Contact button. Plans and sends the monthly receipt of a finished month for this Contact only (MonthlyReceiptPlanAction, allDonors = false). Skipped when the Contact has no charge of that month waiting for a receipt. Gated by Manage_Charge_Schedule (also checked in Apex).</description>
@@ -90,8 +90,8 @@
         <dataType>Date</dataType>
         <expression>DATE(YEAR(ADDMONTHS({!$Flow.CurrentDate}, -1)), MONTH(ADDMONTHS({!$Flow.CurrentDate}, -1)), 1)</expression>
     </formulas>
-    <interviewLabel>הפקת קבלה חודשית {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>הפקת קבלה חודשית</label>
+    <interviewLabel>Create Monthly Receipt {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Create Monthly Receipt</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

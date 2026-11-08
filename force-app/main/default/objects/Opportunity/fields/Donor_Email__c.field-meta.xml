@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Donor_Email__c</fullName>
     <externalId>false</externalId>
-    <label>אימייל (טופס)</label>
+    <label>Email (Form)</label>
     <required>false</required>
     <type>Email</type>
     <unique>false</unique>

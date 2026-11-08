@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Needs_Review__c</fullName>
     <defaultValue>false</defaultValue>
-    <inlineHelpText>סומן ע"י התאמת תורמים; לנקות ידנית אחרי טיפול.</inlineHelpText>
-    <label>לבדיקה</label>
+    <inlineHelpText>Set by donor matching; clear by hand after handling.</inlineHelpText>
+    <label>Needs Review</label>
     <type>Checkbox</type>
 </CustomField>

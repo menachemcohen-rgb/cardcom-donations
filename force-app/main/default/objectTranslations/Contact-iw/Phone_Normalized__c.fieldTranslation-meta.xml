@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>05XXXXXXXX מ-MobilePhone (ואם ריק — Phone). Trigger.</help>
+    <label>נייד מנורמל</label>
+    <name>Phone_Normalized__c</name>
+</CustomFieldTranslation>

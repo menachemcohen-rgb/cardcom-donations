@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Lp_Processed__c</fullName>
     <defaultValue>false</defaultValue>
-    <inlineHelpText>אידמפוטנטיות Webhook</inlineHelpText>
-    <label>LP עובד</label>
+    <inlineHelpText>Webhook idempotency</inlineHelpText>
+    <label>LP Processed</label>
     <type>Checkbox</type>
 </CustomField>

@@ -9,7 +9,7 @@
         <outerJoin>false</outerJoin>
         <relationship>DuplicateRecordItems</relationship>
     </join>
-    <label>רשומות כפולות</label>
+    <label>Duplicate Records</label>
     <sections>
         <columns>
             <checkedByDefault>true</checkedByDefault>
@@ -31,7 +31,7 @@
             <field>CreatedDate</field>
             <table>DuplicateRecordSet</table>
         </columns>
-        <masterLabel>קבוצת כפולים</masterLabel>
+        <masterLabel>Duplicate Set</masterLabel>
     </sections>
     <sections>
         <columns>
@@ -49,6 +49,6 @@
             <field>CreatedDate</field>
             <table>DuplicateRecordSet.DuplicateRecordItems</table>
         </columns>
-        <masterLabel>רשומה כפולה</masterLabel>
+        <masterLabel>Duplicate Record</masterLabel>
     </sections>
 </ReportType>

@@ -55,7 +55,7 @@
         <field>Opportunity.Frequency__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>כישלונות חוזרים</name>
+    <name>Repeated Failures</name>
     <params>
         <name>co</name>
         <value>1</value>

@@ -19,5 +19,5 @@
         <operation>equals</operation>
         <value>1</value>
     </filters>
-    <label>חיובים שדורשים התאמה</label>
+    <label>Charges Needing Reconciliation</label>
 </ListView>

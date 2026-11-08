@@ -15,6 +15,6 @@
     <standardValue>
         <fullName>Daily Donation Pledge</fullName>
         <default>false</default>
-        <label>הוראת תרומה יומית</label>
+        <label>Daily Donation Pledge</label>
     </standardValue>
 </StandardValueSet>

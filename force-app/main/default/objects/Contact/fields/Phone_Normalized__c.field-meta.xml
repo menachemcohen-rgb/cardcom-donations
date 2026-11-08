@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Phone_Normalized__c</fullName>
     <externalId>true</externalId>
-    <inlineHelpText>05XXXXXXXX מ-MobilePhone (ואם ריק — Phone). Trigger.</inlineHelpText>
-    <label>נייד מנורמל</label>
+    <inlineHelpText>05XXXXXXXX from MobilePhone (or Phone if blank). Trigger.</inlineHelpText>
+    <label>Normalized Mobile</label>
     <length>10</length>
     <required>false</required>
     <type>Text</type>

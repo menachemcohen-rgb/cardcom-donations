@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>קבלה חודשית</label>
+    <label>Monthly Receipt</label>
     <nameField>
         <displayFormat>RCP-{000000}</displayFormat>
-        <label>מספר קבלה</label>
+        <label>Receipt Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>קבלות חודשיות</pluralLabel>
+    <pluralLabel>Monthly Receipts</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>קבלה חודשית</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>קבלות חודשיות</value>
+    </caseValues>
+    <layouts>
+        <layout>Monthly Receipt Layout</layout>
+        <sections>
+            <label>קבלה</label>
+            <section>Receipt</section>
+        </sections>
+        <sections>
+            <label>ניסיונות ושגיאות</label>
+            <section>Attempts and Errors</section>
+        </sections>
+    </layouts>
+    <quickActions>
+        <label>שליחה חוזרת</label>
+        <name>Retry_Receipt</name>
+    </quickActions>
+</CustomObjectTranslation>

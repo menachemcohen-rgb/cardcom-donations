@@ -2,7 +2,7 @@
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionCalls>
         <name>Retry</name>
-        <label>שליחה חוזרת</label>
+        <label>Resend</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <actionName>MonthlyReceiptRetryAction</actionName>
@@ -32,13 +32,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Can_Run</name>
-        <label>מצב הקבלה מתאים?</label>
+        <label>Receipt status allowed?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>Not_Allowed_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>or</conditionLogic>
@@ -59,13 +59,13 @@
             <connector>
                 <targetReference>Confirm_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B6.11.1: re-sends a Failed / Needs_Verification monthly receipt (MonthlyReceiptRetryAction: Attempt_Count__c = 0, Status Failed, then MonthlyReceiptQueueable.start). Safe: the same Document.ExternalId returns the same Cardcom document.</description>
     <environments>Default</environments>
-    <interviewLabel>שליחה חוזרת של קבלה {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>שליחה חוזרת של קבלה</label>
+    <interviewLabel>Resend Receipt {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Resend Receipt</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

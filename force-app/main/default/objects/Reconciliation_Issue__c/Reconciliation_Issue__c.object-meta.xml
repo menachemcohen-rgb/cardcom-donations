@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>פער התאמה</label>
+    <label>Reconciliation Issue</label>
     <nameField>
         <displayFormat>REC-{000000}</displayFormat>
-        <label>מספר פער</label>
+        <label>Issue Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>פערי התאמה</pluralLabel>
+    <pluralLabel>Reconciliation Issues</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

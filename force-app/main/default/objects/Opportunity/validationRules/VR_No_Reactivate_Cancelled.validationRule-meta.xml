@@ -8,5 +8,5 @@
     ISCHANGED(StageName),
     ISPICKVAL(PRIORVALUE(StageName), 'Cancelled')
 )</errorConditionFormula>
-    <errorMessage>הוראה שבוטלה אינה ניתנת לשינוי סטטוס.</errorMessage>
+    <errorMessage>A cancelled pledge can't change status.</errorMessage>
 </ValidationRule>

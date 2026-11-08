@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Schedule_Applied_At__c</fullName>
-    <description>נכתב ע"י DonationSetup.reschedule()</description>
+    <description>Written by DonationSetup.reschedule()</description>
     <externalId>false</externalId>
     <label>Schedule Applied At</label>
     <required>false</required>

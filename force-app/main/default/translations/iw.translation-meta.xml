@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <reportTypes>
+        <label>תורמים עם הוראות תרומה</label>
+        <name>Donors_With_Pledges</name>
+        <sections>
+            <label>תורם</label>
+            <name>Donor</name>
+        </sections>
+        <sections>
+            <label>הוראת תרומה</label>
+            <name>Donation Pledge</name>
+        </sections>
+    </reportTypes>
+    <reportTypes>
+        <label>תורמים עם קבלות חודשיות</label>
+        <name>Donors_With_Receipts</name>
+        <sections>
+            <label>תורם</label>
+            <name>Donor</name>
+        </sections>
+        <sections>
+            <label>קבלה חודשית</label>
+            <name>Monthly Receipt</name>
+        </sections>
+    </reportTypes>
+    <reportTypes>
+        <label>רשומות כפולות</label>
+        <name>Duplicate_Contacts</name>
+        <sections>
+            <label>קבוצת כפולים</label>
+            <name>Duplicate Set</name>
+        </sections>
+        <sections>
+            <label>רשומה כפולה</label>
+            <name>Duplicate Record</name>
+        </sections>
+    </reportTypes>
+    <reportTypes>
+        <label>הוראות תרומה עם חיובים</label>
+        <name>Micro_Pledges_With_Charges</name>
+        <sections>
+            <label>הוראת תרומה</label>
+            <name>Donation Pledge</name>
+        </sections>
+        <sections>
+            <label>חיוב</label>
+            <name>Charge</name>
+        </sections>
+    </reportTypes>
+</Translations>

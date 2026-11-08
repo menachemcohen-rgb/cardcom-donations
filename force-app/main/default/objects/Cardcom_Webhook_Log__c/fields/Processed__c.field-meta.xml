@@ -2,6 +2,6 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Processed__c</fullName>
     <defaultValue>false</defaultValue>
-    <label>עובד</label>
+    <label>Processed</label>
     <type>Checkbox</type>
 </CustomField>

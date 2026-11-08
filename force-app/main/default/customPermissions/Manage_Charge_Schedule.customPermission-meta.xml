@@ -2,5 +2,5 @@
 <CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
     <description>Apply the charge schedule from Charge_Settings__c (B9.2).</description>
     <isLicensed>false</isLicensed>
-    <label>החלת זמני חיוב</label>
+    <label>Apply Charge Schedule</label>
 </CustomPermission>

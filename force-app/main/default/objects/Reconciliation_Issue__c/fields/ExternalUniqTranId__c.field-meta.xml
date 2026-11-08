@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>ExternalUniqTranId__c</fullName>
     <externalId>false</externalId>
-    <label>מזהה חיוב לוגי</label>
+    <label>Logical Charge Id</label>
     <length>100</length>
     <required>false</required>
     <type>Text</type>

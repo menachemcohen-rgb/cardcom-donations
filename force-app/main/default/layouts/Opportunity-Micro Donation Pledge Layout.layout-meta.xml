@@ -4,7 +4,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>פרטי ההוראה</label>
+        <label>Pledge Details</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Required</behavior>
@@ -17,6 +17,10 @@
             <layoutItems>
                 <behavior>Required</behavior>
                 <field>StageName</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Readonly</behavior>
+                <field>Probability</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Readonly</behavior>
@@ -71,7 +75,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>פרטי טופס</label>
+        <label>Form Details</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>
@@ -114,7 +118,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>כרטיס</label>
+        <label>Card</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>
@@ -161,7 +165,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>עצירה/חידוש</label>
+        <label>Stop/Resume</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>
@@ -200,7 +204,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>סטטיסטיקה</label>
+        <label>Statistics</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>

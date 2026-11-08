@@ -9,7 +9,7 @@
         <outerJoin>false</outerJoin>
         <relationship>Monthly_Receipts__r</relationship>
     </join>
-    <label>תורמים עם קבלות חודשיות</label>
+    <label>Donors with Monthly Receipts</label>
     <sections>
         <columns>
             <checkedByDefault>true</checkedByDefault>
@@ -51,7 +51,7 @@
             <field>CreatedDate</field>
             <table>Contact</table>
         </columns>
-        <masterLabel>תורם</masterLabel>
+        <masterLabel>Donor</masterLabel>
     </sections>
     <sections>
         <columns>
@@ -109,6 +109,6 @@
             <field>Email_Sent_To__c</field>
             <table>Contact.Monthly_Receipts__r</table>
         </columns>
-        <masterLabel>קבלה חודשית</masterLabel>
+        <masterLabel>Monthly Receipt</masterLabel>
     </sections>
 </ReportType>

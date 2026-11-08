@@ -4,7 +4,7 @@
     <caseSensitive>false</caseSensitive>
     <externalId>true</externalId>
     <inlineHelpText>{ContactId18}-{yyyyMM}</inlineHelpText>
-    <label>מפתח</label>
+    <label>Key</label>
     <length>40</length>
     <required>true</required>
     <type>Text</type>

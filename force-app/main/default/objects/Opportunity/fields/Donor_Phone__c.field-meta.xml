@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Donor_Phone__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>מנורמל 05XXXXXXXX</inlineHelpText>
-    <label>נייד (טופס)</label>
+    <inlineHelpText>Normalized 05XXXXXXXX</inlineHelpText>
+    <label>Mobile (Form)</label>
     <required>false</required>
     <type>Phone</type>
 </CustomField>

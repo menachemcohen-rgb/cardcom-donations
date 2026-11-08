@@ -9,5 +9,5 @@
     OR(ISPICKVAL(PRIORVALUE(Type), 'Daily Donation Pledge'), ISPICKVAL(Type, 'Daily Donation Pledge'))
 )</errorConditionFormula>
     <errorDisplayField>Type</errorDisplayField>
-    <errorMessage>לא ניתן לשנות את סוג ההזדמנות של הוראת תרומה יומית.</errorMessage>
+    <errorMessage>The opportunity type of a daily donation pledge can't be changed.</errorMessage>
 </ValidationRule>

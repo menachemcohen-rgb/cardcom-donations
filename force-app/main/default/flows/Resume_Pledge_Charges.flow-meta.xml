@@ -3,13 +3,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Can_Run</name>
-        <label>מצב ההוראה מתאים?</label>
+        <label>Pledge stage allowed?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>Not_Allowed_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>and</conditionLogic>
@@ -23,13 +23,13 @@
             <connector>
                 <targetReference>Confirm_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B6.8: resume a Stopped pledge from the next scheduled run; skipped charges are not made up. OpportunityTrigger clears Stop_Reason (kept in the change log) and frees the keys of today's and later STOPPED charges.</description>
     <environments>Default</environments>
-    <interviewLabel>חידוש חיובים {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>חידוש חיובים</label>
+    <interviewLabel>Resume Charges {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Resume Charges</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

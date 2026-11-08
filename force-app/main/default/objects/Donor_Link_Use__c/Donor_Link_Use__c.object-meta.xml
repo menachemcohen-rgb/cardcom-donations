@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>שימוש בקישור תורם</label>
+    <label>Donor Link Use</label>
     <nameField>
         <displayFormat>DLU-{000000}</displayFormat>
-        <label>מספר רשומה</label>
+        <label>Record Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>שימושים בקישורי תורם</pluralLabel>
+    <pluralLabel>Donor Link Uses</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

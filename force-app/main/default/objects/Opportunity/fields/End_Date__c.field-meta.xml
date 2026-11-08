@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>End_Date__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>בביטול</inlineHelpText>
-    <label>תאריך סיום</label>
+    <inlineHelpText>On cancellation</inlineHelpText>
+    <label>End Date</label>
     <required>false</required>
     <type>Date</type>
 </CustomField>

@@ -20,9 +20,9 @@
                 </chartSummary>
                 <componentType>Donut</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>הצליחו / נכשלו / דולגו</footer>
+                <footer>Succeeded / Failed / Skipped</footer>
                 <groupingColumn>Charge__c.Status__c</groupingColumn>
-                <header>חיובים היום</header>
+                <header>Charges Today</header>
                 <legendPosition>Bottom</legendPosition>
                 <report>Donations/Charges_Today</report>
                 <showPercentage>true</showPercentage>
@@ -43,8 +43,8 @@
                 </chartSummary>
                 <componentType>Metric</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>₪ מצטבר מתחילת החודש</footer>
-                <header>נגבה החודש</header>
+                <footer>ILS collected since the start of the month</footer>
+                <header>Collected This Month</header>
                 <indicatorHighColor>#54C254</indicatorHighColor>
                 <indicatorLowColor>#C25454</indicatorLowColor>
                 <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
@@ -64,8 +64,8 @@
                 </chartSummary>
                 <componentType>Metric</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>מספר נוכחי</footer>
-                <header>הוראות פעילות</header>
+                <footer>Current count</footer>
+                <header>Active Pledges</header>
                 <indicatorHighColor>#54C254</indicatorHighColor>
                 <indicatorLowColor>#C25454</indicatorLowColor>
                 <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
@@ -87,9 +87,9 @@
                 </chartSummary>
                 <componentType>Line</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>מגמת הצטרפות (90 יום)</footer>
+                <footer>Sign-up Trend (90 Days)</footer>
                 <groupingColumn>Opportunity.Start_Date__c</groupingColumn>
-                <header>הוראות חדשות לפי שבוע</header>
+                <header>New pledges by week</header>
                 <legendPosition>Bottom</legendPosition>
                 <report>Donations/New_Donors</report>
             </dashboardComponent>
@@ -106,8 +106,8 @@
                 </chartSummary>
                 <componentType>Metric</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>כולל כפולים – דוח "רשומות כפולות"</footer>
-                <header>תורמים לבדיקה</header>
+                <footer>Includes duplicates – see the "Duplicate Records" report</footer>
+                <header>Donors to Review</header>
                 <indicatorHighColor>#54C254</indicatorHighColor>
                 <indicatorLowColor>#C25454</indicatorLowColor>
                 <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
@@ -127,8 +127,8 @@
                 </chartSummary>
                 <componentType>Metric</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>לבדיקת כספים</footer>
-                <header>פערי התאמה פתוחים</header>
+                <footer>For finance review</footer>
+                <header>Open Reconciliation Issues</header>
                 <indicatorHighColor>#54C254</indicatorHighColor>
                 <indicatorLowColor>#C25454</indicatorLowColor>
                 <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
@@ -148,8 +148,8 @@
                 </chartSummary>
                 <componentType>Metric</componentType>
                 <displayUnits>Auto</displayUnits>
-                <footer>לטיפול / החלטה</footer>
-                <header>כישלונות חוזרים</header>
+                <footer>To handle / decide</footer>
+                <header>Repeated Failures</header>
                 <indicatorHighColor>#54C254</indicatorHighColor>
                 <indicatorLowColor>#C25454</indicatorLowColor>
                 <indicatorMiddleColor>#C2C254</indicatorMiddleColor>
@@ -163,10 +163,10 @@
         <rowHeight>36</rowHeight>
     </dashboardGridLayout>
     <dashboardType>LoggedInUser</dashboardType>
-    <description>תרומות מיקרו (client spec ch. 8): today's charges, collected this month, active pledges and trend, donors to review, open reconciliation issues, repeated failures.</description>
+    <description>Micro donations (client spec ch. 8): today's charges, collected this month, active pledges and trend, donors to review, open reconciliation issues, repeated failures.</description>
     <isGridLayout>true</isGridLayout>
     <textColor>#000000</textColor>
-    <title>תרומות מיקרו</title>
+    <title>Micro Donations</title>
     <titleColor>#000000</titleColor>
     <titleSize>12</titleSize>
 </Dashboard>

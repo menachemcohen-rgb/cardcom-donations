@@ -13,5 +13,5 @@
         <operation>equals</operation>
         <value>1</value>
     </filters>
-    <label>תורמים לבדיקה</label>
+    <label>Donors to Review</label>
 </ListView>

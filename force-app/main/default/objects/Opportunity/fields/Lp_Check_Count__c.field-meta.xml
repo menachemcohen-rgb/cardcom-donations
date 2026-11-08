@@ -3,8 +3,8 @@
     <fullName>Lp_Check_Count__c</fullName>
     <defaultValue>0</defaultValue>
     <externalId>false</externalId>
-    <inlineHelpText>בדיקות GetLpResult ללא טוקן; 6 → Verification_Failed</inlineHelpText>
-    <label>בדיקות LP</label>
+    <inlineHelpText>GetLpResult checks without a token; 6 → Verification_Failed</inlineHelpText>
+    <label>LP Checks</label>
     <precision>2</precision>
     <required>false</required>
     <scale>0</scale>
