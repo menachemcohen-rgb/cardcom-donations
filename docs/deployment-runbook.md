@@ -36,10 +36,10 @@ sf project deploy start --target-org <alias> --source-dir force-app/main/default
 
 Labels are English; the Hebrew is in `objectTranslations/*-iw`, `translations/iw.translation-meta.xml` and
 `standardValueSetTranslations/OpportunityType-iw`. They deploy with the rest of `force-app` once Translation Workbench is on with Hebrew
-active (README step 4). To push only the translations (for example to a sandbox whose labels were already switched to English):
+active (README step 4); the stage translations resolve against the stage labels, so the `OpportunityStage` set goes with them (E14 still applies: compare it with the org first). To push only the translations (for example to a sandbox whose labels were already switched to English):
 
 ```bash
-sf project deploy start --target-org <alias> --source-dir force-app/main/default/objectTranslations force-app/main/default/translations force-app/main/default/standardValueSetTranslations
+sf project deploy start --target-org <alias> --source-dir force-app/main/default/standardValueSets/OpportunityStage.standardValueSet-meta.xml force-app/main/default/objectTranslations force-app/main/default/translations force-app/main/default/standardValueSetTranslations force-app/main/default/reportTypes
 ```
 
 ## 2. Check-only validation of everything

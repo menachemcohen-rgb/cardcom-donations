@@ -23,6 +23,11 @@
         </columns>
         <columns>
             <checkedByDefault>true</checkedByDefault>
+            <field>DuplicateRule</field>
+            <table>DuplicateRecordSet</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
             <field>CreatedDate</field>
             <table>DuplicateRecordSet</table>
         </columns>
@@ -36,7 +41,7 @@
         </columns>
         <columns>
             <checkedByDefault>true</checkedByDefault>
-            <field>RecordId</field>
+            <field>Record</field>
             <table>DuplicateRecordSet.DuplicateRecordItems</table>
         </columns>
         <columns>
