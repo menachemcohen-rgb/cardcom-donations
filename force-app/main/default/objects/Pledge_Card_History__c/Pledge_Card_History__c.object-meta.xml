@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>היסטוריית כרטיס</label>
+    <label>Card History</label>
     <nameField>
         <displayFormat>PCH-{000000}</displayFormat>
-        <label>מספר רשומה</label>
+        <label>Record Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>היסטוריית כרטיסים</pluralLabel>
+    <pluralLabel>Card Histories</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

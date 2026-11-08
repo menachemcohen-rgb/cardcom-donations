@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Batch_Size__c</fullName>
-    <description>callouts per Queueable (≤100; עד 2 callouts לחיוב)</description>
+    <description>callouts per Queueable (≤100; up to 2 callouts per charge)</description>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Batch Size</label>

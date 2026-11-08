@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Failure_Notify_Emails__c</fullName>
-    <description>מופרד בפסיקים או ; (Q7, Part C E1)</description>
+    <description>Separated by commas or ; (Q7, Part C E1)</description>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Failure Notify Emails</label>

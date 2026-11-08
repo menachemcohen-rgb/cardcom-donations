@@ -3,8 +3,8 @@
     <fullName>Link_Version__c</fullName>
     <defaultValue>1</defaultValue>
     <externalId>false</externalId>
-    <inlineHelpText>העלאה ב-1 מבטלת את כל הקישורים הקודמים</inlineHelpText>
-    <label>גרסת קישורים</label>
+    <inlineHelpText>Raising it by 1 revokes all earlier links</inlineHelpText>
+    <label>Link Version</label>
     <precision>4</precision>
     <required>false</required>
     <scale>0</scale>

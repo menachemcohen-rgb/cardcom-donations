@@ -3,7 +3,7 @@
     <fullName>Frequency__c</fullName>
     <description>Required for pledges (Type = Daily Donation Pledge) via layout and Apex, not at field level (D24). No field default (it would tag every Opportunity).</description>
     <externalId>false</externalId>
-    <label>תדירות</label>
+    <label>Frequency</label>
     <required>false</required>
     <trackHistory>true</trackHistory>
     <type>Picklist</type>
@@ -14,12 +14,12 @@
             <value>
                 <fullName>OnceDaily</fullName>
                 <default>false</default>
-                <label>פעם ביום</label>
+                <label>Once a Day</label>
             </value>
             <value>
                 <fullName>TwiceDaily</fullName>
                 <default>false</default>
-                <label>פעמיים ביום</label>
+                <label>Twice a Day</label>
             </value>
         </valueSetDefinition>
     </valueSet>

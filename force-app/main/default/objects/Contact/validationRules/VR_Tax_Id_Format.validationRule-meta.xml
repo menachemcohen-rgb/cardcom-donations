@@ -5,5 +5,5 @@
     <description>B2.1. Check digit is validated in Apex only.</description>
     <errorConditionFormula>AND(NOT(ISBLANK(Donor_Tax_Id__c)), NOT(REGEX(Donor_Tax_Id__c, "^[0-9]{9}$")))</errorConditionFormula>
     <errorDisplayField>Donor_Tax_Id__c</errorDisplayField>
-    <errorMessage>ת"ז חייבת להכיל 9 ספרות (כולל אפסים מובילים).</errorMessage>
+    <errorMessage>The Israeli ID must have 9 digits (including leading zeros).</errorMessage>
 </ValidationRule>

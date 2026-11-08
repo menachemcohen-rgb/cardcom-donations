@@ -3,13 +3,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Can_Run</name>
-        <label>מצב ההוראה מתאים?</label>
+        <label>Pledge stage allowed?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>Not_Allowed_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>or</conditionLogic>
@@ -30,7 +30,7 @@
             <connector>
                 <targetReference>Cancel_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B6.8: cancel a pledge for good (StageName=Cancelled, End_Date=today). Irreversible: VR_No_Reactivate_Cancelled.</description>
@@ -43,8 +43,8 @@
         <picklistObject>Opportunity</picklistObject>
     </dynamicChoiceSets>
     <environments>Default</environments>
-    <interviewLabel>ביטול הוראה {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>ביטול הוראה</label>
+    <interviewLabel>Cancel Pledge {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Cancel Pledge</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

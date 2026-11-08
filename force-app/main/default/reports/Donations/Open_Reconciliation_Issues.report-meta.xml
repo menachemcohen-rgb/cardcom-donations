@@ -39,7 +39,7 @@
         <field>Reconciliation_Issue__c.Issue_Type__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>פערי התאמה פתוחים</name>
+    <name>Open Reconciliation Issues</name>
     <params>
         <name>co</name>
         <value>1</value>

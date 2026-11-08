@@ -3,13 +3,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Can_Run</name>
-        <label>מצב ההוראה מתאים?</label>
+        <label>Pledge stage allowed?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>Not_Allowed_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>and</conditionLogic>
@@ -23,7 +23,7 @@
             <connector>
                 <targetReference>Reason_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B6.8: stop charging an Active pledge. Sets StageName=Stopped, Stop_Reason, Stopped_At/By. OpportunityTrigger skips the Pending charges and writes the change log. Runs in user context; VR_Status_Change_Permission requires Stop_Pledge_Charges.</description>
@@ -36,8 +36,8 @@
         <picklistObject>Opportunity</picklistObject>
     </dynamicChoiceSets>
     <environments>Default</environments>
-    <interviewLabel>הפסקת חיובים {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>הפסקת חיובים</label>
+    <interviewLabel>Stop Charges {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Stop Charges</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

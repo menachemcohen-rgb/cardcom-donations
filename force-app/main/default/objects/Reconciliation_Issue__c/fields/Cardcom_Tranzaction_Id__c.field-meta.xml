@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Cardcom_Tranzaction_Id__c</fullName>
     <externalId>false</externalId>
-    <label>מספר עסקה Cardcom</label>
+    <label>Cardcom Transaction Id</label>
     <length>50</length>
     <required>false</required>
     <type>Text</type>

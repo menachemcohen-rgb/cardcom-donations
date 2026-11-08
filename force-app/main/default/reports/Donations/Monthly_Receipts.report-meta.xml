@@ -38,7 +38,7 @@
         <field>Monthly_Receipt__c.Status__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>קבלות חודשיות</name>
+    <name>Monthly Receipts</name>
     <params>
         <name>co</name>
         <value>1</value>

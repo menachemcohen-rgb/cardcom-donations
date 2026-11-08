@@ -4,7 +4,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>קבלה</label>
+        <label>Receipt</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>
@@ -59,7 +59,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>ניסיונות ושגיאות</label>
+        <label>Attempts and Errors</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Readonly</behavior>

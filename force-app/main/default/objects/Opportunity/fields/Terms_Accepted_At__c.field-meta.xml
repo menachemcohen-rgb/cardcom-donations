@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Terms_Accepted_At__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>זמן אישור תיבת התנאים</inlineHelpText>
-    <label>אישור תנאים</label>
+    <inlineHelpText>When the terms checkbox was accepted</inlineHelpText>
+    <label>Terms Accepted At</label>
     <required>false</required>
     <type>DateTime</type>
 </CustomField>

@@ -126,7 +126,6 @@
                 <identifier>highlightsPanel</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
@@ -137,7 +136,6 @@
                 <identifier>detailPanel</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>Facet-details</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -168,7 +166,6 @@
                 <identifier>chargesRelatedList</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>Facet-charges</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -199,7 +196,6 @@
                 <identifier>changeLogRelatedList</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>Facet-changes</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -212,7 +208,7 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>relatedListApiName</name>
-                    <value>Histories</value>
+                    <value>OpportunityHistories</value>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>relatedListComponentOverride</name>
@@ -230,7 +226,6 @@
                 <identifier>historyRelatedList</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>Facet-history</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -243,7 +238,7 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>title</name>
-                    <value>פרטים</value>
+                    <value>Details</value>
                 </componentInstanceProperties>
                 <componentName>flexipage:tab</componentName>
                 <identifier>tabDetails</identifier>
@@ -257,7 +252,7 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>title</name>
-                    <value>חיובים</value>
+                    <value>Charges</value>
                 </componentInstanceProperties>
                 <componentName>flexipage:tab</componentName>
                 <identifier>tabCharges</identifier>
@@ -271,7 +266,7 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>title</name>
-                    <value>שינויים</value>
+                    <value>Changes</value>
                 </componentInstanceProperties>
                 <componentName>flexipage:tab</componentName>
                 <identifier>tabChanges</identifier>
@@ -285,13 +280,12 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>title</name>
-                    <value>היסטוריה</value>
+                    <value>History</value>
                 </componentInstanceProperties>
                 <componentName>flexipage:tab</componentName>
                 <identifier>tabHistory</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>Facet-tabs</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -300,7 +294,7 @@
             <componentInstance>
                 <componentInstanceProperties>
                     <name>richTextValue</name>
-                    <value>&lt;p style=&quot;color:#c23934;font-weight:bold;font-size:16px;&quot;&gt;הוראה זו בכישלונות רצופים&lt;/p&gt;</value>
+                    <value>&lt;p style=&quot;color:#c23934;font-weight:bold;font-size:16px;&quot;&gt;This pledge has consecutive failures&lt;/p&gt;</value>
                 </componentInstanceProperties>
                 <componentName>flexipage:richText</componentName>
                 <identifier>consecutiveFailuresBanner</identifier>
@@ -328,11 +322,10 @@
                 <identifier>mainTabset</identifier>
             </componentInstance>
         </itemInstances>
-        <mode>Replace</mode>
         <name>main</name>
         <type>Region</type>
     </flexiPageRegions>
-    <masterLabel>עמוד הוראת תרומה יומית</masterLabel>
+    <masterLabel>Daily Donation Pledge Page</masterLabel>
     <sobjectType>Opportunity</sobjectType>
     <template>
         <name>flexipage:recordHomeTemplateDesktop</name>

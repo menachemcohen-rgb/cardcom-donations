@@ -3,7 +3,7 @@
     <fullName>Email_Normalized__c</fullName>
     <externalId>true</externalId>
     <inlineHelpText>lower(trim(Email)). Trigger.</inlineHelpText>
-    <label>אימייל מנורמל</label>
+    <label>Normalized Email</label>
     <length>255</length>
     <required>false</required>
     <type>Text</type>

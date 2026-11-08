@@ -2,9 +2,9 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Pledge__c</fullName>
     <deleteConstraint>Restrict</deleteConstraint>
-    <label>הוראה</label>
+    <label>Pledge</label>
     <referenceTo>Opportunity</referenceTo>
-    <relationshipLabel>שימושים בקישורים</relationshipLabel>
+    <relationshipLabel>Link Uses</relationshipLabel>
     <relationshipName>Donor_Link_Uses</relationshipName>
     <required>false</required>
     <type>Lookup</type>

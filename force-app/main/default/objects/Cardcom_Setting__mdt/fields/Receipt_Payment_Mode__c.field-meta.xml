@@ -3,7 +3,7 @@
     <fullName>Receipt_Payment_Mode__c</fullName>
     <description>Payment block of the monthly receipt: CreditCardLines = CustomFields, one credit card line per charge (default, D33: every donation is a card charge); Cash = top-level Cash; DealNumbers = DealNumbers[]. Blank = CreditCardLines, or DealNumbers when Receipt_Link_Deal_Numbers__c is on. Verify CreditCardLines on terminal 1001 and with Cardcom for production (Q15) before the first receipt run.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>CreditCardLines = שורת אשראי לכל חיוב (ברירת מחדל); Cash = מזומן; DealNumbers = קישור מספרי עסקאות. ריק = אשראי.</inlineHelpText>
+    <inlineHelpText>CreditCardLines = one credit card line per charge (default); Cash = cash; DealNumbers = link deal numbers. Blank = credit card.</inlineHelpText>
     <label>Receipt Payment Mode</label>
     <required>false</required>
     <type>Picklist</type>

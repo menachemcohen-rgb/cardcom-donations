@@ -19,7 +19,7 @@
         <field>Charge__c.Run_Date__c</field>
         <sortOrder>Desc</sortOrder>
     </groupingsDown>
-    <name>חיובים יומיים לפי סטטוס</name>
+    <name>Daily Charges by Status</name>
     <params>
         <name>co</name>
         <value>1</value>

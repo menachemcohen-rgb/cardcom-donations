@@ -4,6 +4,6 @@
     <description>Replaces the Recurring_Pledge__c auto-number Name (Part C C2). Standard Name is set by Apex (C1).</description>
     <displayFormat>PLG-{000000}</displayFormat>
     <externalId>false</externalId>
-    <label>מספר הוראה</label>
+    <label>Pledge Number</label>
     <type>AutoNumber</type>
 </CustomField>

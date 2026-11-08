@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>מקור תורם</label>
+    <name>Donor_Source__c</name>
+    <picklistValues>
+        <masterLabel>WP_Micro</masterLabel>
+        <translation>טופס מיקרו באתר</translation>
+    </picklistValues>
+</CustomFieldTranslation>

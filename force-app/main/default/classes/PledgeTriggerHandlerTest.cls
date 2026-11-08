@@ -95,7 +95,8 @@ private class PledgeTriggerHandlerTest {
     System.runAs(staff(false)) {
       Database.SaveResult r = Database.update(new Opportunity(Id = p.Id, StageName = 'Stopped', Stop_Reason__c = 'Donor_Request'), false);
       Assert.isFalse(r.isSuccess());
-      Assert.isTrue(r.getErrors()[0].getMessage().contains('אין לך הרשאה'));
+      String msg = r.getErrors()[0].getMessage();
+      Assert.isTrue(msg.contains('You don\'t have permission') || msg.contains('אין לך הרשאה'), msg); // iw translation for Hebrew users
     }
     Assert.areEqual(2, [SELECT COUNT() FROM Charge__c WHERE Pledge__c = :p.Id AND Status__c = 'Pending']);
   }

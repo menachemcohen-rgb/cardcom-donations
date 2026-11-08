@@ -48,7 +48,7 @@
         <field>Opportunity.Stop_Reason__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>הוראות שהופסקו</name>
+    <name>Stopped Pledges</name>
     <params>
         <name>co</name>
         <value>1</value>

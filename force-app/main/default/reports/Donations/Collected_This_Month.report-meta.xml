@@ -32,7 +32,7 @@
         <field>Charge__c.Contact__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>נגבה החודש</name>
+    <name>Collected This Month</name>
     <params>
         <name>co</name>
         <value>1</value>

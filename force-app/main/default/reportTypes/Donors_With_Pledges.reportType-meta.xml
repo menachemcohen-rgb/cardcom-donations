@@ -9,7 +9,7 @@
         <outerJoin>false</outerJoin>
         <relationship>Donor_Pledges__r</relationship>
     </join>
-    <label>תורמים עם הוראות תרומה</label>
+    <label>Donors with Donation Pledges</label>
     <sections>
         <columns>
             <checkedByDefault>true</checkedByDefault>
@@ -51,7 +51,7 @@
             <field>CreatedDate</field>
             <table>Contact</table>
         </columns>
-        <masterLabel>תורם</masterLabel>
+        <masterLabel>Donor</masterLabel>
     </sections>
     <sections>
         <columns>
@@ -144,6 +144,6 @@
             <field>Match_Method__c</field>
             <table>Contact.Donor_Pledges__r</table>
         </columns>
-        <masterLabel>הוראת תרומה</masterLabel>
+        <masterLabel>Donation Pledge</masterLabel>
     </sections>
 </ReportType>

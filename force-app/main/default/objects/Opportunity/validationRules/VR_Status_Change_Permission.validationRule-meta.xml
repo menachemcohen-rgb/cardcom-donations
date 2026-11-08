@@ -14,5 +14,5 @@
     NOT($Permission.Stop_Pledge_Charges),
     $User.Id &lt;&gt; $CustomMetadata.Cardcom_Setting__mdt.Default.Integration_User_Id__c
 )</errorConditionFormula>
-    <errorMessage>אין לך הרשאה לעצור/לחדש חיובים.</errorMessage>
+    <errorMessage>You don't have permission to stop/resume charges.</errorMessage>
 </ValidationRule>

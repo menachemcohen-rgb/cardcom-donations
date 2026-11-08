@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Cardcom_Deal_Number__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>= TranzactionId (אין DealNumber נפרד בתשובה — B5.4; U4)</inlineHelpText>
+    <inlineHelpText>= TranzactionId (the response has no separate DealNumber — B5.4; U4)</inlineHelpText>
     <label>DealNumber</label>
     <length>50</length>
     <required>false</required>

@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Recon_Report_Unknown__c</fullName>
     <defaultValue>true</defaultValue>
-    <description>לדווח עסקאות Cardcom שאינן ב-SF</description>
+    <description>Report Cardcom transactions that are not in Salesforce</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Recon Report Unknown</label>
     <type>Checkbox</type>

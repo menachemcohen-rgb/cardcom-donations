@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>ממולא כשהניסיון הקודם הסתיים בתוצאה לא ידועה; נבדק ב-GetTransactionByExternalUniqTran לפני חיוב (B5.5)</help>
+    <label>מפתח ניסיון קודם לאימות</label>
+    <name>Verify_Attempt_Key__c</name>
+</CustomFieldTranslation>

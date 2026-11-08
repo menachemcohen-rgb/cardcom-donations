@@ -11,5 +11,5 @@
     )
 )</errorConditionFormula>
     <errorDisplayField>Charge_Amount__c</errorDisplayField>
-    <errorMessage>הסכום חייב להיות בין המינימום למקסימום שהוגדרו.</errorMessage>
+    <errorMessage>The amount must be between the configured minimum and maximum.</errorMessage>
 </ValidationRule>

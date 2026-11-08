@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>בקשת החלפת כרטיס</label>
+    <label>Card Change Request</label>
     <nameField>
         <displayFormat>CCR-{000000}</displayFormat>
-        <label>מספר בקשה</label>
+        <label>Request Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>בקשות החלפת כרטיס</pluralLabel>
+    <pluralLabel>Card Change Requests</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

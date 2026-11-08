@@ -3,7 +3,7 @@
     <fullName>Cardcom_Document_Number__c</fullName>
     <externalId>false</externalId>
     <inlineHelpText>DocumentNumber</inlineHelpText>
-    <label>מספר קבלה</label>
+    <label>Receipt Number</label>
     <length>30</length>
     <required>false</required>
     <type>Text</type>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>הופסק ע"י</label>
+    <name>Stopped_By__c</name>
+    <relationshipLabel>הוראות שהופסקו</relationshipLabel>
+</CustomFieldTranslation>

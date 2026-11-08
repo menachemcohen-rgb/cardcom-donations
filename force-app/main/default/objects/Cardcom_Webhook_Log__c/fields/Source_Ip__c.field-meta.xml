@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Source_Ip__c</fullName>
     <externalId>false</externalId>
-    <label>IP מקור</label>
+    <label>Source IP</label>
     <length>45</length>
     <required>false</required>
     <type>Text</type>

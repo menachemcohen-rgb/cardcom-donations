@@ -3,7 +3,7 @@
     <fullName>SF_Amount__c</fullName>
     <description>Canonical name per Part C E2.</description>
     <externalId>false</externalId>
-    <label>סכום ב-Salesforce</label>
+    <label>Salesforce Amount</label>
     <precision>10</precision>
     <required>false</required>
     <scale>2</scale>

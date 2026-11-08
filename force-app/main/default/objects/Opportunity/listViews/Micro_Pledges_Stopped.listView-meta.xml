@@ -22,5 +22,5 @@
         <operation>equals</operation>
         <value>Stopped</value>
     </filters>
-    <label>הוראות שהופסקו</label>
+    <label>Stopped Pledges</label>
 </ListView>

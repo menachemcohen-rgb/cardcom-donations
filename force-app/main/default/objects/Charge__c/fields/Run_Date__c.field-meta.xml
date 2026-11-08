@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Run_Date__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>היום שבו נשלח בפועל (שישי לחיוב שבת) — קובע חודש קבלה</inlineHelpText>
-    <label>תאריך ריצה</label>
+    <inlineHelpText>Day it was actually sent (Friday for a Shabbat charge) — sets the receipt month</inlineHelpText>
+    <label>Run Date</label>
     <required>true</required>
     <type>Date</type>
 </CustomField>

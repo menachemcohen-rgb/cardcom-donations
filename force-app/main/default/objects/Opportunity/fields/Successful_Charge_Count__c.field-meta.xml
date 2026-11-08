@@ -3,7 +3,7 @@
     <fullName>Successful_Charge_Count__c</fullName>
     <defaultValue>0</defaultValue>
     <externalId>false</externalId>
-    <label>חיובים מוצלחים</label>
+    <label>Successful Charges</label>
     <precision>8</precision>
     <required>false</required>
     <scale>0</scale>

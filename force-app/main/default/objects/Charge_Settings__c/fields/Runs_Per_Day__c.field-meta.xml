@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Runs_Per_Day__c</fullName>
     <defaultValue>2</defaultValue>
-    <description>1 = רק בוקר; 2 = בוקר+ערב</description>
+    <description>1 = morning only; 2 = morning + evening</description>
     <externalId>false</externalId>
     <label>Runs Per Day</label>
     <precision>1</precision>

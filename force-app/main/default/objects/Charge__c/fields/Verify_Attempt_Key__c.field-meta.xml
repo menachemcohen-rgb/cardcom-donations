@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Verify_Attempt_Key__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>ממולא כשהניסיון הקודם הסתיים בתוצאה לא ידועה; נבדק ב-GetTransactionByExternalUniqTran לפני חיוב (B5.5)</inlineHelpText>
-    <label>מפתח ניסיון קודם לאימות</label>
+    <inlineHelpText>Filled when the previous attempt ended with an unknown outcome; checked with GetTransactionByExternalUniqTran before charging (B5.5)</inlineHelpText>
+    <label>Previous Attempt Key to Verify</label>
     <length>110</length>
     <required>false</required>
     <type>Text</type>

@@ -3,8 +3,8 @@
     <fullName>Token__c</fullName>
     <description>Never filter on it in SOQL (Part C E15). Select it and check in Apex.</description>
     <externalId>false</externalId>
-    <inlineHelpText>FLS: Integration + Donations_Admin בלבד</inlineHelpText>
-    <label>אסימון</label>
+    <inlineHelpText>FLS: Integration + Donations_Admin only</inlineHelpText>
+    <label>Token</label>
     <length>64</length>
     <maskChar>asterisk</maskChar>
     <maskType>all</maskType>

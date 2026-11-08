@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Is_Final_Failure__c</fullName>
     <defaultValue>false</defaultValue>
-    <inlineHelpText>אין ניסיון נוסף לחיוב הלוגי</inlineHelpText>
-    <label>כישלון סופי</label>
+    <inlineHelpText>No further attempt for the logical charge</inlineHelpText>
+    <label>Final Failure</label>
     <type>Checkbox</type>
 </CustomField>

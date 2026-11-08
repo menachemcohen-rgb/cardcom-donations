@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Receipt_Product_Description__c</fullName>
-    <description>תיאור השורה היחידה בקבלה</description>
+    <description>Description of the single receipt line</description>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Receipt Product Description</label>

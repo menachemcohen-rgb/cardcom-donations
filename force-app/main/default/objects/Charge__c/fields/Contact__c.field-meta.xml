@@ -2,10 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Contact__c</fullName>
     <deleteConstraint>Restrict</deleteConstraint>
-    <inlineHelpText>מועתק מההוראה</inlineHelpText>
-    <label>תורם</label>
+    <inlineHelpText>Copied from the pledge</inlineHelpText>
+    <label>Donor</label>
     <referenceTo>Contact</referenceTo>
-    <relationshipLabel>ניסיונות חיוב</relationshipLabel>
+    <relationshipLabel>Charge Attempts</relationshipLabel>
     <relationshipName>Charges</relationshipName>
     <required>false</required>
     <type>Lookup</type>

@@ -2,10 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Contact__c</fullName>
     <deleteConstraint>Restrict</deleteConstraint>
-    <inlineHelpText>קבלה אחת לתורם לחודש (גם אם כמה הוראות)</inlineHelpText>
-    <label>תורם</label>
+    <inlineHelpText>One receipt per donor per month (even with several pledges)</inlineHelpText>
+    <label>Donor</label>
     <referenceTo>Contact</referenceTo>
-    <relationshipLabel>קבלות חודשיות</relationshipLabel>
+    <relationshipLabel>Monthly Receipts</relationshipLabel>
     <relationshipName>Monthly_Receipts</relationshipName>
     <required>true</required>
     <type>Lookup</type>

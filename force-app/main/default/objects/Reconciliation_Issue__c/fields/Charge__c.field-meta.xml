@@ -2,9 +2,9 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Charge__c</fullName>
     <deleteConstraint>Restrict</deleteConstraint>
-    <label>ניסיון חיוב</label>
+    <label>Charge Attempt</label>
     <referenceTo>Charge__c</referenceTo>
-    <relationshipLabel>פערי התאמה</relationshipLabel>
+    <relationshipLabel>Reconciliation Issues</relationshipLabel>
     <relationshipName>Reconciliation_Issues</relationshipName>
     <required>false</required>
     <type>Lookup</type>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>PLG-{pledgeId18}-{yyyyMMdd}-{AM/PM} — מזהה פנימי של החיוב הלוגי (לא נשלח כמות שהוא)</help>
+    <label>מזהה חיוב לוגי</label>
+    <name>ExternalUniqTranId__c</name>
+</CustomFieldTranslation>

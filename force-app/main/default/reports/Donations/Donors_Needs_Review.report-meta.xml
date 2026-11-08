@@ -28,7 +28,7 @@
         <field>Contact.Donor_Source__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>תורמים לבדיקה</name>
+    <name>Donors to Review</name>
     <params>
         <name>co</name>
         <value>1</value>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>סטטוס</label>
+    <name>Status__c</name>
+    <picklistValues>
+        <masterLabel>Pending</masterLabel>
+        <translation>ממתינה</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Issued</masterLabel>
+        <translation>הופקה ונשלחה</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Failed</masterLabel>
+        <translation>נכשלה</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Needs_Verification</masterLabel>
+        <translation>תשובה לא ידועה</translation>
+    </picklistValues>
+</CustomFieldTranslation>

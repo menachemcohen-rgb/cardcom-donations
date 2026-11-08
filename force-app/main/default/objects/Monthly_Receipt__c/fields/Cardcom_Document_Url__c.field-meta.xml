@@ -3,7 +3,7 @@
     <fullName>Cardcom_Document_Url__c</fullName>
     <externalId>false</externalId>
     <inlineHelpText>DocumentUrl</inlineHelpText>
-    <label>קישור למסמך</label>
+    <label>Document Link</label>
     <required>false</required>
     <type>Url</type>
 </CustomField>

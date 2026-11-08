@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>ניסיון חיוב</label>
+    <label>Charge Attempt</label>
     <nameField>
         <displayFormat>CHG-{00000000}</displayFormat>
-        <label>מספר ניסיון</label>
+        <label>Attempt Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>ניסיונות חיוב</pluralLabel>
+    <pluralLabel>Charge Attempts</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

@@ -14,14 +14,14 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>יומן שינויים</label>
+    <label>Change Log</label>
     <nameField>
         <displayFormat>PCL-{000000}</displayFormat>
-        <label>מספר רשומה</label>
+        <label>Record Number</label>
         <trackHistory>false</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>יומני שינויים</pluralLabel>
+    <pluralLabel>Change Logs</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

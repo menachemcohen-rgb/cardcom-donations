@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>כפי שהוקלד</help>
+    <label>שם פרטי (טופס)</label>
+    <name>Donor_First_Name__c</name>
+</CustomFieldTranslation>

@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AM_Time__c</fullName>
     <defaultValue>"08:00"</defaultValue>
-    <description>HH:mm — ריצת בוקר ביום רגיל</description>
+    <description>HH:mm — morning run on a regular day</description>
     <externalId>false</externalId>
     <label>AM Time</label>
     <length>5</length>

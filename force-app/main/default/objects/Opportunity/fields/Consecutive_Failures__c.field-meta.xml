@@ -3,8 +3,8 @@
     <fullName>Consecutive_Failures__c</fullName>
     <defaultValue>0</defaultValue>
     <externalId>false</externalId>
-    <inlineHelpText>חיובים לוגיים שנכשלו סופית ברצף</inlineHelpText>
-    <label>כישלונות רצופים</label>
+    <inlineHelpText>Logical charges that failed finally in a row</inlineHelpText>
+    <label>Consecutive Failures</label>
     <precision>4</precision>
     <required>false</required>
     <scale>0</scale>

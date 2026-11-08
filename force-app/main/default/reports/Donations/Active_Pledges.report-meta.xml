@@ -40,7 +40,7 @@
         <field>Opportunity.Frequency__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>הוראות פעילות</name>
+    <name>Active Pledges</name>
     <params>
         <name>co</name>
         <value>1</value>

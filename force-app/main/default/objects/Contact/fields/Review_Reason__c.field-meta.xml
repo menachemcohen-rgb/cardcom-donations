@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Review_Reason__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>נצבר (append) עם חותמת זמן.</inlineHelpText>
-    <label>סיבת בדיקה</label>
+    <inlineHelpText>Appended with a timestamp.</inlineHelpText>
+    <label>Review Reason</label>
     <length>2000</length>
     <required>false</required>
     <type>LongTextArea</type>

@@ -23,7 +23,7 @@
         <field>Charge__c.Status__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>חיובים היום</name>
+    <name>Charges Today</name>
     <params>
         <name>co</name>
         <value>1</value>

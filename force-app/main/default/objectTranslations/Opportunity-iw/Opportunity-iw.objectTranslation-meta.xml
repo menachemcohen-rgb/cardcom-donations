@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <layouts>
+        <layout>Micro Donation Pledge Layout</layout>
+        <sections>
+            <label>פרטי ההוראה</label>
+            <section>Pledge Details</section>
+        </sections>
+        <sections>
+            <label>פרטי טופס</label>
+            <section>Form Details</section>
+        </sections>
+        <sections>
+            <label>כרטיס</label>
+            <section>Card</section>
+        </sections>
+        <sections>
+            <label>עצירה/חידוש</label>
+            <section>Stop/Resume</section>
+        </sections>
+        <sections>
+            <label>סטטיסטיקה</label>
+            <section>Statistics</section>
+        </sections>
+    </layouts>
+    <quickActions>
+        <label>ביטול הוראה</label>
+        <name>Cancel_Pledge</name>
+    </quickActions>
+    <quickActions>
+        <label>חידוש חיובים</label>
+        <name>Resume_Charges</name>
+    </quickActions>
+    <quickActions>
+        <label>ביטול קישורי תורם</label>
+        <name>Revoke_Donor_Links</name>
+    </quickActions>
+    <quickActions>
+        <label>הפסקת חיובים</label>
+        <name>Stop_Charges</name>
+    </quickActions>
+    <recordTypes>
+        <label>הזדמנות</label>
+        <name>Micro_Donation_Pledge</name>
+    </recordTypes>
+    <validationRules>
+        <errorMessage>הוראה פעילה חייבת אסימון כרטיס ותורם משויך.</errorMessage>
+        <name>VR_Active_Requires_Token</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>הסכום חייב להיות בין המינימום למקסימום שהוגדרו.</errorMessage>
+        <name>VR_Amount_Range</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>הוראה שבוטלה אינה ניתנת לשינוי סטטוס.</errorMessage>
+        <name>VR_No_Reactivate_Cancelled</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>כשסיבת ההפסקה היא "אחר" חובה למלא פירוט.</errorMessage>
+        <name>VR_Other_Requires_Details</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>לא ניתן לשנות את סוג ההזדמנות של הוראת תרומה יומית.</errorMessage>
+        <name>VR_Pledge_Type_Locked</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>אין לך הרשאה לעצור/לחדש חיובים.</errorMessage>
+        <name>VR_Status_Change_Permission</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>חובה לבחור סיבת הפסקה.</errorMessage>
+        <name>VR_Stop_Requires_Reason</name>
+    </validationRules>
+</CustomObjectTranslation>

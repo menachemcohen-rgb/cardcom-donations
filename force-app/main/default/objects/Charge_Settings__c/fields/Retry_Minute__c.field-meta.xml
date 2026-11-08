@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Retry_Minute__c</fullName>
     <defaultValue>30</defaultValue>
-    <description>דקה בכל שעה לסורק ה-retries (Part C E7)</description>
+    <description>Minute of every hour for the retry scan (Part C E7)</description>
     <externalId>false</externalId>
     <label>Retry Minute</label>
     <precision>2</precision>

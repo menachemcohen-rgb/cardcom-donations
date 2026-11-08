@@ -8,5 +8,5 @@
     <fields>Last4__c</fields>
     <fields>Card_Expiry_Date__c</fields>
     <fields>Consecutive_Failures__c</fields>
-    <label>הוראת תרומה יומית</label>
+    <label>Daily Donation Pledge</label>
 </CompactLayout>

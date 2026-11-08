@@ -3,8 +3,8 @@
     <fullName>Attempt_Key__c</fullName>
     <caseSensitive>false</caseSensitive>
     <externalId>true</externalId>
-    <inlineHelpText>{ExternalUniqTranId}-A{n} — זה הערך שנשלח ל-Cardcom כ-ExternalUniqTranId (B5.4)</inlineHelpText>
-    <label>מפתח ניסיון</label>
+    <inlineHelpText>{ExternalUniqTranId}-A{n} — this is the value sent to Cardcom as ExternalUniqTranId (B5.4)</inlineHelpText>
+    <label>Attempt Key</label>
     <length>110</length>
     <required>true</required>
     <type>Text</type>

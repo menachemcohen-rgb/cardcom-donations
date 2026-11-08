@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>שימוש בקישור תורם</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>שימושים בקישורי תורם</value>
+    </caseValues>
+</CustomObjectTranslation>

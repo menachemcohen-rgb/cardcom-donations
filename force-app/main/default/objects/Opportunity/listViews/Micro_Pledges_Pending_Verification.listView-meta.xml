@@ -18,5 +18,5 @@
         <operation>equals</operation>
         <value>Pending_Verification</value>
     </filters>
-    <label>הוראות ממתינות לאימות</label>
+    <label>Pledges Pending Verification</label>
 </ListView>

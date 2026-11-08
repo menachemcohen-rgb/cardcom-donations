@@ -1,7 +1,7 @@
 /**
  * Behaviour tests for the Prompt 1 validation rules (B2.1 VR_Tax_Id_Format; Part C C2 Opportunity rules).
  * Every Opportunity rule is guarded by Type = 'Daily Donation Pledge', so other Opportunities are never affected (D24, D34).
- * Messages are asserted on the Hebrew text from the spec.
+ * Messages are asserted on the English master text (Hebrew is a translation, objectTranslations/*-iw).
  */
 @IsTest
 private class PledgeValidationRulesTest {
@@ -33,11 +33,25 @@ private class PledgeValidationRulesTest {
     return o;
   }
 
+  // English master text → part of the Hebrew translation (objectTranslations/*-iw).
+  private static final Map<String, String> HE = new Map<String, String>{
+    'The Israeli ID must have 9 digits' => 'ת"ז חייבת להכיל 9 ספרות',
+    'The amount must be between the configured minimum and maximum' => 'הסכום חייב להיות בין המינימום למקסימום',
+    'An active pledge needs a card token and a linked donor' => 'הוראה פעילה חייבת אסימון כרטיס ותורם משויך',
+    'A stop reason is required' => 'חובה לבחור סיבת הפסקה',
+    'details are required' => 'חובה למלא פירוט',
+    'You don\'t have permission to stop/resume charges' => 'אין לך הרשאה לעצור/לחדש חיובים',
+    'A cancelled pledge can\'t change status' => 'הוראה שבוטלה אינה ניתנת לשינוי סטטוס',
+    'The opportunity type of a daily donation pledge can\'t be changed' => 'לא ניתן לשנות את סוג ההזדמנות'
+  };
+
   private static void assertFails(Database.SaveResult r, String expectedMessage) {
     Assert.isFalse(r.isSuccess(), 'Expected the save to fail with: ' + expectedMessage);
     Boolean found = false;
     for (Database.Error e : r.getErrors()) {
-      if (e.getMessage().unescapeHtml4().contains(expectedMessage)) {
+      String msg = e.getMessage().unescapeHtml4();
+      // A user whose language is Hebrew gets the iw translation of the message.
+      if (msg.contains(expectedMessage) || (HE.containsKey(expectedMessage) && msg.contains(HE.get(expectedMessage)))) {
         found = true;
       }
     }
@@ -50,14 +64,14 @@ private class PledgeValidationRulesTest {
 
   @IsTest
   static void contactTaxIdMustBeNineDigits() {
-    assertFails(Database.insert(new Contact(LastName = 'Bad', Donor_Tax_Id__c = '12345'), false), 'ת"ז חייבת להכיל 9 ספרות');
+    assertFails(Database.insert(new Contact(LastName = 'Bad', Donor_Tax_Id__c = '12345'), false), 'The Israeli ID must have 9 digits');
     assertSucceeds(Database.insert(new Contact(LastName = 'Good', Donor_Tax_Id__c = '000000018'), false));
   }
 
   @IsTest
   static void amountMustBeWithinRange() {
-    assertFails(Database.insert(pledge('Pending_Verification', 0.5), false), 'הסכום חייב להיות בין המינימום למקסימום');
-    assertFails(Database.insert(pledge('Pending_Verification', 999), false), 'הסכום חייב להיות בין המינימום למקסימום');
+    assertFails(Database.insert(pledge('Pending_Verification', 0.5), false), 'The amount must be between the configured minimum and maximum');
+    assertFails(Database.insert(pledge('Pending_Verification', 999), false), 'The amount must be between the configured minimum and maximum');
     assertSucceeds(Database.insert(pledge('Pending_Verification', 3), false));
   }
 
@@ -77,7 +91,7 @@ private class PledgeValidationRulesTest {
 
   @IsTest
   static void activeRequiresTokenAndDonor() {
-    assertFails(Database.insert(pledge('Active', 3), false), 'הוראה פעילה חייבת אסימון כרטיס ותורם משויך');
+    assertFails(Database.insert(pledge('Active', 3), false), 'An active pledge needs a card token and a linked donor');
     assertSucceeds(Database.insert(activePledge(), false));
   }
 
@@ -85,12 +99,12 @@ private class PledgeValidationRulesTest {
   static void stopRequiresReasonAndDetails() {
     Opportunity noReason = activePledge();
     noReason.StageName = 'Stopped';
-    assertFails(Database.insert(noReason, false), 'חובה לבחור סיבת הפסקה');
+    assertFails(Database.insert(noReason, false), 'A stop reason is required');
 
     Opportunity otherNoDetails = activePledge();
     otherNoDetails.StageName = 'Stopped';
     otherNoDetails.Stop_Reason__c = 'Other';
-    assertFails(Database.insert(otherNoDetails, false), 'חובה למלא פירוט');
+    assertFails(Database.insert(otherNoDetails, false), 'details are required');
   }
 
   @IsTest
@@ -113,7 +127,7 @@ private class PledgeValidationRulesTest {
     );
     System.runAs(u) {
       Opportunity upd = new Opportunity(Id = o.Id, StageName = 'Stopped', Stop_Reason__c = 'Donor_Request');
-      assertFails(Database.update(upd, false), 'אין לך הרשאה לעצור/לחדש חיובים');
+      assertFails(Database.update(upd, false), 'You don\'t have permission to stop/resume charges');
     }
   }
 
@@ -122,7 +136,7 @@ private class PledgeValidationRulesTest {
     Opportunity o = activePledge();
     o.StageName = 'Cancelled';
     insert o;
-    assertFails(Database.update(new Opportunity(Id = o.Id, StageName = 'Active'), false), 'הוראה שבוטלה אינה ניתנת לשינוי סטטוס');
+    assertFails(Database.update(new Opportunity(Id = o.Id, StageName = 'Active'), false), 'A cancelled pledge can\'t change status');
   }
 
   @IsTest
@@ -130,9 +144,9 @@ private class PledgeValidationRulesTest {
     // D34: the Type value is what makes a record a pledge; it can't be switched on or off by hand
     Opportunity o = activePledge();
     insert o;
-    assertFails(Database.update(new Opportunity(Id = o.Id, Type = 'New Business'), false), 'לא ניתן לשנות את סוג ההזדמנות');
+    assertFails(Database.update(new Opportunity(Id = o.Id, Type = 'New Business'), false), 'The opportunity type of a daily donation pledge can\'t be changed');
     Opportunity other = new Opportunity(Type = 'New Business', Name = 'Regular deal', StageName = 'Prospecting', CloseDate = Date.today());
     insert other;
-    assertFails(Database.update(new Opportunity(Id = other.Id, Type = MicroPledges.TYPE), false), 'לא ניתן לשנות את סוג ההזדמנות');
+    assertFails(Database.update(new Opportunity(Id = other.Id, Type = MicroPledges.TYPE), false), 'The opportunity type of a daily donation pledge can\'t be changed');
   }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>בדיקות GetLpResult ללא טוקן; 6 → Verification_Failed</help>
+    <label>בדיקות LP</label>
+    <name>Lp_Check_Count__c</name>
+</CustomFieldTranslation>

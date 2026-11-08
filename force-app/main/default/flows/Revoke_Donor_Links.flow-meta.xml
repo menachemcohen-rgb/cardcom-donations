@@ -3,13 +3,13 @@
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Can_Run</name>
-        <label>מצב ההוראה מתאים?</label>
+        <label>Pledge stage allowed?</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <defaultConnector>
             <targetReference>Not_Allowed_Screen</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>לא</defaultConnectorLabel>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
         <rules>
             <name>Allowed</name>
             <conditionLogic>or</conditionLogic>
@@ -30,7 +30,7 @@
             <connector>
                 <targetReference>Confirm_Screen</targetReference>
             </connector>
-            <label>כן</label>
+            <label>Yes</label>
         </rules>
     </decisions>
     <description>B6.8 / D15: invalidates every donor link sent so far (Link_Version__c + 1). OpportunityTrigger writes the Link_Revoke change log.</description>
@@ -41,8 +41,8 @@
         <expression>{!Get_Pledge.Link_Version__c} + 1</expression>
         <scale>0</scale>
     </formulas>
-    <interviewLabel>ביטול קישורי תורם {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>ביטול קישורי תורם</label>
+    <interviewLabel>Revoke Donor Links {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Revoke Donor Links</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

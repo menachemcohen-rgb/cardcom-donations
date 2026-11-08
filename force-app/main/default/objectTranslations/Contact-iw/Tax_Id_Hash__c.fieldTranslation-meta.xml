@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>SHA-256 hex של ת"ז מרופדת ל-9. מתמלא ע"י Trigger. אין לערוך.</help>
+    <label>טביעת ת"ז</label>
+    <name>Tax_Id_Hash__c</name>
+</CustomFieldTranslation>

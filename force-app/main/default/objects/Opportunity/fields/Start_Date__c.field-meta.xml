@@ -3,7 +3,7 @@
     <fullName>Start_Date__c</fullName>
     <externalId>false</externalId>
     <inlineHelpText>= Activated date</inlineHelpText>
-    <label>תאריך התחלה</label>
+    <label>Start Date</label>
     <required>false</required>
     <type>Date</type>
 </CustomField>

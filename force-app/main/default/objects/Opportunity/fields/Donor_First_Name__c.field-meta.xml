@@ -2,8 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Donor_First_Name__c</fullName>
     <externalId>false</externalId>
-    <inlineHelpText>כפי שהוקלד</inlineHelpText>
-    <label>שם פרטי (טופס)</label>
+    <inlineHelpText>As typed</inlineHelpText>
+    <label>First Name (Form)</label>
     <length>40</length>
     <required>false</required>
     <type>Text</type>

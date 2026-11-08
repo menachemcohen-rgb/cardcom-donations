@@ -3,7 +3,7 @@
     <fullName>Token__c</fullName>
     <description>Never filter on it in SOQL (Part C rule 8, E15).</description>
     <externalId>false</externalId>
-    <label>אסימון</label>
+    <label>Token</label>
     <length>64</length>
     <maskChar>asterisk</maskChar>
     <maskType>all</maskType>

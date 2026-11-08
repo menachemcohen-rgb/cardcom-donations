@@ -45,7 +45,7 @@
         <field>Charge__c.Contact__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <name>חיובים מוצלחים ללא קבלה</name>
+    <name>Successful Charges without a Receipt</name>
     <params>
         <name>co</name>
         <value>1</value>
