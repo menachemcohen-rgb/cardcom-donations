@@ -8,4 +8,5 @@
         <plural>true</plural>
         <value>יומני Webhook</value>
     </caseValues>
+    <gender>Masculine</gender>
 </CustomObjectTranslation>

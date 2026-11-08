@@ -2,7 +2,7 @@
 <ReportType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Donors_With_Receipts</fullName>
     <baseObject>Contact</baseObject>
-    <category>contacts</category>
+    <category>accounts</category>
     <deployed>true</deployed>
     <description>Donor Contacts with their monthly Cardcom receipts (Prompt 11).</description>
     <join>

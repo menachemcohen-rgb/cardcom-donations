@@ -8,4 +8,5 @@
         <plural>true</plural>
         <value>פערי התאמה</value>
     </caseValues>
+    <gender>Masculine</gender>
 </CustomObjectTranslation>

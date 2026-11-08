@@ -7,7 +7,7 @@
         <translation>ממתינה</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>Issued</masterLabel>
+        <masterLabel>Issued and Sent</masterLabel>
         <translation>הופקה ונשלחה</translation>
     </picklistValues>
     <picklistValues>
@@ -15,7 +15,7 @@
         <translation>נכשלה</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>Needs_Verification</masterLabel>
+        <masterLabel>Unknown Response</masterLabel>
         <translation>תשובה לא ידועה</translation>
     </picklistValues>
 </CustomFieldTranslation>
