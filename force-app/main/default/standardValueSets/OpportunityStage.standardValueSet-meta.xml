@@ -94,7 +94,7 @@
     <standardValue>
         <fullName>Pending_Verification</fullName>
         <default>false</default>
-        <label>Pending Verification</label>
+        <label>Pending_Verification</label>
         <closed>false</closed>
         <forecastCategory>Pipeline</forecastCategory>
         <probability>10</probability>
@@ -130,7 +130,7 @@
     <standardValue>
         <fullName>Verification_Failed</fullName>
         <default>false</default>
-        <label>Verification Failed</label>
+        <label>Verification_Failed</label>
         <closed>true</closed>
         <forecastCategory>Omitted</forecastCategory>
         <probability>0</probability>

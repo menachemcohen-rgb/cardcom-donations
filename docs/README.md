@@ -259,7 +259,7 @@ Recorded from the Ato Dev sandbox on 2026-11-02 (`docs/org-discovery.md`); re-ch
 - No Shield Platform Encryption detected: encrypted fields use **Classic Encrypted Text** (max 175 chars, not filterable, masked).
   `MetadataSmokeTest.encryptedFieldsAreNotFilterable` records the scheme in its debug log and fails if a field is filterable.
 - Every new Contact gets a "{First} {Last} Household" Account from the org's flow `Create_New_Account_When_Creating_A_Contact`.
-- All users have language `en_US`, so they see the English stage labels ("Pending Verification", "Active"…). The Hebrew labels from
+- All users have language `en_US`, so they see the English stage labels ("Pending_Verification", "Active"…; a stage label can't be renamed by a deploy, so the repo keeps the label the org already has). The Hebrew labels from
   C1 appear only for users whose language is Hebrew.
 
 ## Validating (no deploy)
