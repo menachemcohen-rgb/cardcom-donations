@@ -3,15 +3,15 @@
     <label>סיבת הפסקה</label>
     <name>Stop_Reason__c</name>
     <picklistValues>
-        <masterLabel>Donor_Request</masterLabel>
+        <masterLabel>Donor Request</masterLabel>
         <translation>בקשת התורם</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>Card_Blocked</masterLabel>
+        <masterLabel>Card Blocked</masterLabel>
         <translation>כרטיס חסום</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>Financial_Review</masterLabel>
+        <masterLabel>Financial Review</masterLabel>
         <translation>בירור כספי</translation>
     </picklistValues>
     <picklistValues>

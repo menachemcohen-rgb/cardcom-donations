@@ -8,4 +8,5 @@
         <plural>true</plural>
         <value>בקשות החלפת כרטיס</value>
     </caseValues>
+    <gender>Feminine</gender>
 </CustomObjectTranslation>

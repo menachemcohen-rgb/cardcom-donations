@@ -18,11 +18,6 @@
         </columns>
         <columns>
             <checkedByDefault>true</checkedByDefault>
-            <field>DuplicateRuleId</field>
-            <table>DuplicateRecordSet</table>
-        </columns>
-        <columns>
-            <checkedByDefault>true</checkedByDefault>
             <field>RecordCount</field>
             <table>DuplicateRecordSet</table>
         </columns>

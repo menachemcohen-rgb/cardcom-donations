@@ -8,6 +8,7 @@
         <plural>true</plural>
         <value>קבלות חודשיות</value>
     </caseValues>
+    <gender>Feminine</gender>
     <layouts>
         <layout>Monthly Receipt Layout</layout>
         <sections>

@@ -8,4 +8,5 @@
         <plural>true</plural>
         <value>יומני שינויים</value>
     </caseValues>
+    <gender>Masculine</gender>
 </CustomObjectTranslation>

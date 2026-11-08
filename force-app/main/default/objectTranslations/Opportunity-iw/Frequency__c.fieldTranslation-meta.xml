@@ -3,11 +3,11 @@
     <label>תדירות</label>
     <name>Frequency__c</name>
     <picklistValues>
-        <masterLabel>OnceDaily</masterLabel>
+        <masterLabel>Once a Day</masterLabel>
         <translation>פעם ביום</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>TwiceDaily</masterLabel>
+        <masterLabel>Twice a Day</masterLabel>
         <translation>פעמיים ביום</translation>
     </picklistValues>
 </CustomFieldTranslation>

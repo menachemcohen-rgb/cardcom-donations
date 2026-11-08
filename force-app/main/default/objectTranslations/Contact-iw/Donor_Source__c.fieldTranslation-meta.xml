@@ -3,7 +3,7 @@
     <label>מקור תורם</label>
     <name>Donor_Source__c</name>
     <picklistValues>
-        <masterLabel>WP_Micro</masterLabel>
+        <masterLabel>Website Micro Form</masterLabel>
         <translation>טופס מיקרו באתר</translation>
     </picklistValues>
 </CustomFieldTranslation>

@@ -8,6 +8,7 @@
         <plural>true</plural>
         <value>ניסיונות חיוב</value>
     </caseValues>
+    <gender>Masculine</gender>
     <validationRules>
         <errorMessage>לא ניתן לשנות סכום של חיוב שהצליח.</errorMessage>
         <name>VR_Charge_Immutable_After_Final</name>
