@@ -44,7 +44,9 @@ for o in Opportunity Contact OpportunityContactRole; do
   qt "workflow-$o" "SELECT Name, NamespacePrefix FROM WorkflowRule WHERE TableEnumOrId = '$o'"
 done
 # Record-triggered flows and Process Builders (labels may be localized; filter by API name of the object in the CSV)
-q flows-active "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND (TriggerType != null OR ProcessType = 'Workflow')"
+# FlowDefinitionView rejects OR ("Disjunctions not supported"): two queries
+q flows-active "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND TriggerType != null"
+q flows-process-builder "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND ProcessType = 'Workflow'"
 q duplicate-rules "SELECT DeveloperName, MasterLabel, SobjectType, IsActive, NamespacePrefix FROM DuplicateRule WHERE SobjectType IN ('Contact','Opportunity','Account','Lead')"
 
 # 4. Email and users
