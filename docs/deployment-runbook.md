@@ -98,6 +98,10 @@ Site `cardcom` + guest permission set, permission-set assignments, record type a
    scripts/deploy-pe-subscriber.sh <alias> <int-user>
    ```
 
+   Then **Suspend and Resume** the three subscriptions (Setup → Platform Events → each event → Subscriptions → Manage); otherwise
+   the running triggers can keep the old user (production, N105). After step 4 check that every `Donations …` CronTrigger has
+   `OwnerId` = the integration user.
+
    **Check the publish behavior** in the target org: Setup → Platform Events → Charge Success → "Publish Behavior" must be
    **Publish After Commit** (repo: `objects/Charge_Success__e` `publishBehavior=PublishAfterCommit`, commit 4f31290). With
    "Publish Immediately" the thank-you trigger can read the charge before it is saved as Success and send nothing. An event's publish
