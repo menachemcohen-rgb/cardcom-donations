@@ -2,6 +2,16 @@
 
 הפירוט המלא באנגלית: `docs/production-deployment.md`. מסומן **(שינוי באורג)** = פעולה שמשנה את הפרודקשן.
 
+**Windows / PowerShell:** לכל סקריפט `.sh` יש גרסת `.ps1` באותה תיקייה, עם אותם פרמטרים. מריצים אותה כך:
+`powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 prod validate`
+
+דוגמאות:
+- `scripts\org-discovery.ps1 prod`
+- `scripts\prod\deploy-prod.ps1 prod quick <job-id>`
+- `scripts\deploy-pe-subscriber.ps1 prod <username>`
+
+`build-prod.py` רץ עם `python` (לא `python3`).
+
 ## א. לפני הכל (ידני)
 - [ ] Discovery על הפרודקשן (`scripts/org-discovery.sh <prod>`).
   - לבדוק אוטומציות ושדות חובה על Opportunity.
