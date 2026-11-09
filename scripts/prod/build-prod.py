@@ -178,7 +178,7 @@ def make_cmdt_public(out_default):
 
 def write_phase1(out, out_default):
     """Validation rules read $CustomMetadata.Cardcom_Setting__mdt.Default, which must exist before the main deploy:
-    phase 1 = the custom metadata types and their records only (no Apex, deploys with NoTestRun)."""
+    phase 1 = the custom metadata types and their records only (no Apex, deploys with the default test level)."""
     p1 = out.parent / (out.name + "-phase1")
     shutil.rmtree(p1, ignore_errors=True)
     d1 = p1 / "force-app" / "main" / "default"
