@@ -11,7 +11,7 @@ DIR="$(cd "$(dirname "$0")/../.." && pwd)/build/prod"
 [ -d "$DIR/force-app" ] || { echo "Run scripts/prod/build-prod.py first" >&2; exit 1; }
 if [ "$MODE" = phase1 ]; then
   # Validation rules read $CustomMetadata.Cardcom_Setting__mdt.Default: the types and records must exist first.
-  cd "$DIR-phase1" && exec sf project deploy start --target-org "$ALIAS" --source-dir force-app --test-level NoTestRun --wait 30
+  cd "$DIR-phase1" && exec sf project deploy start --target-org "$ALIAS" --source-dir force-app --wait 30
 fi
 cd "$DIR"
 TESTS=()

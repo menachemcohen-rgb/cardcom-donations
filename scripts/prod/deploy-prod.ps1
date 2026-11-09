@@ -15,7 +15,7 @@ if ($Mode -eq 'phase1') {
     # Validation rules read $CustomMetadata.Cardcom_Setting__mdt.Default: the types and records must exist first.
     Push-Location ($dir + '-phase1')
     try {
-        & sf project deploy start --target-org $Alias --source-dir force-app --test-level NoTestRun --wait 30
+        & sf project deploy start --target-org $Alias --source-dir force-app --wait 30
         if ($LASTEXITCODE -ne 0) { throw "sf exited with $LASTEXITCODE" }
     } finally { Pop-Location }
     return
