@@ -5,7 +5,8 @@ It keeps everything already in the layout and only adds what is missing:
   * a "Micro Donor" section with Donor_Source__c, Needs_Review__c, Review_Reason__c and the org's Israeli_Id__c
     (each only if the layout doesn't show it yet; never the encrypted Donor_Tax_Id__c, N106);
   * related lists Daily Donation Pledges (Opportunity.Donor_Contact__c) and Monthly Receipts (Monthly_Receipt__c.Contact__c);
-  * the action "Create Monthly Receipt" (Contact.Plan_Monthly_Receipt).
+  * the action "Create Monthly Receipt" (Contact.Plan_Monthly_Receipt) in the Lightning actions (platformActionList) when the
+    layout already overrides them; otherwise it says to add it in Setup (a flow action can't go into quickActionList).
 Deploying the org's own layout back with these additions changes nothing else in it.
 
 Usage:
@@ -20,7 +21,6 @@ import sys
 SECTION_FIELDS = ["Donor_Source__c", "Needs_Review__c", "Review_Reason__c", "Israeli_Id__c"]
 RELATED = ["Opportunity.Donor_Contact__c", "Monthly_Receipt__c.Contact__c"]
 ACTION = "Contact.Plan_Monthly_Receipt"
-DEFAULT_ACTIONS = ["FeedItem.TextPost", "FeedItem.ContentPost", "SendEmail", "NewTask", "LogACall", "NewEvent", "NewNote"]
 # Layout elements that come after the ones we insert (Metadata API order)
 AFTER_SECTIONS = ["miniLayout", "multilineLayoutFields", "platformActionList", "quickActionList", "relatedContent",
                   "relatedLists", "relatedObjects", "runAssignmentRulesDefault", "showEmailCheckbox", "showHighlightsPanel",
@@ -91,21 +91,24 @@ def main():
         else:
             xml = insert_before_first(xml, AFTER_SECTIONS[AFTER_SECTIONS.index("relatedObjects"):], rel_blocks)
 
-    if f"<quickActionName>{ACTION}</quickActionName>" not in xml:
-        item = f"""        <quickActionListItems>
-            <quickActionName>{ACTION}</quickActionName>
-        </quickActionListItems>
+    # A flow quick action can't go into quickActionList (classic publisher): Lightning actions live in platformActionList.
+    # Undo an earlier version of this script that put it in quickActionList.
+    xml = re.sub(r"[ \t]*<quickActionListItems>\s*<quickActionName>" + re.escape(ACTION) +
+                 r"</quickActionName>\s*</quickActionListItems>\n?", "", xml)
+    manual = False
+    if f"<actionName>{ACTION}</actionName>" not in xml:
+        if "</platformActionList>" in xml:
+            orders = [int(x) for x in re.findall(r"<sortOrder>(\d+)</sortOrder>", xml.split("<platformActionList>")[1].split("</platformActionList>")[0])]
+            item = f"""        <platformActionListItems>
+            <actionName>{ACTION}</actionName>
+            <actionType>QuickAction</actionType>
+            <sortOrder>{(max(orders) + 1) if orders else 0}</sortOrder>
+        </platformActionListItems>
 """
-        if "</quickActionList>" in xml:
-            xml = xml.replace("    </quickActionList>", item + "    </quickActionList>", 1)
-        else:  # layout used the predefined actions: write them out explicitly, plus ours
-            items = "".join(f"""        <quickActionListItems>
-            <quickActionName>{a}</quickActionName>
-        </quickActionListItems>
-""" for a in DEFAULT_ACTIONS) + item
-            xml = insert_before_first(xml, AFTER_SECTIONS[AFTER_SECTIONS.index("relatedContent"):],
-                                      "    <quickActionList>\n" + items + "    </quickActionList>\n")
-        added.append("action " + ACTION)
+            xml = xml.replace("    </platformActionList>", item + "    </platformActionList>", 1)
+            added.append("action " + ACTION + " (Lightning actions)")
+        else:
+            manual = True   # the layout uses Salesforce's predefined actions; overriding them by file would drop them
 
     path.write_text(xml, encoding="utf-8")
     root = path.parent.parent
@@ -113,6 +116,13 @@ def main():
         '{"packageDirectories":[{"path":"layouts","default":true}],"sourceApiVersion":"62.0"}\n', encoding="utf-8")
     print(f"  file: {path}")
     print("\n".join("  added " + a for a in added) if added else "  nothing to add (already there)")
+    if manual:
+        print("  NOT added: the action 'Create Monthly Receipt'. This layout uses Salesforce's predefined Lightning actions.")
+        print("  Add it in Setup: Contact > Page Layouts > the layout > Mobile & Lightning Actions > click the wrench to override,")
+        print("  drag 'Create Monthly Receipt' into 'Salesforce Mobile and Lightning Experience Actions', Save.")
+    if not added:
+        print("Nothing to deploy.")
+        return
     print("Deploy (org change, layout only):")
     print(f'  cd "{root}" && sf project deploy start --target-org prod --source-dir layouts')
 
