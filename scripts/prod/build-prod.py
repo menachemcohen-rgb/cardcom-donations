@@ -91,7 +91,7 @@ def fill_settings(out_default, values_path):
         labels_file.unlink()
         print("  Cardcom_Setting.Default + custom labels: LEFT OUT (no --values); production keeps the values set in Setup")
         return
-    vals = json.loads(pathlib.Path(values_path).read_text(encoding="utf-8"))
+    vals = json.loads(pathlib.Path(values_path).read_text(encoding="utf-8-sig"))  # Notepad may add a BOM
     labels = vals.pop("labels", {}) or {}
     vals = {k: v for k, v in vals.items() if not k.startswith("_")}
     fill_labels(labels_file, labels, values_path)
