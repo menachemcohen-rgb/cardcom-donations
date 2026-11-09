@@ -69,6 +69,8 @@
   - Internal_Read → צפייה בלבד (אופציונלי).
 - [ ] `scripts/deploy-pe-subscriber.sh <prod> <integration-username>` (שינוי באורג).
   - לבדוק ש-Charge Success מוגדר Publish After Commit.
+  - **להפעיל מחדש את ה-Subscriptions.** בשלושת האירועים (Cardcom Lp Event, Charge Success, Donation Setup Command) עושים Manage → Suspend ואחר כך Resume. בלי זה ה-Jobs המתוזמנים נוצרים בשם משתמש המערכת (autoproc) ולא מצליחים לפנות ל-Cardcom.
+  - **אחרי התזמון,** לבדוק ש-`OwnerId` של ה-Jobs שמתחילים ב-`Donations` הוא ה-Id של משתמש האינטגרציה.
 
 ## ה. Layouts, דפים, כפתורים (ידני)
 - [ ] Opportunity Layout.

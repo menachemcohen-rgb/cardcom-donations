@@ -161,6 +161,12 @@ The quick deploy has to run within 10 days of the validation, with no deploy in 
    - `Donations_Internal_Read` → read-only users (optional).
 7. **Platform event subscribers** (org change): `scripts/deploy-pe-subscriber.sh <prod-alias> <integration-username>`. Then check
    that `Charge_Success__e` is "Publish After Commit" (runbook 5.2).
+   **Then Suspend and Resume each of the three subscriptions** (Setup → Platform Events → Cardcom Lp Event / Charge Success /
+   Donation Setup Command → Subscriptions → Manage). In production (9.11.2026) the page already showed the integration user, but
+   the running trigger kept the old user until it was restarted: jobs scheduled through `DonationSetup.request` were owned by the
+   Automated Process user, which has no access to the Cardcom credential, so every callout from a scheduled job failed silently.
+   Check after scheduling: `SELECT CronJobDetail.Name, OwnerId FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations%'`
+   must show the integration user's Id. If not: Suspend/Resume, abort the `Donations …` jobs, schedule again.
 
 ## 5. Layouts, pages, actions and buttons (by hand)
 
