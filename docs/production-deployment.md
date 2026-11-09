@@ -90,7 +90,7 @@ python3 scripts/prod/build-prod.py --org-svs build/prod-svs --values config/prod
 The build output shows the production stages it kept, the values it added and anything it left out.
 
 - **Stop condition:** it stops if one of the 5 stages already exists in production (E14). Decide with the client before going on.
-- **Optional flags:** `--no-translations`, `--no-history`, `--with-record-type`.
+- **Optional flags:** `--no-translations`, `--no-history`, `--with-record-type`, `--allow-placeholders` (deploy before the client sent every value: missing values become warnings and are filled later in Setup → Custom Metadata Types → Cardcom Setting and Setup → Custom Labels, before go-live).
 - **Output:** `build/prod/force-app`, `build/prod/manifest/package.xml` and `build/prod/tests.txt`.
 
 **Later releases:** run the build without `--first-install`, so the donor-link secret is never sent. Use `--skip-svs` when the value

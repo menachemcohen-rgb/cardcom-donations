@@ -33,6 +33,17 @@ BOOLEAN = {"Holiday_Auto_Detect__c", "Is_Recurring_Terminal__c", "Optional_Verif
            "Receipt_Link_Deal_Numbers__c", "Recon_Report_Unknown__c", "Send_Donor_Charge_Email__c"}
 
 
+ALLOW_PLACEHOLDERS = False
+
+
+def die_or_warn(msg):
+    """--allow-placeholders: deploy now, fill the missing values in Setup before go-live."""
+    if ALLOW_PLACEHOLDERS:
+        print("  WARNING: " + msg + " (allowed by --allow-placeholders: fix it in Setup before go-live)")
+    else:
+        die(msg)
+
+
 def die(msg):
     print("ERROR: " + msg, file=sys.stderr)
     sys.exit(1)
@@ -114,7 +125,7 @@ def fill_settings(out_default, values_path):
     empty = [f for f in REQUIRED if re.search(r"<field>" + f + r"</field>\s*<value xsi:nil", xml)]
     bad = [p for p in PLACEHOLDERS + ["&lt;"] if p in xml]
     if empty or bad:
-        die(f"Cardcom_Setting.Default still has empty {empty} / placeholders {bad}; fix {values_path}")
+        die_or_warn(f"Cardcom_Setting.Default still has empty {empty} / placeholders {bad}; fix {values_path}")
     print(f"  Cardcom_Setting.Default: filled {len(vals)} fields from {values_path}")
 
 
@@ -133,7 +144,7 @@ def fill_labels(labels_file, labels, values_path):
     labels_file.write_text(xml, encoding="utf-8")
     bad = [p for p in LABEL_PLACEHOLDERS if p in xml]
     if bad:
-        die(f"custom labels still hold placeholders {bad}; add them under \"labels\" in {values_path}")
+        die_or_warn(f"custom labels still hold placeholders {bad}; add them under \"labels\" in {values_path}")
     print(f"  custom labels: filled {len(labels)} from {values_path}")
 
 
@@ -157,8 +168,12 @@ def main():
     ap.add_argument("--with-record-type", action="store_true", help="also deploy record type Micro_Donation_Pledge + its sales process")
     ap.add_argument("--no-translations", action="store_true", help="leave out the Hebrew translations (Translation Workbench off)")
     ap.add_argument("--no-history", action="store_true", help="turn off field-history tracking on the Opportunity fields")
+    ap.add_argument("--allow-placeholders", action="store_true",
+                    help="build even if values are still empty/placeholders (fill them in Setup before go-live)")
     ap.add_argument("--out", default=str(ROOT / "build" / "prod"))
     a = ap.parse_args()
+    global ALLOW_PLACEHOLDERS
+    ALLOW_PLACEHOLDERS = a.allow_placeholders
     if not a.org_svs and not a.skip_svs:
         die("give --org-svs <retrieved folder> (first install / value-set change) or --skip-svs")
     if a.first_install and not a.values:
