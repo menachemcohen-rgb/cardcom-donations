@@ -3,6 +3,10 @@
 The complete path from this repo to the client's production org. It builds on `docs/deployment-runbook.md` (order, phases,
 rollback) and the manual steps in `docs/README.md` ("README n"). Hebrew checklist: `docs/production-checklist-he.md`.
 
+**Windows:** every `.sh` script has a `.ps1` twin with the same arguments (`scripts/org-discovery.ps1`,
+`scripts/prod/deploy-prod.ps1`, `scripts/deploy-pe-subscriber.ps1`). Run it as
+`powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 <alias> validate`. Run `build-prod.py` with `python`.
+
 Every command marked **(org change)** changes production. Run it only when you mean to, outside the charge times
 (06:00, 08:00, 11:00, 20:00 and the hour before each).
 
