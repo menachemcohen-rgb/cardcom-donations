@@ -156,7 +156,38 @@ def strip_record_type(out_default):
     if tr.exists():
         tr.write_text(re.sub(r"[ \t]*<recordTypes>.*?</recordTypes>\n?", "", tr.read_text(encoding="utf-8"), flags=re.S),
                       encoding="utf-8")
-    print("  record type Micro_Donation_Pledge + sales process Micro_Donation_Process: LEFT OUT (D34)")
+    lay = out_default / "layouts" / "Opportunity-Micro Donation Pledge Layout.layout-meta.xml"
+    if lay.exists():
+        lay.write_text(re.sub(r"[ \t]*<layoutItems>\s*<behavior>\w+</behavior>\s*<field>RecordTypeId</field>\s*</layoutItems>\n?", "",
+                              lay.read_text(encoding="utf-8")), encoding="utf-8")
+    print("  record type Micro_Donation_Pledge + sales process Micro_Donation_Process: LEFT OUT (D34); RecordTypeId off the layout")
+
+
+def make_cmdt_public(out_default):
+    """Production (not a developer/sandbox/scratch org) refuses Protected custom metadata types outside a managed package.
+    In an unmanaged org Protected hides nothing from admins anyway; the secret stays in Setup only."""
+    obj = out_default / "objects" / "Donor_Link_Setting__mdt" / "Donor_Link_Setting__mdt.object-meta.xml"
+    obj.write_text(obj.read_text(encoding="utf-8").replace("<visibility>Protected</visibility>", "<visibility>Public</visibility>"),
+                   encoding="utf-8")
+    rec = out_default / "customMetadata" / "Donor_Link_Setting.Default.md-meta.xml"
+    if rec.exists():
+        rec.write_text(rec.read_text(encoding="utf-8").replace("<protected>true</protected>", "<protected>false</protected>"),
+                       encoding="utf-8")
+    print("  Donor_Link_Setting__mdt: visibility Public (production refuses Protected)")
+
+
+def write_phase1(out, out_default):
+    """Validation rules read $CustomMetadata.Cardcom_Setting__mdt.Default, which must exist before the main deploy:
+    phase 1 = the custom metadata types and their records only (no Apex, deploys with NoTestRun)."""
+    p1 = out.parent / (out.name + "-phase1")
+    shutil.rmtree(p1, ignore_errors=True)
+    d1 = p1 / "force-app" / "main" / "default"
+    (d1 / "objects").mkdir(parents=True)
+    for o in (out_default / "objects").glob("*__mdt"):
+        shutil.copytree(o, d1 / "objects" / o.name)
+    shutil.copytree(out_default / "customMetadata", d1 / "customMetadata")
+    shutil.copy(out / "sfdx-project.json", p1)
+    print(f"  phase 1 (custom metadata types + records) -> {p1}")
 
 
 def main():
@@ -216,6 +247,9 @@ def main():
     if left:
         print("  WARNING placeholders remain in: " + ", ".join(left))
 
+    make_cmdt_public(out_default)
+    write_phase1(out, out_default)
+
     tests = sorted(p.stem for p in (out_default / "classes").glob("*Test.cls"))
     (out / "tests.txt").write_text("\n".join(tests) + "\n", encoding="utf-8")
     print(f"  {len(tests)} test classes -> {out / 'tests.txt'}")
@@ -226,7 +260,7 @@ def main():
         print(f"  manifest -> {out / 'manifest' / 'package.xml'}")
     else:
         print("  sf CLI not found: manifest not generated (the deploy script uses --source-dir anyway)")
-    print("Done. Next: scripts/prod/deploy-prod.sh <alias> validate")
+    print("Done. Next: deploy-prod <alias> phase1 (first install), then deploy-prod <alias> validate")
 
 
 if __name__ == "__main__":
