@@ -39,7 +39,9 @@ foreach ($o in 'Opportunity', 'Contact', 'OpportunityContactRole') {
     Q "triggers-$o" "SELECT Name, Status, NamespacePrefix, UsageBeforeInsert, UsageAfterInsert, UsageBeforeUpdate, UsageAfterUpdate FROM ApexTrigger WHERE TableEnumOrId = '$o'" -Tooling
     Q "workflow-$o" "SELECT Name, NamespacePrefix FROM WorkflowRule WHERE TableEnumOrId = '$o'" -Tooling
 }
-Q 'flows-active'    "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND (TriggerType != null OR ProcessType = 'Workflow')"
+# FlowDefinitionView rejects OR ("Disjunctions not supported"): two queries
+Q 'flows-active'    "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND TriggerType != null"
+Q 'flows-process-builder' "SELECT ApiName, Label, ProcessType, TriggerType, RecordTriggerType, TriggerObjectOrEventId, TriggerObjectOrEventLabel, NamespacePrefix FROM FlowDefinitionView WHERE IsActive = true AND ProcessType = 'Workflow'"
 Q 'duplicate-rules' "SELECT DeveloperName, MasterLabel, SobjectType, IsActive, NamespacePrefix FROM DuplicateRule WHERE SobjectType IN ('Contact','Opportunity','Account','Lead')"
 
 # 4. Email and users
