@@ -1,15 +1,25 @@
 # PowerShell version of scripts/prod/deploy-prod.sh (docs/production-deployment.md).
 # Validates / deploys the folder built by scripts/prod/build-prod.py. Real changes to the org except "validate".
+#   powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 <alias> phase1   # first install: custom metadata types + records (real deploy, no Apex)
 #   powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 <alias> validate
 #   powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 <alias> quick <job-id>
 #   powershell -ExecutionPolicy Bypass -File scripts\prod\deploy-prod.ps1 <alias> deploy
 param(
     [Parameter(Mandatory = $true)][string]$Alias,
-    [Parameter(Mandatory = $true)][ValidateSet('validate', 'quick', 'deploy')][string]$Mode,
+    [Parameter(Mandatory = $true)][ValidateSet('phase1', 'validate', 'quick', 'deploy')][string]$Mode,
     [string]$JobId
 )
 $ErrorActionPreference = 'Stop'
 $dir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'build\prod'
+if ($Mode -eq 'phase1') {
+    # Validation rules read $CustomMetadata.Cardcom_Setting__mdt.Default: the types and records must exist first.
+    Push-Location ($dir + '-phase1')
+    try {
+        & sf project deploy start --target-org $Alias --source-dir force-app --test-level NoTestRun --wait 30
+        if ($LASTEXITCODE -ne 0) { throw "sf exited with $LASTEXITCODE" }
+    } finally { Pop-Location }
+    return
+}
 if (-not (Test-Path (Join-Path $dir 'force-app'))) { throw 'Run scripts\prod\build-prod.py first' }
 Push-Location $dir
 try {

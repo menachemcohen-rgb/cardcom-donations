@@ -96,7 +96,19 @@ The build output shows the production stages it kept, the values it added and an
 **Later releases:** run the build without `--first-install`, so the donor-link secret is never sent. Use `--skip-svs` when the value
 sets didn't change. Run it without `--values` to keep the Cardcom settings and labels that admins changed in Setup.
 
-## 2. Validate (check-only, no org change)
+## 2. Phase 1 (first install only, org change)
+
+The validation rules on Opportunity read `$CustomMetadata.Cardcom_Setting__mdt.Default`, which must exist before the main
+deploy validates. The build writes `build/prod-phase1` (the custom metadata types and their records, no Apex):
+
+```bash
+scripts/prod/deploy-prod.sh <prod-alias> phase1
+```
+
+Production refuses Protected custom metadata types outside a managed package, so the build makes `Donor_Link_Setting__mdt`
+Public (in an unmanaged org Protected hides nothing from admins anyway). The secret is still set only in Setup.
+
+## 2b. Validate (check-only, no org change)
 
 ```bash
 scripts/prod/deploy-prod.sh <prod-alias> validate

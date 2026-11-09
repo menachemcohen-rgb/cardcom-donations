@@ -39,6 +39,7 @@
 ## ב. בנייה ובדיקה (בלי שינוי באורג)
 - [ ] `sf project retrieve start --target-org <prod> --manifest manifest/retrieve-standard-value-sets.xml --output-dir build/prod-svs`
 - [ ] `python3 scripts/prod/build-prod.py --org-svs build/prod-svs --values config/prod-values.local.json --first-install`
+- [ ] בהתקנה ראשונה: `deploy-prod <prod> phase1` (שינוי באורג: רק סוגי ה-Custom Metadata והרשומות שלהם, בלי קוד).
 - [ ] `scripts/prod/deploy-prod.sh <prod> validate`: אמור לעבור עם 32 מחלקות הבדיקה. לשמור את ה-Job Id.
 
 ## ג. דיפלוי (שינוי באורג)

@@ -28,6 +28,7 @@
                 <showPercentage>true</showPercentage>
                 <showTotal>true</showTotal>
                 <showValues>true</showValues>
+                <sortBy>RowLabelAscending</sortBy>
             </dashboardComponent>
             <rowIndex>0</rowIndex>
             <rowSpan>8</rowSpan>
@@ -92,6 +93,7 @@
                 <header>New pledges by week</header>
                 <legendPosition>Bottom</legendPosition>
                 <report>Donations/New_Donors</report>
+                <sortBy>RowLabelAscending</sortBy>
             </dashboardComponent>
             <rowIndex>4</rowIndex>
             <rowSpan>4</rowSpan>
