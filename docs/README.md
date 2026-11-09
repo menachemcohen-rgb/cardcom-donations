@@ -166,7 +166,9 @@ sf apex run --target-org <alias> --file scripts/apex/init-settings.apex
     list; it counts toward the limit of 20.
 19. **Contact layout section** (B2.8): add a "תורם מיקרו" section to the existing "Contact Layout" with `Donor_Source__c`,
     `Needs_Review__c`, `Review_Reason__c`, the org's existing `Israeli_Id__c` (not `Donor_Tax_Id__c`, N106), and the related list
-    "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand because deploying the Contact layout would overwrite the org's existing one.
+    "הוראות תרומה יומית" (`Donor_Pledges`). Done by hand because deploying the repo's Contact layout would overwrite the org's existing one;
+    or retrieve the org's own layout and let `scripts/prod/patch-contact-layout.py` add only these parts (+ Monthly Receipts and the
+    action "Create Monthly Receipt"), then deploy that one file (N107).
 20. **Platform event subscribers** (B6.3, B6.9.2, N42). `CardcomLpEventTrigger`, `ChargeSuccessTrigger` and
     `DonationSetupCommandTrigger` must run as the integration user: the first so its job can use the Cardcom credential, the second so
     donor emails go out from the org-wide address, the third so scheduled jobs belong to that user. PlatformEventSubscriberConfig has no Setup page and names an org-specific user, so it is a template outside
