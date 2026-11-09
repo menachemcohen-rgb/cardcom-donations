@@ -14,8 +14,6 @@
 
 ## אצל יוסי
 - [ ] **`check.txt`:** להריץ את הבדיקה הכללית (`scripts\prod\post-deploy-check.ps1`) ולעבור על התוצאה.
-- [ ] **Stage History:** להוסיף ל-Micro Donation Pledge Layout, אם עוד לא נוסף. בלעדיו טאב History בהוראה ריק.
-- [ ] **Utility Bar:** להוסיף לאפליקציית המנהלים את `Apply_Charge_Schedule` ואת `Plan_Monthly_Receipts_All`.
 - [ ] **דוחות:** לשתף את תיקיית Donations עם הצוות.
 - [ ] **הרשאות לצוות:** לשייך Donations_Admin או Donations_Staff לאנשי הצוות שצריכים גישה.
 - [ ] **ניקיון בפרודקשן (לא דחוף):**
@@ -66,3 +64,5 @@
   - ההוראה: משויך, וה-Record Page פעיל.
   - איש קשר: סקשן, Related Lists וכפתור הקבלה.
 - **דף התורם:** פורסם באתר.
+- **Stage History:** נוסף ל-Layout של ההוראה.
+- **Utility Bar:** באפליקציית המנהלים יש "החלת זמני חיוב" ו"הפקת קבלות חודשיות לכל התורמים".
