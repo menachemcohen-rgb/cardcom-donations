@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help>ת"ז 9 ספרות כולל ספרת ביקורת. גלוי רק ל-PS Donations_Admin.</help>
-    <label>תעודת זהות</label>
+    <help>ת"ז שהוזנה בטופס התרומה, מוצפנת, 9 ספרות כולל ספרת ביקורת. גלוי רק ל-PS Donations_Admin. שדה הת"ז הראשי של הארגון נשאר Israeli_Id__c; הזיהוי עובד לפי שניהם.</help>
+    <label>ת"ז תורם (מוצפן)</label>
     <name>Donor_Tax_Id__c</name>
 </CustomFieldTranslation>

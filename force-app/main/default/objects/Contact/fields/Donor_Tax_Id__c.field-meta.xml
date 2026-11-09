@@ -3,8 +3,8 @@
     <fullName>Donor_Tax_Id__c</fullName>
     <description>Classic Encrypted Text unless Shield is enabled. Never filter or match on it in SOQL (Part C E16); match via Tax_Id_Hash__c.</description>
     <externalId>false</externalId>
-    <inlineHelpText>Israeli ID, 9 digits including the check digit. Visible only to PS Donations_Admin.</inlineHelpText>
-    <label>Israeli ID</label>
+    <inlineHelpText>Israeli ID entered on the donation form, encrypted, 9 digits including the check digit. Visible only to PS Donations_Admin. The org's existing Israeli_Id__c stays the main ID field; matching uses either.</inlineHelpText>
+    <label>Donor Tax ID (encrypted)</label>
     <length>9</length>
     <maskChar>asterisk</maskChar>
     <maskType>lastFour</maskType>
