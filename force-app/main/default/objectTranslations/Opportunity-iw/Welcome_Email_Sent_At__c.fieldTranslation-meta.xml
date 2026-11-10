@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>מתי נשלח לתורם מייל הקליטה עם הקישורים הקבועים.</help>
+    <label>מייל קליטה נשלח</label>
+    <name>Welcome_Email_Sent_At__c</name>
+</CustomFieldTranslation>

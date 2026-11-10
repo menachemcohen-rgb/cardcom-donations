@@ -11,6 +11,10 @@
             <section>Form Details</section>
         </sections>
         <sections>
+            <label>מיילים לתורם</label>
+            <section>Donor Emails</section>
+        </sections>
+        <sections>
             <label>כרטיס</label>
             <section>Card</section>
         </sections>

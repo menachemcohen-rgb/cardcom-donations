@@ -57,17 +57,25 @@ public without sharing class PledgeActivationService {
   /** Activates as many as the remaining limits allow; each pledge is isolated by a savepoint. The sweeper retries the rest. */
   public static Integer activateAll(List<Id> pledgeIds) {
     Integer n = 0;
+    Set<Id> activated = new Set<Id>();
     for (Id id : pledgeIds) {
       if (!hasHeadroom())
         break;
       Savepoint sp = Database.setSavepoint();
       try {
-        if (tryActivate(id))
+        if (tryActivate(id)) {
           n++;
+          activated.add(id);
+        }
       } catch (Exception e) {
         Database.rollback(sp);
         System.debug(LoggingLevel.ERROR, 'Activation failed for ' + id + ': ' + e.getMessage());
       }
+    }
+    try {
+      DonorEmailService.sendWelcome(activated); // D37: welcome email with the permanent links
+    } catch (Exception e) {
+      System.debug(LoggingLevel.ERROR, 'Welcome email failed: ' + e.getMessage());
     }
     return n;
   }

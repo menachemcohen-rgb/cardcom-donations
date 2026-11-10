@@ -76,32 +76,6 @@
                             </visibilityRule>
                         </valueListItems>
                         <valueListItems>
-                            <value>Opportunity.Revoke_Donor_Links</value>
-                            <visibilityRule>
-                                <booleanFilter>((1 OR 2) AND 3) AND 4</booleanFilter>
-                                <criteria>
-                                    <leftValue>{!Record.StageName}</leftValue>
-                                    <operator>EQUAL</operator>
-                                    <rightValue>Active</rightValue>
-                                </criteria>
-                                <criteria>
-                                    <leftValue>{!Record.StageName}</leftValue>
-                                    <operator>EQUAL</operator>
-                                    <rightValue>Stopped</rightValue>
-                                </criteria>
-                                <criteria>
-                                    <leftValue>{!$Permission.CustomPermission.Stop_Pledge_Charges}</leftValue>
-                                    <operator>EQUAL</operator>
-                                    <rightValue>true</rightValue>
-                                </criteria>
-                                <criteria>
-                                    <leftValue>{!Record.Type}</leftValue>
-                                    <operator>EQUAL</operator>
-                                    <rightValue>Daily Donation Pledge</rightValue>
-                                </criteria>
-                            </visibilityRule>
-                        </valueListItems>
-                        <valueListItems>
                             <value>Edit</value>
                         </valueListItems>
                     </valueList>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Welcome_Email_Sent_At__c</fullName>
+    <description>When the welcome email with the permanent links was sent (D37). Empty = not sent yet.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>When the welcome email with the permanent links was sent (D37). Empty = not sent yet.</inlineHelpText>
+    <label>Welcome Email Sent At</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>DateTime</type>
+</CustomField>

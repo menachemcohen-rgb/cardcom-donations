@@ -200,7 +200,7 @@ sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex
 sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
 ```
 
-    It asks the integration user to schedule all 13 jobs: the 4 charge runs (AM, PM, Eve AM, Eve PM on SUN-FRI;
+    It asks the integration user to schedule all 14 jobs: the 4 charge runs (AM, PM, Eve AM, Eve PM on SUN-FRI;
     `ChargeCalendar.shouldRun` decides), retries, the 4 LP sweepers, receipts, reconciliation, daily alerts and log clean-up. Staff get
     "זמני חיוב עודכנו", or "זמני החיוב לא עודכנו" with the reason. Check in Setup → Scheduled Jobs that the jobs are submitted by the
     integration user. (`scripts/apex/schedule-lp-sweeper.apex` is only for a partial set-up and must run as the integration user.)

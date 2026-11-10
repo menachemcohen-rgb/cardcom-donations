@@ -22,7 +22,7 @@ Q '7. Permission set assignments' "SELECT PermissionSet.Name, Assignee.Username,
 Q '8. Custom permissions given to users (via permission sets)' "SELECT Parent.Name, SetupEntityId FROM SetupEntityAccess WHERE SetupEntityType = 'CustomPermission' AND Parent.Name LIKE 'Donations_%'"
 Q '9. Platform event subscribers (UserId must be the integration user)' "SELECT DeveloperName, UserId, BatchSize FROM PlatformEventSubscriberConfig" -Tooling
 Q '10. Integration user' "SELECT Id, Username, IsActive, TimeZoneSidKey, Profile.Name FROM User WHERE Username LIKE 'integration.donations%'"
-Q '11. Scheduled Donations jobs (expected 13 once scheduled, owner = integration user)' "SELECT CronJobDetail.Name, State, NextFireTime, CreatedBy.Username FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations%' ORDER BY CronJobDetail.Name"
+Q '11. Scheduled Donations jobs (expected 14 once scheduled, owner = integration user)' "SELECT CronJobDetail.Name, State, NextFireTime, CreatedBy.Username FROM CronTrigger WHERE CronJobDetail.Name LIKE 'Donations%' ORDER BY CronJobDetail.Name"
 Q '12. Apex jobs that failed in the last 2 days' "SELECT ApexClass.Name, JobType, Status, ExtendedStatus, CreatedDate FROM AsyncApexJob WHERE Status = 'Failed' AND CreatedDate = LAST_N_DAYS:2 ORDER BY CreatedDate DESC LIMIT 20"
 Q '13. Org-Wide Email Addresses' "SELECT Address, DisplayName, IsAllowAllProfiles FROM OrgWideEmailAddress"
 Q '14. Donor duplicate rule (activate after normalizing Contacts)' "SELECT DeveloperName, IsActive FROM DuplicateRule WHERE SobjectType = 'Contact'"

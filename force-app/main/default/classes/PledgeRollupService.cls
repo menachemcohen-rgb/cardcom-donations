@@ -23,7 +23,9 @@ public without sharing class PledgeRollupService {
           Successful_Charge_Count__c,
           Last_Successful_Charge_Date__c,
           Consecutive_Failures__c,
-          Failure_Alert_Sent_At__c
+          Failure_Alert_Sent_At__c,
+          Payment_Issue_Since__c,
+          Failure_Reminders_Stopped__c
         FROM Opportunity
         WHERE Id IN :pledgeIds AND Type = :pledgeType
         FOR UPDATE
@@ -96,6 +98,7 @@ public without sharing class PledgeRollupService {
       ? null
       : ChargeSettings.get().Max_Consecutive_Failures__c.intValue();
     Set<Id> toAlert = new Set<Id>();
+    Set<Id> donorAlert = new Set<Id>();
     for (Opportunity p : pledges.values()) {
       Integer n = 0;
       List<String> logical = orderByPledge.containsKey(p.Id) ? orderByPledge.get(p.Id) : new List<String>();
@@ -109,6 +112,13 @@ public without sharing class PledgeRollupService {
       Opportunity c = changes.get(p.Id);
       c.Consecutive_Failures__c = n;
       if (n == 0) {
+        c.Payment_Issue_Since__c = null; // D37: issue resolved → weekly reminders stop
+        c.Failure_Reminders_Stopped__c = false;
+      } else if (p.Payment_Issue_Since__c == null && p.StageName == MicroPledges.STAGE_ACTIVE) {
+        c.Payment_Issue_Since__c = Datetime.now(); // D37: first final failure → donor emailed at once
+        donorAlert.add(p.Id);
+      }
+      if (n == 0) {
         c.Failure_Alert_Sent_At__c = null; // streak ended → re-arm the alert
       } else if (maxFail != null && n >= maxFail && p.Failure_Alert_Sent_At__c == null && p.StageName == MicroPledges.STAGE_ACTIVE) {
         c.Failure_Alert_Sent_At__c = Datetime.now(); // once per streak; NO stage change (D9)
@@ -121,11 +131,19 @@ public without sharing class PledgeRollupService {
     for (Integer i = 0; i < srs.size(); i++) {
       if (!srs[i].isSuccess()) {
         toAlert.remove(rows[i].Id);
+        donorAlert.remove(rows[i].Id);
         System.debug(LoggingLevel.ERROR, 'Roll-up update failed for ' + rows[i].Id + ': ' + srs[i].getErrors()[0].getMessage());
       }
     }
     if (!toAlert.isEmpty())
       StaffAlertService.failureStreak(toAlert); // synchronous (N5): no extra job in the chain
+    if (!donorAlert.isEmpty()) {
+      try {
+        DonorEmailService.sendPaymentFailed(donorAlert, false); // D37: at once, then every Sunday (DonorFailureReminderJob)
+      } catch (Exception e) {
+        System.debug(LoggingLevel.ERROR, 'Donor failure email failed: ' + e.getMessage());
+      }
+    }
   }
 
   static String outcome(Charge__c c) {
