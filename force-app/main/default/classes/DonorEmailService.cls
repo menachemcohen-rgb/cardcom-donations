@@ -164,6 +164,18 @@ public without sharing class DonorEmailService {
     return System.Label.Donation_Org_Name;
   }
 
+  // Signer line; skips the org suffix when the signer label already names the org.
+  @TestVisible
+  static String signature() {
+    String signer = System.Label.Donation_Signer_Name;
+    String o = org();
+    if (String.isBlank(signer))
+      return o;
+    if (String.isBlank(o) || signer.contains(o))
+      return signer;
+    return signer + ', ' + o;
+  }
+
   static String cardPhrase(Opportunity p) {
     return String.isBlank(p.Last4__c) ? '' : ' · כרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c);
   }
@@ -212,9 +224,7 @@ public without sharing class DonorEmailService {
       (String.isBlank(System.Label.Donation_Contact_Email) ? '' : ' · ' + EmailUtil.esc(System.Label.Donation_Contact_Email)) +
       '</p>' +
       '<p>בתודה,<br>' +
-      EmailUtil.esc(System.Label.Donation_Signer_Name) +
-      ', ' +
-      EmailUtil.esc(org()) +
+      EmailUtil.esc(signature()) +
       '</p></div>';
     Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
     Id owea = EmailUtil.oweaId(s.Org_Wide_Email_Address__c);
