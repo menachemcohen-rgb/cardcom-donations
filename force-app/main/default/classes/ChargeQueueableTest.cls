@@ -210,4 +210,40 @@ private class ChargeQueueableTest {
     Assert.isTrue(ChargeQueueable.isCredentialError(new CalloutException(CardcomMock.CREDENTIAL_MESSAGE)));
     Assert.isTrue(ChargeQueueable.isCredentialError(new CalloutException('Unauthorized endpoint, please check Setup')));
   }
+
+  @IsTest
+  static void pledgeOnTheSecondaryTerminalIsChargedThere() {
+    // D39
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    List<Opportunity> ps = TestDataFactory.activePledges(2, 'OnceDaily');
+    update new Opportunity(Id = ps[1].Id, Cardcom_Terminal__c = 'Secondary');
+    Charge__c c0 = TestDataFactory.pendingCharge(ps[0], WED, 'AM', 1, null);
+    Charge__c c1 = TestDataFactory.pendingCharge(ps[1], WED, 'AM', 1, null);
+    CardcomMock m = CardcomMock.install().always('Transactions/Transaction', 200, TestDataFactory.txSuccess(987654321L, '4321'));
+    run(new List<Charge__c>{ c0, c1 });
+    Map<String, String> endpointByKey = new Map<String, String>();
+    for (HttpRequest r : m.requestsTo('Transactions/Transaction'))
+      endpointByKey.put((String) ((Map<String, Object>) JSON.deserializeUntyped(r.getBody())).get('ExternalUniqTranId'), r.getEndpoint());
+    Assert.areEqual('callout:Cardcom/api/v11/Transactions/Transaction', endpointByKey.get(c0.Attempt_Key__c));
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/Transactions/Transaction', endpointByKey.get(c1.Attempt_Key__c));
+    Assert.areEqual('Primary', [SELECT Cardcom_Terminal__c FROM Charge__c WHERE Id = :c0.Id].Cardcom_Terminal__c);
+    Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Charge__c WHERE Id = :c1.Id].Cardcom_Terminal__c);
+  }
+
+  @IsTest
+  static void missingTerminalNumberIsAConfigErrorWithoutACallout() {
+    // D39: the pledge's token belongs to a terminal that is no longer configured
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    update new Opportunity(Id = p.Id, Cardcom_Terminal__c = 'Secondary');
+    Charge__c c = TestDataFactory.pendingCharge(p, WED, 'AM', 1, null);
+    CardcomMock m = CardcomMock.install();
+    run(new List<Charge__c>{ c });
+    Charge__c r = reload(c.Id);
+    Assert.areEqual('Failed', r.Status__c);
+    Assert.areEqual('Config', r.Error_Category__c);
+    Assert.areEqual('CONFIG_ERROR', r.Error_Code__c);
+    Assert.areEqual(0, m.requests.size());
+  }
 }

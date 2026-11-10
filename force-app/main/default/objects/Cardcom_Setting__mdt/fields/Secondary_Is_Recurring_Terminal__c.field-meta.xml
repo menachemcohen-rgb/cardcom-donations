@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Secondary_Is_Recurring_Terminal__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>D39. Advanced.IsAutoRecurringPayment for charges on the secondary terminal (same meaning as Is_Recurring_Terminal__c).</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Secondary Is Recurring Terminal</label>
+    <type>Checkbox</type>
+</CustomField>

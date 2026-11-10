@@ -173,4 +173,29 @@ private class DonationPledgeResourceTest {
     Assert.areEqual(500, RestContext.response.statusCode);
     Assert.areEqual('INTERNAL', TestDataFactory.responseJson().get('error'));
   }
+
+  @IsTest
+  static void storesTheTerminalTheCardPageWasOpenedOn() {
+    // D39
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    Map<String, Object> diners = body('lp-0000000001');
+    diners.put('terminal', 'Secondary');
+    TestDataFactory.rest('/services/apexrest/donations/pledge', diners);
+    DonationPledgeResource.submit();
+    Assert.areEqual(200, RestContext.response.statusCode, RestContext.response.responseBody.toString());
+    TestDataFactory.rest('/services/apexrest/donations/pledge', body('lp-0000000002'));
+    DonationPledgeResource.submit();
+    Map<String, String> byLp = new Map<String, String>();
+    for (Opportunity o : [SELECT LowProfileId__c, Cardcom_Terminal__c FROM Opportunity])
+      byLp.put(o.LowProfileId__c, o.Cardcom_Terminal__c);
+    Assert.areEqual('Secondary', byLp.get('lp-0000000001'));
+    Assert.areEqual('Primary', byLp.get('lp-0000000002'));
+
+    CardcomService.settings().Secondary_Terminal_Number__c = null; // one terminal: the request can't choose another
+    Map<String, Object> ignored = body('lp-0000000003');
+    ignored.put('terminal', 'Secondary');
+    TestDataFactory.rest('/services/apexrest/donations/pledge', ignored);
+    DonationPledgeResource.submit();
+    Assert.areEqual('Primary', [SELECT Cardcom_Terminal__c FROM Opportunity WHERE LowProfileId__c = 'lp-0000000003'].Cardcom_Terminal__c);
+  }
 }

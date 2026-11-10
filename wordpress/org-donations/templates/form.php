@@ -74,6 +74,12 @@ foreach ($pickers as $prayer => $pk): ?>
       <h3>פרטי כרטיס אשראי (מסגרת מאובטחת של Cardcom)</h3>
       <p class="orgdon-card-note">שמירת כרטיס בלבד – לא יתבצע חיוב עכשיו. הסכום ₪1.00 שמופיע במסגרת הוא בדיקת תקינות של הכרטיס, והחיוב יתבצע לפי הסכום והתדירות שבחרת.</p>
       <p class="orgdon-card-hint" data-role="card-hint">יש למלא את פרטי הטופס ולאשר את התנאים, ואז ללחוץ על "המשך להזנת פרטי כרטיס".</p>
+<?php if (!empty($diners)): ?>
+      <div class="orgdon-row orgdon-diners">
+        <label><input type="checkbox" name="diners" value="1"> <span>הכרטיס שלי הוא דיינרס (Diners)</span></label>
+        <span class="orgdon-diners-note">כרטיסי דיינרס נקלטים בדף תשלום נפרד. יש לסמן לפני הזנת פרטי הכרטיס.</span>
+      </div>
+<?php endif; ?>
       <button type="button" id="orgdon-continue" class="orgdon-btn">המשך להזנת פרטי כרטיס</button>
       <iframe id="orgdon-iframe" title="תשלום מאובטח Cardcom" hidden
               referrerpolicy="no-referrer" allow="payment" sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation-by-user-activation"></iframe>

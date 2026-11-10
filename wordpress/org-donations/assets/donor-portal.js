@@ -75,6 +75,7 @@
     $('[data-role=card]').textContent = cardText();
     $('[data-role=contact]').textContent = cfg.contactLine;
     renderPickers();
+    $('[data-role=card-diners-wrap]').hidden = !ctx.diners;
     show('main');
     tab(cfg.action || ctx.action || 'amount');
   }
@@ -183,13 +184,15 @@
 
   // 5) card replacement
   const frameWrap = $('[data-role=card-frame-wrap]'); const frame = $('[data-role=card-frame]');
+  const dinersBox = $('[data-role=card-diners]');   // shown only when Salesforce has a Diners terminal (ctx.diners)
   $('[data-role=card-start]').addEventListener('click', async (e) => {
     const btn = e.currentTarget; msg('');
     btn.disabled = true;
-    const j = await post('card', {});
+    const j = await post('card', dinersBox.checked ? { diners: '1' } : {});
     btn.disabled = false;
     if (!j.success) { if (j.data && j.data.invalid) return invalid(j.data.message); msg((j.data && j.data.message) || 'לא ניתן לטעון כעת את טופס התשלום.', 'error'); return; }
     lpId = j.data.lpId; frame.src = j.data.url; frameWrap.hidden = false; btn.hidden = true;
+    dinersBox.disabled = true;   // the open card page belongs to the chosen terminal
   });
 
   window.addEventListener('message', (ev) => {
@@ -227,13 +230,13 @@
     renderAmounts();
     msg(last4 ? 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס המסתיים ב-' + last4 + '.'
               : 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס החדש.', 'ok');
-    $('[data-role=card-start]').hidden = false;
+    $('[data-role=card-start]').hidden = false; dinersBox.disabled = false;
   }
 
   function cardFailed() {
     $('[data-role=card-wait]').hidden = true; lpId = null;
     msg('פרטי הכרטיס לא נקלטו והכרטיס הקודם נשאר בתוקף. ניתן לנסות שוב.', 'error');
-    $('[data-role=card-start]').hidden = false;
+    $('[data-role=card-start]').hidden = false; dinersBox.disabled = false;
   }
 
   load();

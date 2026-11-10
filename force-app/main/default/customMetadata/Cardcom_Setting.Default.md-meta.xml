@@ -91,6 +91,14 @@
         <value xsi:type="xsd:boolean">true</value>
     </values>
     <values>
+        <field>Secondary_Is_Recurring_Terminal__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>Secondary_Terminal_Number__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
         <field>Send_Donor_Charge_Email__c</field>
         <value xsi:type="xsd:boolean">false</value>
     </values>

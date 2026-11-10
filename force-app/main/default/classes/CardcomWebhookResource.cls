@@ -20,7 +20,11 @@ global without sharing class CardcomWebhookResource {
     // Only an ID is trusted from here; everything else comes from GetLpResult.
     if (String.isNotBlank(lpId) && Pattern.matches('[A-Za-z0-9-]{10,64}', lpId)) {
       // Guest context can't use the Named Credential → publish a Platform Event; its trigger runs as the integration user
-      EventBus.publish(new Cardcom_Lp_Event__e(LowProfileId__c = lpId));
+      // D39: ?terminal=Secondary on the webhook URL says which terminal to ask first; GetLpResult still decides.
+      String t = req.params == null ? null : req.params.get('terminal');
+      EventBus.publish(
+        new Cardcom_Lp_Event__e(LowProfileId__c = lpId, Terminal__c = t == CardcomService.SECONDARY ? CardcomService.SECONDARY : null)
+      );
     }
     RestContext.response.statusCode = 200;
   }

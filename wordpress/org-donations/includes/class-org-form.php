@@ -51,10 +51,25 @@ final class Org_Form {
     public static function submit_max(): int { return Org_Rate_Limiter::cfg('ORG_DONATION_RL_SUBMIT_MAX', self::RL_SUBMIT_MAX); }
     public static function lp_max(): int     { return Org_Rate_Limiter::cfg('ORG_DONATION_RL_LP_MAX', self::RL_LP_MAX); }
 
-    private static function create_lp(): array {
+    /**
+     * Two Cardcom terminals (D39): the main one doesn't clear Diners cards, so a donor who ticks "כרטיס דיינרס" gets the card page
+     * of the second terminal. Turn the option on in wp-config.php with define('ORG_DONATION_DINERS', true) once Salesforce has
+     * the second terminal (Cardcom_Setting__mdt.Secondary_Terminal_Number__c).
+     */
+    public static function diners_enabled(): bool {
+        return in_array(strtolower(orgdon_const('ORG_DONATION_DINERS')), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /** Salesforce terminal key for this request: 'Secondary' only when the option is on and the donor ticked the Diners box. */
+    public static function terminal(array $in): string {
+        return self::diners_enabled() && !empty($in['diners']) ? 'Secondary' : 'Primary';
+    }
+
+    private static function create_lp(string $terminal): array {
         $r = Org_SF_Client::post('/donations/lowprofile', [
             'purpose' => 'signup',
             'returnUrlBase' => home_url('/cardcom-return/'),
+            'terminal' => $terminal,
         ]);
         if ($r['code'] !== 200 || empty($r['body']['url'])) throw new RuntimeException('LP');
         return $r['body'];
@@ -71,9 +86,10 @@ final class Org_Form {
             'cardcomOrigin' => orgdon_const('ORG_CARDCOM_ORIGIN', 'https://secure.cardcom.solutions'),
             'selfOrigin'    => ORG_DONATION_ORIGIN,
             'min' => self::min_amount(), 'max' => self::max_amount(),
+            'diners' => self::diners_enabled(),
         ]);
         ob_start();
-        $presets = self::presets(); $terms_url = orgdon_const('ORG_DONATION_TERMS_URL');
+        $presets = self::presets(); $terms_url = orgdon_const('ORG_DONATION_TERMS_URL'); $diners = self::diners_enabled();
         include ORGDON_DIR . 'templates/form.php';
         return ob_get_clean();
     }
@@ -84,11 +100,12 @@ final class Org_Form {
      */
     public static function ajax_lp(): void {
         check_ajax_referer('org_donation', 'nonce');
-        $v = Org_Validator::signup(wp_unslash($_POST), self::min_amount(), self::max_amount(), false);
+        $in = wp_unslash($_POST);
+        $v = Org_Validator::signup($in, self::min_amount(), self::max_amount(), false);
         if ($v['errors']) wp_send_json_error(['fields' => $v['errors'], 'message' => 'נא לתקן את השדות המסומנים.'], 422);
         if (!Org_Rate_Limiter::allowed('lp', self::lp_max())) wp_send_json_error(['message' => self::MSG_TOO_MANY], 429);
         Org_Rate_Limiter::count('lp', self::window());
-        try { $lp = self::create_lp(); }
+        try { $lp = self::create_lp(self::terminal($in)); }
         catch (Throwable $t) { wp_send_json_error(['message' => 'לא ניתן לטעון כעת את טופס התשלום.'], 502); }
         wp_send_json_success(['lpId' => $lp['lowProfileId'], 'url' => $lp['url'], 'expiresAt' => $lp['expiresAt'] ?? null]);
     }
@@ -139,7 +156,7 @@ final class Org_Form {
         $v = Org_Validator::signup($in, self::min_amount(), self::max_amount());
         if ($v['errors']) return [false, ['fields' => $v['errors'], 'message' => 'נא להשלים את פרטי הטופס וללחוץ "סיום".'], 422];
         Org_Rate_Limiter::count('submit', self::window());     // only real (valid) submissions are counted
-        $payload = $v['data'] + ['clientIp' => Org_Rate_Limiter::ip()];
+        $payload = $v['data'] + ['clientIp' => Org_Rate_Limiter::ip(), 'terminal' => self::terminal($in)];
         try { $r = Org_SF_Client::post('/donations/pledge', $payload); }
         catch (Throwable $t) { return [false, ['message' => 'אירעה שגיאה בשמירה. נסו שוב. אם הבעיה חוזרת – פנו אלינו.'], 502]; }
         $err = $r['body']['error'] ?? '';

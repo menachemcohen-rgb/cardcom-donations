@@ -133,6 +133,7 @@ public without sharing class ChargeOutcomeHandler {
       ExternalUniqTranId__c = c.ExternalUniqTranId__c,
       Attempt_Key__c = c.ExternalUniqTranId__c + '-A' + (n + 1),
       Not_Before__c = nb,
+      Cardcom_Terminal__c = c.Cardcom_Terminal__c, // D39: where the attempt to verify was sent; overwritten when this one is sent
       Verify_Attempt_Key__c = unknownOutcome ? c.Attempt_Key__c : null
     );
     return r;

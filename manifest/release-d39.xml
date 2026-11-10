@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- D39: second Cardcom terminal for Diners cards. sf project deploy start -x manifest/release-d39.xml
+     Then by hand: ApiName/ApiPassword in External Credential Cardcom_Secondary_EC, Secondary_Terminal_Number__c in Cardcom Setting. -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>CardChangeService</members>
+        <members>CardcomLpResultJob</members>
+        <members>CardcomLpResultJobTest</members>
+        <members>CardcomService</members>
+        <members>CardcomServiceTest</members>
+        <members>CardcomWebhookResource</members>
+        <members>CardcomWebhookResourceTest</members>
+        <members>ChargeOutcomeHandler</members>
+        <members>ChargeQueueable</members>
+        <members>ChargeQueueableTest</members>
+        <members>DonationLowProfileResource</members>
+        <members>DonationLowProfileResourceTest</members>
+        <members>DonationPledgeResource</members>
+        <members>DonationPledgeResourceTest</members>
+        <members>DonorPortalResource</members>
+        <members>DonorPortalResourceTest</members>
+        <members>ReconciliationJob</members>
+        <members>ReconciliationJobTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>CardcomLpEventTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
+        <members>Card_Change_Request__c.Cardcom_Terminal__c</members>
+        <members>Cardcom_Lp_Event__e.Terminal__c</members>
+        <members>Cardcom_Setting__mdt.Secondary_Is_Recurring_Terminal__c</members>
+        <members>Cardcom_Setting__mdt.Secondary_Terminal_Number__c</members>
+        <members>Charge__c.Cardcom_Terminal__c</members>
+        <members>Opportunity.Cardcom_Terminal__c</members>
+        <members>Pledge_Card_History__c.Cardcom_Terminal__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>Card_Change_Request__c-iw</members>
+        <members>Charge__c-iw</members>
+        <members>Opportunity-iw</members>
+        <members>Pledge_Card_History__c-iw</members>
+        <name>CustomObjectTranslation</name>
+    </types>
+    <types>
+        <members>Cardcom_Secondary_EC</members>
+        <name>ExternalCredential</name>
+    </types>
+    <types>
+        <members>Cardcom_Secondary</members>
+        <name>NamedCredential</name>
+    </types>
+    <types>
+        <members>Opportunity-Micro Donation Pledge Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>Donations_Admin</members>
+        <members>Donations_Integration</members>
+        <members>Donations_Internal_Read</members>
+        <members>Donations_Staff</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>62.0</version>
+</Package>

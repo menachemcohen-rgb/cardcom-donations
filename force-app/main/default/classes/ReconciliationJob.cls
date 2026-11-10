@@ -70,15 +70,18 @@ public without sharing class ReconciliationJob implements Schedulable {
     // ---- reads + callouts (no DML before them) ----
     Map<String, CardcomService.TxnSummary> cc = new Map<String, CardcomService.TxnSummary>();
     try {
-      for (Integer page = 1; page <= MAX_PAGES; page++) {
-        List<CardcomService.TxnSummary> rows = CardcomService.listTransactions(day, page, pageSize);
-        for (CardcomService.TxnSummary t : rows) {
-          CardcomService.TxnSummary prev = cc.get(t.tranzactionId);
-          if (prev == null || t.isRefundOrCancel)
-            cc.put(t.tranzactionId, t);
+      // D39: one list per terminal, merged (TranzactionId is Cardcom's own deal number)
+      for (String terminal : CardcomService.terminals()) {
+        for (Integer page = 1; page <= MAX_PAGES; page++) {
+          List<CardcomService.TxnSummary> rows = CardcomService.listTransactions(terminal, day, page, pageSize);
+          for (CardcomService.TxnSummary t : rows) {
+            CardcomService.TxnSummary prev = cc.get(t.tranzactionId);
+            if (prev == null || t.isRefundOrCancel)
+              cc.put(t.tranzactionId, t);
+          }
+          if (rows.size() < pageSize)
+            break; // a partial page is the last one
         }
-        if (rows.size() < pageSize)
-          break; // a partial page is the last one
       }
     } catch (Exception e) {
       System.debug(LoggingLevel.ERROR, 'Reconciliation ' + day + ' aborted: ' + e.getMessage());
@@ -91,7 +94,7 @@ public without sharing class ReconciliationJob implements Schedulable {
     }
     Date since = day.addDays(-7);
     List<Charge__c> unknown = [
-      SELECT Id, Attempt_Key__c, ExternalUniqTranId__c, Amount__c
+      SELECT Id, Attempt_Key__c, ExternalUniqTranId__c, Amount__c, Cardcom_Terminal__c
       FROM Charge__c
       WHERE Needs_Reconciliation__c = TRUE AND Cardcom_Tranzaction_Id__c = NULL AND Run_Date__c >= :since
       ORDER BY Run_Date__c
@@ -101,7 +104,7 @@ public without sharing class ReconciliationJob implements Schedulable {
     Set<Id> notFound = new Set<Id>();
     for (Charge__c c : unknown) {
       try {
-        Map<String, Object> t = CardcomService.findSuccessByExternalId(c.Attempt_Key__c);
+        Map<String, Object> t = CardcomService.findSuccessByExternalId(c.Cardcom_Terminal__c, c.Attempt_Key__c);
         if (t != null)
           found.put(c.Id, t);
         else
@@ -222,7 +225,7 @@ public without sharing class ReconciliationJob implements Schedulable {
     List<Id> ids = onlyIds;
     String q =
       'SELECT Id, Amount__c, Cardcom_Tranzaction_Id__c, ExternalUniqTranId__c, Attempt_Key__c, Verify_Attempt_Key__c, ' +
-      'Error_Code__c, Needs_Reconciliation__c FROM Charge__c ' +
+      'Error_Code__c, Needs_Reconciliation__c, Cardcom_Terminal__c FROM Charge__c ' +
       'WHERE Run_Date__c = :d AND Status__c = \'Success\' AND Cardcom_Tranzaction_Id__c != NULL' +
       (ids == null ? '' : ' AND Id IN :ids') +
       ' ORDER BY Id';
@@ -255,7 +258,7 @@ public without sharing class ReconciliationJob implements Schedulable {
     v.charges = charges;
     for (Charge__c c : charges) {
       try {
-        Map<String, Object> t = CardcomService.findSuccessByExternalId(chargedKey(c));
+        Map<String, Object> t = CardcomService.findSuccessByExternalId(c.Cardcom_Terminal__c, chargedKey(c));
         if (t != null)
           v.found.put(c.Id, t);
         else

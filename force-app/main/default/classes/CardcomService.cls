@@ -1,4 +1,9 @@
-/** Cardcom API v11 client. CLAUDE.md B5.9 (authoritative, Part C E8). Credentials come from Named Credential merge fields only. */
+/**
+ * Cardcom API v11 client. CLAUDE.md B5.9 (authoritative, Part C E8). Credentials come from Named Credential merge fields only.
+ * D39: two terminals. PRIMARY (Named Credential Cardcom, Terminal_Number__c) takes every card except Diners; SECONDARY
+ * (Named Credential Cardcom_Secondary, Secondary_Terminal_Number__c) is the Diners terminal. A token works only on the terminal
+ * that created it, so every call names its terminal; a blank terminal means PRIMARY (pledges older than D39).
+ */
 public without sharing class CardcomService {
   public class CardcomException extends Exception {
   }
@@ -7,24 +12,65 @@ public without sharing class CardcomService {
   }
   @TestVisible
   static Cardcom_Setting__mdt settingsOverride;
-  static final String API = 'callout:Cardcom/api/v11/';
-  static final String AN = '{!$Credential.Cardcom_EC.ApiName}';
-  static final String AP = '{!$Credential.Cardcom_EC.ApiPassword}';
+  /** The terminal has no number in Cardcom_Setting__mdt. Nothing was sent to Cardcom. */
+  public class TerminalConfigException extends Exception {
+  }
+  public static final String PRIMARY = 'Primary';
+  public static final String SECONDARY = 'Secondary';
+
+  /** PRIMARY unless the value is exactly SECONDARY (blank, unknown and legacy values → PRIMARY). */
+  public static String terminalKey(String t) {
+    return t == SECONDARY ? SECONDARY : PRIMARY;
+  }
+  public static String otherTerminal(String t) {
+    return terminalKey(t) == SECONDARY ? PRIMARY : SECONDARY;
+  }
+  public static Boolean hasSecondary() {
+    return settings().Secondary_Terminal_Number__c != null;
+  }
+  /** Terminals that have a number: PRIMARY, then SECONDARY when configured. */
+  public static List<String> terminals() {
+    List<String> out = new List<String>{ PRIMARY };
+    if (hasSecondary())
+      out.add(SECONDARY);
+    return out;
+  }
+  static String nc(String t) {
+    return terminalKey(t) == SECONDARY ? 'Cardcom_Secondary' : 'Cardcom';
+  }
+  static String api(String t) {
+    return 'callout:' + nc(t) + '/api/v11/';
+  }
+  static String an(String t) {
+    return '{!$Credential.' + nc(t) + '_EC.ApiName}';
+  }
+  static String ap(String t) {
+    return '{!$Credential.' + nc(t) + '_EC.ApiPassword}';
+  }
 
   public static Cardcom_Setting__mdt settings() {
     return settingsOverride != null ? settingsOverride : Cardcom_Setting__mdt.getInstance('Default');
   }
-  static Long terminal() {
-    return settings().Terminal_Number__c.longValue();
+  static Long terminalNumber(String t) {
+    Decimal n = terminalKey(t) == SECONDARY ? settings().Secondary_Terminal_Number__c : settings().Terminal_Number__c;
+    if (n == null)
+      throw new TerminalConfigException('Cardcom terminal not configured: ' + terminalKey(t));
+    return n.longValue();
   }
-  static Map<String, Object> withTerminal() {
-    return new Map<String, Object>{ 'TerminalNumber' => terminal(), 'ApiName' => AN };
+  static Map<String, Object> withTerminal(String t) {
+    return new Map<String, Object>{ 'TerminalNumber' => terminalNumber(t), 'ApiName' => an(t) };
+  }
+  static Boolean isRecurring(String t) {
+    return (terminalKey(t) == SECONDARY ? settings().Secondary_Is_Recurring_Terminal__c : settings().Is_Recurring_Terminal__c) == true;
   }
 
   /** POST; returns parsed body. HTTP 401/400 → CardcomHttpException (Config). HTTP 5xx → CardcomHttpException (Retryable). */
   public static Map<String, Object> post(String path, Map<String, Object> body) {
+    return post(PRIMARY, path, body);
+  }
+  public static Map<String, Object> post(String terminal, String path, Map<String, Object> body) {
     HttpRequest req = new HttpRequest();
-    req.setEndpoint(API + path);
+    req.setEndpoint(api(terminal) + path);
     req.setMethod('POST');
     req.setHeader('Content-Type', 'application/json; charset=utf-8');
     req.setTimeout(30000);
@@ -46,14 +92,17 @@ public without sharing class CardcomService {
 
   // ---- B5.1 ----
   public static Map<String, Object> createTokenLowProfile(String returnValue, String returnUrlBase, String productName) {
-    Map<String, Object> b = withTerminal();
+    return createTokenLowProfile(PRIMARY, returnValue, returnUrlBase, productName);
+  }
+  public static Map<String, Object> createTokenLowProfile(String terminal, String returnValue, String returnUrlBase, String productName) {
+    Map<String, Object> b = withTerminal(terminal);
     b.put('Operation', 'CreateTokenOnly');
     b.put('ReturnValue', returnValue);
     b.put('Amount', 1);
     b.put('SuccessRedirectUrl', returnUrlBase + '?s=ok');
     b.put('FailedRedirectUrl', returnUrlBase + '?s=fail');
     b.put('CancelRedirectUrl', returnUrlBase + '?s=fail');
-    b.put('WebHookUrl', settings().Webhook_Url__c);
+    b.put('WebHookUrl', webhookUrl(terminal));
     b.put('ProductName', productName.left(50));
     b.put('Language', 'he');
     b.put('ISOCoinId', 1);
@@ -69,17 +118,35 @@ public without sharing class CardcomService {
     );
     Integer jv = settings().Lp_JValidate_Type__c == null ? 2 : settings().Lp_JValidate_Type__c.intValue();
     b.put('AdvancedDefinition', new Map<String, Object>{ 'JValidateType' => jv, 'ThreeDSecureState' => 'Auto' });
-    Map<String, Object> r = post('LowProfile/Create', b);
+    Map<String, Object> r = post(terminal, 'LowProfile/Create', b);
     if (code(r) != 0 || String.isBlank((String) r.get('Url')))
       throw new CardcomException('LP_CREATE:' + code(r) + ' ' + r.get('Description'));
     return r; // LowProfileId, Url
   }
 
+  /** The secondary terminal's webhook carries ?terminal=Secondary: a hint for GetLpResult, never trusted (CardcomLpResultJob). */
+  @TestVisible
+  static String webhookUrl(String terminal) {
+    String u = settings().Webhook_Url__c;
+    if (terminalKey(terminal) != SECONDARY || String.isBlank(u))
+      return u;
+    return u + (u.contains('?') ? '&' : '?') + 'terminal=' + SECONDARY;
+  }
+
   // ---- B5.3 ----
   public static Map<String, Object> getLpResult(String lowProfileId) {
-    Map<String, Object> b = withTerminal();
+    return getLpResult(PRIMARY, lowProfileId);
+  }
+  public static Map<String, Object> getLpResult(String terminal, String lowProfileId) {
+    Map<String, Object> b = withTerminal(terminal);
     b.put('LowProfileId', lowProfileId);
-    return post('LowProfile/GetLpResult', b);
+    return post(terminal, 'LowProfile/GetLpResult', b);
+  }
+
+  /** A GetLpResult that settles the question for its terminal: a token, or the donor still on the page (5117–5119). */
+  public static Boolean isLpKnown(Map<String, Object> r) {
+    Integer c = code(r);
+    return (c == 0 && cardFrom(r) != null) || (c >= 5117 && c <= 5119);
   }
 
   /** Parsed card data from GetLpResult (Last4 may be null for CreateTokenOnly — B5.3). */
@@ -107,7 +174,10 @@ public without sharing class CardcomService {
 
   // ---- B5.4 ----
   public static Map<String, Object> chargeToken(String token, String expMMYY, Decimal amount, String attemptKey) {
-    Map<String, Object> b = withTerminal();
+    return chargeToken(PRIMARY, token, expMMYY, amount, attemptKey);
+  }
+  public static Map<String, Object> chargeToken(String terminal, String token, String expMMYY, Decimal amount, String attemptKey) {
+    Map<String, Object> b = withTerminal(terminal);
     b.put('Amount', amount.setScale(2));
     b.put('Token', token);
     b.put('CardExpirationMMYY', expMMYY);
@@ -116,18 +186,21 @@ public without sharing class CardcomService {
     b.put('ISOCoinId', 1);
     b.put('NumOfPayments', 1);
     Map<String, Object> adv = new Map<String, Object>{ 'SendNote' => false };
-    if (settings().Is_Recurring_Terminal__c == true)
+    if (isRecurring(terminal))
       adv.put('IsAutoRecurringPayment', true);
     b.put('Advanced', adv);
-    return post('Transactions/Transaction', b);
+    return post(terminal, 'Transactions/Transaction', b);
   }
 
   // ---- B5.5 ----
   /** @return TranzactionInfo map if a SUCCESSFUL transaction exists for the key, else null. */
   public static Map<String, Object> findSuccessByExternalId(String attemptKey) {
-    Map<String, Object> b = withTerminal();
+    return findSuccessByExternalId(PRIMARY, attemptKey);
+  }
+  public static Map<String, Object> findSuccessByExternalId(String terminal, String attemptKey) {
+    Map<String, Object> b = withTerminal(terminal);
     b.put('ExternalUniqTranId', attemptKey);
-    Map<String, Object> r = post('Transactions/GetTransactionByExternalUniqTran', b);
+    Map<String, Object> r = post(terminal, 'Transactions/GetTransactionByExternalUniqTran', b);
     Object tid = r.get('TranzactionId');
     return (code(r) == 0 && tid != null && Long.valueOf(String.valueOf(tid)) > 0) ? r : null;
   }
@@ -141,18 +214,21 @@ public without sharing class CardcomService {
   }
   /** One page. Caller loops while result.size() == pageSize. */
   public static List<TxnSummary> listTransactions(Date d, Integer page, Integer pageSize) {
+    return listTransactions(PRIMARY, d, page, pageSize);
+  }
+  public static List<TxnSummary> listTransactions(String terminal, Date d, Integer page, Integer pageSize) {
     String dd = Datetime.newInstance(d, Time.newInstance(12, 0, 0, 0)).format('ddMMyyyy');
     Map<String, Object> b = new Map<String, Object>{
-      'ApiName' => AN,
-      'ApiPassword' => AP,
+      'ApiName' => an(terminal),
+      'ApiPassword' => ap(terminal),
       'FromDate' => dd,
       'ToDate' => dd,
       'TranStatus' => 'All',
       'Page' => page,
       'Page_size' => pageSize,
-      'LimitForTerminal' => terminal()
+      'LimitForTerminal' => terminalNumber(terminal)
     };
-    Map<String, Object> r = post('Transactions/ListTransactions', b);
+    Map<String, Object> r = post(terminal, 'Transactions/ListTransactions', b);
     if (code(r) != 0)
       throw new CardcomException('LIST:' + code(r) + ' ' + r.get('Description'));
     List<TxnSummary> out = new List<TxnSummary>();
@@ -173,10 +249,11 @@ public without sharing class CardcomService {
   }
 
   // ---- B5.7 ----
+  /** Documents are issued with the primary terminal's credentials (one Cardcom company, D39). */
   public static Map<String, Object> createDocument(Map<String, Object> body) {
-    body.put('ApiName', AN);
-    body.put('ApiPassword', AP);
-    return post('Documents/CreateDocument', body);
+    body.put('ApiName', an(PRIMARY));
+    body.put('ApiPassword', ap(PRIMARY));
+    return post(PRIMARY, 'Documents/CreateDocument', body);
   }
 
   /** Remove secrets/token before persisting. */

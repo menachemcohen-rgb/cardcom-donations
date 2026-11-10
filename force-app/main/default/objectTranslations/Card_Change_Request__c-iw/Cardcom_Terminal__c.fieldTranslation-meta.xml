@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>מסוף Cardcom שאליו שייך אסימון הכרטיס. הראשי מקבל כל כרטיס חוץ מדיינרס; המשני הוא מסוף הדיינרס. ריק = ראשי.</help>
+    <label>מסוף Cardcom</label>
+    <name>Cardcom_Terminal__c</name>
+    <picklistValues>
+        <masterLabel>Primary</masterLabel>
+        <translation>ראשי</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Secondary (Diners)</masterLabel>
+        <translation>משני (דיינרס)</translation>
+    </picklistValues>
+</CustomFieldTranslation>

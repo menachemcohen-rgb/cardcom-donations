@@ -35,7 +35,7 @@ global without sharing class DonorPortalResource {
           out = amount(token, ip, body);
         }
         when 'card' {
-          out = card(token, ip, (String) body.get('returnUrlBase'), body.get('amount'));
+          out = card(token, ip, (String) body.get('returnUrlBase'), body.get('amount'), (String) body.get('terminal'));
         }
         when 'card/status' {
           out = cardStatus(token, ip, (String) body.get('lowProfileId'));
@@ -89,7 +89,8 @@ global without sharing class DonorPortalResource {
       'status' => p.StageName,
       'minAmount' => s.Min_Amount__c,
       'maxAmount' => s.Max_Amount__c,
-      'presets' => presets
+      'presets' => presets,
+      'dinersTerminal' => CardcomService.hasSecondary() // D39: the donor page offers "Diners card" for a card change
     };
   }
 
@@ -168,9 +169,12 @@ global without sharing class DonorPortalResource {
    * Starts a card replacement. Optional `amount`: a new amount per charge chosen in the same step; it is stored on the request
    * and applied only when the new card is saved (CardChangeService.complete), so a failed card change leaves the amount alone.
    */
-  static Map<String, Object> card(String token, String ip, String returnUrlBase, Object rawAmount) {
+  static Map<String, Object> card(String token, String ip, String returnUrlBase, Object rawAmount, String rawTerminal) {
     Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
     DonationLowProfileResource.assertAllowedReturnUrl(returnUrlBase); // same host allow-list as signup (7.3)
+    String terminal = CardcomService.terminalKey(rawTerminal); // D39: 'Secondary' = the donor's new card is a Diners card
+    if (terminal == CardcomService.SECONDARY && !CardcomService.hasSecondary())
+      throw err(400, 'TERMINAL_NOT_CONFIGURED');
     Decimal newAmount = rawAmount == null || String.isBlank(String.valueOf(rawAmount)) ? null : validAmount(rawAmount);
     if (newAmount == p.Charge_Amount__c)
       newAmount = null; // unchanged
@@ -178,9 +182,10 @@ global without sharing class DonorPortalResource {
     if (today >= 5)
       throw err(429, 'TOO_MANY');
     String key = 'CARD-' + UUID.randomUUID().toString();
-    Map<String, Object> lp = CardcomService.createTokenLowProfile(key, returnUrlBase, 'עדכון כרטיס להוראת תרומה'); // callout first
+    Map<String, Object> lp = CardcomService.createTokenLowProfile(terminal, key, returnUrlBase, 'עדכון כרטיס להוראת תרומה'); // callout first
     insert new Card_Change_Request__c(
       Pledge__c = p.Id,
+      Cardcom_Terminal__c = terminal,
       LowProfileId__c = (String) lp.get('LowProfileId'),
       Status__c = 'Pending',
       Link_Version__c = p.Link_Version__c,
@@ -197,7 +202,7 @@ global without sharing class DonorPortalResource {
   static Map<String, Object> cardStatus(String token, String ip, String lpId) {
     Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
     List<Card_Change_Request__c> cc = [
-      SELECT Id, Status__c, CreatedDate
+      SELECT Id, Status__c, CreatedDate, Cardcom_Terminal__c
       FROM Card_Change_Request__c
       WHERE LowProfileId__c = :lpId AND Pledge__c = :p.Id
       LIMIT 1
@@ -207,7 +212,7 @@ global without sharing class DonorPortalResource {
     String st = cc[0].Status__c;
     // Webhook may be late: after 10 s pull GetLpResult ourselves (idempotent with the webhook path)
     if (st == 'Pending' && cc[0].CreatedDate < Datetime.now().addSeconds(-10)) {
-      Map<String, Object> r = CardcomService.getLpResult(lpId);
+      Map<String, Object> r = CardcomService.getLpResult(cc[0].Cardcom_Terminal__c, lpId);
       Integer code = CardcomService.code(r);
       if (code == 0 || !(code >= 5117 && code <= 5119))
         st = CardChangeService.complete(lpId, r);

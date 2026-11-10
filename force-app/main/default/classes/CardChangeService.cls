@@ -17,6 +17,8 @@ public without sharing class CardChangeService {
         Pledge__c,
         Link_Version__c,
         New_Amount__c,
+        Cardcom_Terminal__c,
+        Pledge__r.Cardcom_Terminal__c,
         Pledge__r.Charge_Amount__c,
         Pledge__r.Token__c,
         Pledge__r.CardExpirationMMYY__c,
@@ -47,6 +49,7 @@ public without sharing class CardChangeService {
       Token__c = ccr.Pledge__r.Token__c,
       CardExpirationMMYY__c = ccr.Pledge__r.CardExpirationMMYY__c,
       Last4__c = ccr.Pledge__r.Last4__c,
+      Cardcom_Terminal__c = CardcomService.terminalKey(ccr.Pledge__r.Cardcom_Terminal__c),
       Replaced_At__c = Datetime.now(),
       Replaced_By_Request__c = ccr.Id
     );
@@ -56,6 +59,7 @@ public without sharing class CardChangeService {
       CardExpirationMMYY__c = d.expMMYY,
       Token_Expiry_Date__c = d.tokenExpiry,
       Last4__c = d.last4,
+      Cardcom_Terminal__c = CardcomService.terminalKey(ccr.Cardcom_Terminal__c), // D39: the new token's terminal
       Payment_Issue_Since__c = null, // D37: a new card ends the failed-charge reminders
       Failure_Reminders_Stopped__c = false
     ); // last4 null until next charge (B5.3)
@@ -75,14 +79,16 @@ public without sharing class CardChangeService {
       );
     }
     update upd;
-    logs.add(new Pledge_Change_Log__c(
-      Pledge__c = ccr.Pledge__c,
-      Change_Type__c = 'Card',
-      Old_Value__c = ccr.Pledge__r.Last4__c == null ? null : '****' + ccr.Pledge__r.Last4__c,
-      New_Value__c = d.last4 == null ? 'כרטיס חדש' : '****' + d.last4,
-      Source__c = 'Donor_Portal',
-      Link_Version__c = ccr.Link_Version__c
-    ));
+    logs.add(
+      new Pledge_Change_Log__c(
+        Pledge__c = ccr.Pledge__c,
+        Change_Type__c = 'Card',
+        Old_Value__c = ccr.Pledge__r.Last4__c == null ? null : '****' + ccr.Pledge__r.Last4__c,
+        New_Value__c = d.last4 == null ? 'כרטיס חדש' : '****' + d.last4,
+        Source__c = 'Donor_Portal',
+        Link_Version__c = ccr.Link_Version__c
+      )
+    );
     insert logs;
     ccr.Status__c = 'Completed';
     ccr.Completed_At__c = Datetime.now();

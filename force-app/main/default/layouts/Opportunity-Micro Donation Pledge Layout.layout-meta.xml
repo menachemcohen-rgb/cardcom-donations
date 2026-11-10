@@ -130,6 +130,10 @@
             </layoutItems>
             <layoutItems>
                 <behavior>Readonly</behavior>
+                <field>Cardcom_Terminal__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Readonly</behavior>
                 <field>CardExpirationMMYY__c</field>
             </layoutItems>
             <layoutItems>
