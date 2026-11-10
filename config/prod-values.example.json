@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy to config/prod-values.local.json (ignored by Git) and fill in. Values of Cardcom_Setting__mdt.Default for production (B2.6). No passwords here: ApiName/ApiPassword go into the External Credentials (Cardcom_EC; Cardcom_Secondary_EC for the Diners terminal, D39 — leave Secondary_Terminal_Number__c null for one terminal), the donor-link secret into Donor_Link_Setting in Setup.",
+  "_comment": "Copy to config/prod-values.local.json (ignored by Git) and fill in. Values of Cardcom_Setting__mdt.Default for production (B2.6). No passwords here: ApiName/ApiPassword go into the External Credential Cardcom_EC (one Cardcom account, used by both terminals; D39 — leave Secondary_Terminal_Number__c null for one terminal), the donor-link secret into Donor_Link_Setting in Setup.",
   "Terminal_Number__c": null,
   "Secondary_Terminal_Number__c": null,
   "Webhook_Url__c": "https://<prod-site-domain>.my.salesforce-sites.com/cardcom/services/apexrest/cardcom/webhook",

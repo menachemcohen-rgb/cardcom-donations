@@ -141,8 +141,8 @@ The quick deploy has to run within 10 days of the validation, with no deploy in 
    - `Secret__c` = 64 random hex characters (`openssl rand -hex 32`);
    - never reuse the sandbox secret.
 2. **Cardcom credentials** (README 7). External Credential `Cardcom_EC` → principal `CardcomTerminal`: the client's ApiName and
-   ApiPassword. Second (Diners) terminal, D39: the same in `Cardcom_Secondary_EC`, plus `Secondary_Terminal_Number__c` in
-   `Cardcom_Setting__mdt.Default`.
+   ApiPassword. Second (Diners) terminal, D39: same Cardcom account, so the same credential; only `Secondary_Terminal_Number__c`
+   in `Cardcom_Setting__mdt.Default`.
 3. **Custom-setting defaults** (org change): `sf apex run --target-org <prod-alias> --file scripts/apex/init-settings.apex`. Then
    check Charge Settings → Org Default:
    - `Receipt Day Of Month` = 2;
