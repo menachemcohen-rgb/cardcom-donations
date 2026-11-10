@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Run_Failure_Sent_At__c</fullName>
+    <description>Last "many charges failed" alert to staff (D38); at most one every 4 hours.</description>
+    <externalId>false</externalId>
+    <label>Run Failure Sent At</label>
+    <required>false</required>
+    <type>DateTime</type>
+</CustomField>

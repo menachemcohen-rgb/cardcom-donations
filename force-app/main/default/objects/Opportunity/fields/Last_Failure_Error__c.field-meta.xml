@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Failure_Error__c</fullName>
+    <description>Error code and message of the last failed charge attempt (D38).</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Error code and message of the last failed charge attempt (D38).</inlineHelpText>
+    <label>Last Failure Reason</label>
+    <length>255</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

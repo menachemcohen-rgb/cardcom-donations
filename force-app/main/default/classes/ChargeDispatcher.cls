@@ -29,6 +29,7 @@ public without sharing class ChargeDispatcher {
       ids.add(c.Id);
     if (ids.isEmpty()) {
       ChargeRunLock.release();
+      StaffAlertService.runFailures(); // D38: many failures in the last hours → staff alert (at most every 4 hours)
       return;
     } // chain finished
     ChargeRunLock.acquire(); // extended on every link

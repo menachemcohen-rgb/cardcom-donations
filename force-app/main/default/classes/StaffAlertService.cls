@@ -350,6 +350,127 @@ public without sharing class StaffAlertService {
   }
 
   /** 09:00 SUN-FRI (B9 "Donations Daily Alerts"). */
+  /**
+   * D38: "charges are not going through" — sent to Failure_Notify_Emails__c (ATO admin and the developers) when, in the last 3
+   * hours, at least 3 attempts were sent and half or more of them failed. At most one alert every 4 hours (Alert_State__c).
+   */
+  @TestVisible
+  static Datetime nowOverride;
+  @TestVisible
+  static Boolean runFailuresInTests = false; // other tests' failed charges must not add this alert to their counts
+  public static void runFailures() {
+    if (Test.isRunningTest() && !runFailuresInTests)
+      return;
+    Datetime now = nowOverride != null ? nowOverride : Datetime.now();
+    Alert_State__c st = Alert_State__c.getOrgDefaults();
+    if (st != null && st.Run_Failure_Sent_At__c != null && st.Run_Failure_Sent_At__c > now.addHours(-4))
+      return;
+    Datetime since = now.addHours(-3);
+    Integer total = 0, failed = 0;
+    Map<String, Integer> byCode = new Map<String, Integer>();
+    for (AggregateResult ar : [
+      SELECT Status__c st, Error_Code__c code, COUNT(Id) n
+      FROM Charge__c
+      WHERE Executed_At__c >= :since AND Status__c IN ('Success', 'Failed')
+      GROUP BY Status__c, Error_Code__c
+    ]) {
+      Integer n = (Integer) ar.get('n');
+      total += n;
+      if ((String) ar.get('st') == 'Failed') {
+        failed += n;
+        String code = ar.get('code') == null ? '?' : (String) ar.get('code');
+        byCode.put(code, (byCode.containsKey(code) ? byCode.get(code) : 0) + n);
+      }
+    }
+    if (total < 3 || failed * 2 < total)
+      return;
+    String rows = '';
+    for (String code : byCode.keySet())
+      rows += '<tr><td>' + EmailUtil.esc(code) + '</td><td>' + byCode.get(code) + '</td></tr>';
+    send(
+      'תקלת סליקה: ' + failed + ' מתוך ' + total + ' חיובים נכשלו',
+      wrap(
+        '<p>בשלוש השעות האחרונות נשלחו ל-Cardcom ' +
+          total +
+          ' חיובים, ו-' +
+          failed +
+          ' מהם נכשלו. כשרוב החיובים נכשלים יחד, הסיבה בדרך כלל אינה בכרטיסים של התורמים אלא בטרמינל או בהגדרות.</p>' +
+          table(new List<String>{ 'קוד שגיאה', 'מספר חיובים' }, rows) +
+          '<p>מה לבדוק: הודעות במסוף Cardcom, פרטי הגישה ל-API (External Credential Cardcom_EC), ומצב הטרמינל. ' +
+          'אם צריך לעצור את כל החיובים: Charge Settings → Charging Enabled.</p>' +
+          '<p><a href="' +
+          URL.getOrgDomainUrl().toExternalForm() +
+          '/lightning/o/Report/home">דוח "חיובים שלא עברו"</a></p>'
+      )
+    );
+    if (st == null || st.Id == null)
+      st = new Alert_State__c(SetupOwnerId = UserInfo.getOrganizationId());
+    st.Run_Failure_Sent_At__c = now;
+    upsert st;
+  }
+
+  /** D38: every Sunday after the donor reminders — the open payment issues, so staff can call the donors. */
+  public static void weeklyFailedDigest() {
+    String pledgeType = MicroPledges.TYPE;
+    String active = MicroPledges.STAGE_ACTIVE;
+    String rows = '';
+    Integer n = 0;
+    for (Opportunity p : [
+      SELECT
+        Id,
+        Pledge_Number__c,
+        Payment_Issue_Since__c,
+        Consecutive_Failures__c,
+        Last_Failure_Error__c,
+        Failure_Reminders_Stopped__c,
+        Donor_First_Name__c,
+        Donor_Last_Name__c,
+        Donor_Phone__c,
+        Donor_Contact__r.Name,
+        Donor_Contact__r.Email,
+        Donor_Contact__r.MobilePhone
+      FROM Opportunity
+      WHERE Type = :pledgeType AND StageName = :active AND Payment_Issue_Since__c != NULL
+      ORDER BY Payment_Issue_Since__c
+      LIMIT 200
+    ]) {
+      n++;
+      String name = p.Donor_Contact__r != null ? p.Donor_Contact__r.Name : (p.Donor_First_Name__c + ' ' + p.Donor_Last_Name__c);
+      String phone = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.MobilePhone) ? p.Donor_Contact__r.MobilePhone : p.Donor_Phone__c;
+      rows +=
+        '<tr><td><a href="' +
+        EmailUtil.recordUrl(p.Id) +
+        '">' +
+        EmailUtil.esc(p.Pledge_Number__c) +
+        '</a></td><td>' +
+        EmailUtil.esc(name) +
+        '</td><td>' +
+        EmailUtil.esc(phone) +
+        '</td><td>' +
+        EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.Email) +
+        '</td><td>' +
+        EmailUtil.esc(p.Payment_Issue_Since__c == null ? null : p.Payment_Issue_Since__c.format('dd/MM/yyyy')) +
+        '</td><td>' +
+        EmailUtil.esc(p.Consecutive_Failures__c) +
+        '</td><td>' +
+        EmailUtil.esc(p.Last_Failure_Error__c) +
+        '</td><td>' +
+        (p.Failure_Reminders_Stopped__c == true ? 'עצורות' : 'נשלחות') +
+        '</td></tr>';
+    }
+    if (n == 0)
+      return;
+    send(
+      'הוראות עם חיובים שלא עברו – ' + n,
+      wrap(
+        '<p>להוראות הבאות יש חיוב שלא עבר. התורמים מקבלים תזכורת במייל בכל יום ראשון עם קישור להחלפת כרטיס.</p>' +
+          table(new List<String>{ 'הוראה', 'תורם', 'טלפון', 'מייל', 'מאז', 'כישלונות רצופים', 'שגיאה אחרונה', 'תזכורות' }, rows) +
+          '<p>מה אפשר לעשות: להתקשר לתורם ולבקש להחליף כרטיס דרך הקישור במייל; אם התורם מבקש להפסיק – "הפסקת חיובים" בהוראה; ' +
+          'כדי להפסיק רק את התזכורות – לסמן "עצירת תזכורות כישלון" בהוראה.</p>'
+      )
+    );
+  }
+
   public class Daily implements Schedulable {
     public Daily() {
     }
