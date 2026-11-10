@@ -1,31 +1,65 @@
-// Read-only check of every configured Cardcom terminal (D39: primary + secondary/Diners) with the Cardcom_EC credentials.
-// For each terminal: 1) LowProfile/Create (CreateTokenOnly) — a payment page only, charges nothing;
-//                    2) LowProfile/GetLpResult on that page — expected 5117-5119 (page not filled yet).
+// Read-only check of the Cardcom terminals, per PR #56 (D39): each terminal has its own Named Credential.
+//   Primary   = Named Credential Cardcom           / External Credential Cardcom_EC           / Terminal_Number__c
+//   Secondary = Named Credential Cardcom_Secondary / External Credential Cardcom_Secondary_EC / Secondary_Terminal_Number__c
+// For each terminal: LowProfile/Create (CreateTokenOnly — a payment page, charges nothing), then GetLpResult on it
+// (expected 5117-5119: page not filled yet). Builds the requests itself, so it works whatever CardcomService version is deployed.
 // Writes nothing to Salesforce. Do NOT open and fill the printed URLs: a saved card would create a pledge with no donor.
-// The running user needs access to the Cardcom_EC principal (permission set Donations_Integration).
+// The running user needs principal access to both External Credentials (permission set Donations_Integration).
 //   sf apex run --target-org <alias> --file scripts/apex/check-cardcom-terminal.apex
-Cardcom_Setting__mdt s = CardcomService.settings();
+Cardcom_Setting__mdt s = Cardcom_Setting__mdt.getInstance('Default');
+Object secondary = null;
+try { secondary = s.get('Secondary_Terminal_Number__c'); } catch (Exception e) { System.debug(LoggingLevel.ERROR, 'CHECK no Secondary_Terminal_Number__c field (D39 not deployed)'); }
 System.debug(LoggingLevel.ERROR, String.format('CHECK primary {0} secondary {1} webhook {2}',
-    new List<Object>{ s.Terminal_Number__c, s.Secondary_Terminal_Number__c, s.Webhook_Url__c }));
-if (s.Secondary_Terminal_Number__c == null) {
-    System.debug(LoggingLevel.ERROR, 'CHECK secondary terminal number is empty: only the primary is checked');
-}
+    new List<Object>{ s.Terminal_Number__c, secondary, s.Webhook_Url__c }));
+
+List<List<Object>> terminals = new List<List<Object>>{ new List<Object>{ 'Primary', 'Cardcom', s.Terminal_Number__c } };
+if (secondary != null) terminals.add(new List<Object>{ 'Secondary', 'Cardcom_Secondary', secondary });
+else System.debug(LoggingLevel.ERROR, 'CHECK secondary terminal number is empty: only the primary is checked');
+
 String returnBase = 'https://ato770.com/cardcom-return/';
-for (String t : CardcomService.terminals()) {
+for (List<Object> t : terminals) {
+    String name = (String) t[0], nc = (String) t[1];
+    Long terminal = ((Decimal) t[2]).longValue();
+    String apiName = '{!$Credential.' + nc + '_EC.ApiName}';
     try {
-        Map<String, Object> lp = CardcomService.createTokenLowProfile(t, 'CHECK-' + UUID.randomUUID().toString(), returnBase, 'בדיקת מסוף');
+        Map<String, Object> body = new Map<String, Object>{
+            'TerminalNumber' => terminal, 'ApiName' => apiName, 'Operation' => 'CreateTokenOnly',
+            'ReturnValue' => 'CHECK-' + UUID.randomUUID().toString(), 'Amount' => 1,
+            'SuccessRedirectUrl' => returnBase + '?s=ok', 'FailedRedirectUrl' => returnBase + '?s=fail',
+            'CancelRedirectUrl' => returnBase + '?s=fail', 'WebHookUrl' => s.Webhook_Url__c,
+            'ProductName' => 'בדיקת מסוף', 'Language' => 'he', 'ISOCoinId' => 1,
+            'AdvancedDefinition' => new Map<String, Object>{ 'JValidateType' => 2, 'ThreeDSecureState' => 'Auto' } };
+        Map<String, Object> lp = post(nc, 'LowProfile/Create', body);
+        Integer createCode = code(lp);
         String lpId = String.valueOf(lp.get('LowProfileId'));
-        System.debug(LoggingLevel.ERROR, String.format('CHECK {0} Create OK lowProfileId {1} url {2}', new List<Object>{ t, lpId, lp.get('Url') }));
-        Map<String, Object> r = CardcomService.getLpResult(t, lpId);
-        Integer code = CardcomService.code(r);
-        Boolean ok = code >= 5117 && code <= 5119;
-        System.debug(LoggingLevel.ERROR, String.format('CHECK {0} GetLpResult ResponseCode {1} Description {2}',
-            new List<Object>{ t, code, r.get('Description') }));
-        System.debug(LoggingLevel.ERROR, String.format('CHECK RESULT {0}: {1}', new List<Object>{ t,
-            ok ? 'TERMINAL WORKS' : 'CREATE WORKS, GETLPRESULT UNEXPECTED' }));
-    } catch (CardcomService.CardcomHttpException e) {
-        System.debug(LoggingLevel.ERROR, String.format('CHECK RESULT {0}: HTTP {1} (401 = wrong ApiName/terminal): {2}', new List<Object>{ t, e.status, e.getMessage() }));
+        System.debug(LoggingLevel.ERROR, String.format('CHECK {0} ({1}, terminal {2}) Create ResponseCode {3} Description {4} lowProfileId {5}',
+            new List<Object>{ name, nc, terminal, createCode, lp.get('Description'), lpId }));
+        if (createCode != 0) {
+            System.debug(LoggingLevel.ERROR, 'CHECK RESULT ' + name + ': CREATE FAILED');
+            continue;
+        }
+        Map<String, Object> r = post(nc, 'LowProfile/GetLpResult',
+            new Map<String, Object>{ 'TerminalNumber' => terminal, 'ApiName' => apiName, 'LowProfileId' => lpId });
+        Integer c = code(r);
+        System.debug(LoggingLevel.ERROR, String.format('CHECK {0} GetLpResult ResponseCode {1} Description {2}', new List<Object>{ name, c, r.get('Description') }));
+        System.debug(LoggingLevel.ERROR, 'CHECK RESULT ' + name + ': ' + (c >= 5117 && c <= 5119 ? 'TERMINAL WORKS' : 'CREATE WORKS, GETLPRESULT UNEXPECTED'));
     } catch (Exception e) {
-        System.debug(LoggingLevel.ERROR, String.format('CHECK RESULT {0}: {1}: {2}', new List<Object>{ t, e.getTypeName(), e.getMessage() }));
+        System.debug(LoggingLevel.ERROR, String.format('CHECK RESULT {0} ({1}): {2}: {3}', new List<Object>{ name, nc, e.getTypeName(), e.getMessage() }));
     }
+}
+
+Map<String, Object> post(String nc, String path, Map<String, Object> body) {
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:' + nc + '/api/v11/' + path);
+    req.setMethod('POST');
+    req.setHeader('Content-Type', 'application/json; charset=utf-8');
+    req.setTimeout(30000);
+    req.setBody(JSON.serialize(body, true));
+    HttpResponse res = new Http().send(req);
+    if (res.getStatusCode() != 200) throw new CalloutException('HTTP ' + res.getStatusCode() + ' (401 = wrong ApiName/terminal): ' + res.getBody().left(200));
+    return (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+}
+Integer code(Map<String, Object> r) {
+    Object c = r == null ? null : r.get('ResponseCode');
+    return c == null ? -1 : Integer.valueOf(String.valueOf(c));
 }
