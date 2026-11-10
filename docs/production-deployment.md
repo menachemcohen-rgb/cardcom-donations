@@ -204,7 +204,7 @@ The quick deploy has to run within 10 days of the validation, with no deploy in 
    - the dashboard is "logged-in user": viewers need the "View Dashboards"-type access their profile gives;
    - build the duplicates report by hand.
 3. **Schedule the jobs:** `scripts/apex/schedule-donations.apex`. Check Setup → Scheduled Jobs:
-   - 13 `Donations …` jobs, submitted by the integration user;
+   - 14 `Donations …` jobs, submitted by the integration user;
    - the staff email "זמני חיוב עודכנו".
 
 ## 7. WordPress (production site)

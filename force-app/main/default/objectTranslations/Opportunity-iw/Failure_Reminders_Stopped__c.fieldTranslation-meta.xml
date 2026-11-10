@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>סימון עוצר את התזכורות השבועיות לתורם על חיוב שנכשל. מתאפס אוטומטית כשבעיית התשלום נפתרת.</help>
+    <label>עצירת תזכורות כישלון</label>
+    <name>Failure_Reminders_Stopped__c</name>
+</CustomFieldTranslation>

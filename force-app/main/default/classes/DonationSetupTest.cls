@@ -1,6 +1,6 @@
 @IsTest
 private class DonationSetupTest {
-  static final Integer LATER_JOBS = 5; // Retry, Receipts, Reconcile, Daily Alerts, Log Cleanup (classes from later prompts)
+  static final Integer LATER_JOBS = 6; // Retry, Receipts, Reconcile, Daily Alerts, Log Cleanup, Donor Reminders (D37)
 
   static User user(String tz, Boolean withPermission) {
     User u;

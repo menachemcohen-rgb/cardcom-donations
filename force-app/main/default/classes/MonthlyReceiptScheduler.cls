@@ -6,6 +6,8 @@
 public without sharing class MonthlyReceiptScheduler implements Schedulable {
   @TestVisible
   static Date todayOverride;
+  @TestVisible
+  static Boolean summaryInTests = false; // a test may start only one batch; MonthlyReceiptTest starts the planner
 
   /** Scheduled by name (DonationSetup, N46). */
   public MonthlyReceiptScheduler() {
@@ -23,6 +25,8 @@ public without sharing class MonthlyReceiptScheduler implements Schedulable {
     Integer targetDay = day == null ? 2 : day.intValue(); // the 2nd of the month by default (client, 4.11.2026)
     if (today.day() > 10 || today.day() < targetDay || ChargeCalendar.isRestDay(today))
       return 'skipped'; // window: target day .. 10th
+    if (!Test.isRunningTest() || summaryInTests)
+      DonorMonthlySummaryBatch.startIfNeeded(prev); // D37: monthly summary email with the receipts (idempotent per pledge)
     MonthlyReceiptQueueable.resetStale();
     if (hasUnplannedCharges(prev)) {
       Database.executeBatch(new MonthlyReceiptPlanner(prev), 200); // finish() starts the queueable (Pending + Failed retries)

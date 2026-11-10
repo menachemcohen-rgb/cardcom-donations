@@ -90,7 +90,7 @@
   - לחכות לסיום ה-Batch.
   - להפעיל את Matching Rule `Donor_Contact_Match` ואת Duplicate Rule `Donor_Contact_Duplicate`.
 - [ ] `scripts/apex/schedule-donations.apex`.
-  - לוודא 13 Jobs בשם משתמש האינטגרציה.
+  - לוודא 14 Jobs בשם משתמש האינטגרציה.
   - לוודא שהגיע המייל "זמני חיוב עודכנו".
 
 ## ז. וורדפרס

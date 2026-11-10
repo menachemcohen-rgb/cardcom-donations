@@ -49,6 +49,7 @@ public with sharing class DonationSetup {
     PendingVerificationSweeper.scheduleAll();
     scheduleIfPresent(jobName('Daily Alerts'), '0 0 9 ? * SUN-FRI', 'StaffAlertService.Daily');
     scheduleIfPresent(jobName('Log Cleanup'), '0 0 3 ? * SUN', 'LogCleanupBatch');
+    scheduleIfPresent(jobName('Donor Reminders'), '0 0 10 ? * SUN', 'DonorFailureReminderJob'); // D37: Sunday 10:00
   }
 
   /** Schedules `className` if it exists and is Schedulable; otherwise records it in lastSkipped. */

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- D37 donor emails (part 2). Deploy after release-d36.xml. sf project deploy start -x manifest/release-d37.xml -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>CardChangeService</members>
+        <members>DonationSetup</members>
+        <members>DonationSetupTest</members>
+        <members>DonorEmailService</members>
+        <members>DonorEmailServiceTest</members>
+        <members>DonorFailureReminderJob</members>
+        <members>DonorMonthlySummaryBatch</members>
+        <members>MonthlyReceiptScheduler</members>
+        <members>PledgeActivationService</members>
+        <members>PledgeRollupService</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Opportunity.Failure_Reminders_Stopped__c</members>
+        <members>Opportunity.Last_Failure_Email_At__c</members>
+        <members>Opportunity.Last_Summary_Month__c</members>
+        <members>Opportunity.Payment_Issue_Since__c</members>
+        <members>Opportunity.Welcome_Email_Sent_At__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>Opportunity-iw</members>
+        <name>CustomObjectTranslation</name>
+    </types>
+    <types>
+        <members>Pledge_Record_Page</members>
+        <name>FlexiPage</name>
+    </types>
+    <types>
+        <members>Opportunity-Micro Donation Pledge Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>Donations_Admin</members>
+        <members>Donations_Integration</members>
+        <members>Donations_Internal_Read</members>
+        <members>Donations_Staff</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>62.0</version>
+</Package>

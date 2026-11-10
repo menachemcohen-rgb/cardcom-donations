@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Failure_Reminders_Stopped__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Tick to stop the weekly failed-charge reminders to this donor (D37). Cleared automatically when the payment issue is resolved.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Tick to stop the weekly failed-charge reminders to this donor (D37). Cleared automatically when the payment issue is resolved.</inlineHelpText>
+    <label>Stop Failure Reminders</label>
+    <trackHistory>false</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

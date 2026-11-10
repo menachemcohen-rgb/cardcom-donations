@@ -55,7 +55,9 @@ public without sharing class CardChangeService {
       Token__c = d.token,
       CardExpirationMMYY__c = d.expMMYY,
       Token_Expiry_Date__c = d.tokenExpiry,
-      Last4__c = d.last4
+      Last4__c = d.last4,
+      Payment_Issue_Since__c = null, // D37: a new card ends the failed-charge reminders
+      Failure_Reminders_Stopped__c = false
     ); // last4 null until next charge (B5.3)
     List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
     Boolean amountChanged = ccr.New_Amount__c != null && ccr.New_Amount__c != ccr.Pledge__r.Charge_Amount__c;

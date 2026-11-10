@@ -64,7 +64,7 @@ is on. Unschedule, deploy, schedule again (Anonymous Apex, as any admin; the int
 1. `DonationSetup.request('UNSCHEDULE_ALL');` — wait until Setup → Scheduled Jobs shows no `Donations …` job (about a minute) and
    no charge chain is running (Apex Jobs: no `ChargeQueueable` Queued/Processing).
 2. Deploy.
-3. `DonationSetup.request('SCHEDULE_ALL');` — expect 13 `Donations …` jobs again and the staff email "זמני חיוב עודכנו".
+3. `DonationSetup.request('SCHEDULE_ALL');` — expect 14 `Donations …` jobs again and the staff email "זמני חיוב עודכנו".
 
 Do it outside the charge times (not at 06:00/08:00/11:00/20:00 or on the hour before them). A run missed while unscheduled is not
 made up; if one was missed, run `ChargePlanner.plan(Date.today(), 'AM')` (or `'PM'`) by hand.
@@ -109,7 +109,7 @@ Site `cardcom` + guest permission set, permission-set assignments, record type a
 3. **Normalize existing Contacts**, wait for the batch, then activate `Donor_Contact_Match` and `Donor_Contact_Duplicate` (README 21):
    `sf apex run --target-org <alias> --file scripts/apex/normalize-contacts.apex`.
 4. **Schedule all jobs** (as any admin; the integration user does the scheduling, D30 — README 22–23):
-   `sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex`. Check Setup → Scheduled Jobs: 13 `Donations …` jobs
+   `sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex`. Check Setup → Scheduled Jobs: 14 `Donations …` jobs
    submitted by the integration user, and the staff email "זמני חיוב עודכנו".
 5. **"Apply charge schedule" button** in the admins' app (README 24).
 6. **Reports:** folder access, dashboard running user, the duplicates report by hand (README 25).
@@ -157,7 +157,7 @@ Deploy to an org that already runs 0.1.x:
    only applies to new records). Add the action "הפקת קבלה חודשית" to the Contact page layout(s) (Mobile & Lightning Actions) or
    the Contact Lightning page, and the flow `Plan_Monthly_Receipts_All` to the admins' app utility bar (like `Apply_Charge_Schedule`,
    README 24).
-4. `DonationSetup.request('SCHEDULE_ALL');` and expect 13 jobs again.
+4. `DonationSetup.request('SCHEDULE_ALL');` and expect 14 jobs again.
 5. Receipts that already exist keep their old `Deal_Numbers__c` (plain numbers): Cash and DealNumbers still work for them;
    `CreditCardLines` marks them `Failed` / `NO_CHARGE_LINES` instead of sending them.
 6. Sandbox: the 2–10 December run now plans every November charge that has no receipt, including avi@fried.com's (left out on purpose on
