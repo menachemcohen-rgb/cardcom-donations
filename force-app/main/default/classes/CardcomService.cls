@@ -10,7 +10,15 @@ public without sharing class CardcomService {
   }
   public class CardcomHttpException extends Exception {
     public Integer status;
+    /** ResponseCode from the error body, when Cardcom sent one (null otherwise). */
+    public Integer responseCode;
   }
+  /**
+   * GetTransactionByExternalUniqTran "no successful transaction for this key": Cardcom answers HTTP 400 with this ResponseCode
+   * (checked in production 10.11.2026: {"ResponseCode":9998,"Description":"ExternalUniqTranId not found - there is not successful
+   * transaction for this ExternalUniqTranId"}).
+   */
+  public static final Integer EXTERNAL_ID_NOT_FOUND = 9998;
   @TestVisible
   static Cardcom_Setting__mdt settingsOverride;
   /** The terminal has no number in Cardcom_Setting__mdt. Nothing was sent to Cardcom. */
@@ -73,9 +81,21 @@ public without sharing class CardcomService {
     if (sc != 200) {
       CardcomHttpException e = new CardcomHttpException('HTTP ' + sc + ' ' + path + ' ' + res.getBody().left(200));
       e.status = sc;
+      e.responseCode = errorCode(res.getBody());
       throw e;
     }
     return (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+  }
+
+  /** ResponseCode of an error body; null when the body isn't JSON or has no numeric ResponseCode. */
+  @TestVisible
+  static Integer errorCode(String body) {
+    try {
+      Object c = ((Map<String, Object>) JSON.deserializeUntyped(body)).get('ResponseCode');
+      return c == null ? null : Integer.valueOf(String.valueOf(c));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   public static Integer code(Map<String, Object> r) {
@@ -186,14 +206,25 @@ public without sharing class CardcomService {
   }
 
   // ---- B5.5 ----
-  /** @return TranzactionInfo map if a SUCCESSFUL transaction exists for the key, else null. */
+  /**
+   * @return TranzactionInfo map if a SUCCESSFUL transaction exists for the key, else null.
+   * "Not found" comes back as HTTP 400 + ResponseCode 9998 → null. Any other HTTP 400 (e.g. a wrong ApiName) is still thrown,
+   * so a configuration problem never looks like "not charged" and is never charged again.
+   */
   public static Map<String, Object> findSuccessByExternalId(String attemptKey) {
     return findSuccessByExternalId(PRIMARY, attemptKey);
   }
   public static Map<String, Object> findSuccessByExternalId(String terminal, String attemptKey) {
     Map<String, Object> b = withTerminal(terminal);
     b.put('ExternalUniqTranId', attemptKey);
-    Map<String, Object> r = post(terminal, 'Transactions/GetTransactionByExternalUniqTran', b);
+    Map<String, Object> r;
+    try {
+      r = post(terminal, 'Transactions/GetTransactionByExternalUniqTran', b);
+    } catch (CardcomHttpException e) {
+      if (e.status == 400 && e.responseCode == EXTERNAL_ID_NOT_FOUND)
+        return null;
+      throw e;
+    }
     Object tid = r.get('TranzactionId');
     return (code(r) == 0 && tid != null && Long.valueOf(String.valueOf(tid)) > 0) ? r : null;
   }

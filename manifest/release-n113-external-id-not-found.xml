@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- N113: GetTransactionByExternalUniqTran "not found" = HTTP 400 + ResponseCode 9998.
+     CardcomService is referenced by the scheduled classes: unschedule -> deploy -> schedule (docs/deployment-runbook.md).
+     sf project deploy start -x manifest/release-n113-external-id-not-found.xml --test-level RunSpecifiedTests
+       --tests CardcomServiceTest --tests ChargeQueueableTest --tests ReconciliationJobTest -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>CardcomService</members>
+        <members>CardcomServiceTest</members>
+        <members>ChargeQueueableTest</members>
+        <members>ReconciliationJobTest</members>
+        <name>ApexClass</name>
+    </types>
+    <version>62.0</version>
+</Package>

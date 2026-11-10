@@ -129,6 +129,50 @@ private class ChargeQueueableTest {
   }
 
   @IsTest
+  static void previousAttemptNotFoundIsChargedNormally() {
+    // Cardcom's real "not found" for the previous key: HTTP 400 + 9998 → charge now (was: config error, no charge)
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Charge__c a2 = TestDataFactory.pendingCharge(p, WED, 'AM', 2, 'PLG-prev-A1');
+    CardcomMock m = CardcomMock.install()
+      .always(
+        'Transactions/GetTransactionByExternalUniqTran',
+        400,
+        new Map<String, Object>{
+          'ResponseCode' => 9998,
+          'Description' => 'ExternalUniqTranId not found - there is not successful transaction for this ExternalUniqTranId'
+        }
+      )
+      .always('Transactions/Transaction', 200, TestDataFactory.txSuccess(777, '1234'));
+    run(new List<Charge__c>{ a2 });
+    Charge__c r = reload(a2.Id);
+    Assert.areEqual('Success', r.Status__c);
+    Assert.areNotEqual('Config', r.Error_Category__c);
+    Assert.areEqual(1, m.requestsTo('Transactions/Transaction').size(), 'charged once');
+  }
+
+  @IsTest
+  static void previousAttemptLookupBadRequestStaysConfig() {
+    // HTTP 400 without 9998 (e.g. wrong ApiName): still a configuration error — never treated as "not charged"
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Charge__c a2 = TestDataFactory.pendingCharge(p, WED, 'AM', 2, 'PLG-prev-A1');
+    CardcomMock m = CardcomMock.install()
+      .always(
+        'Transactions/GetTransactionByExternalUniqTran',
+        400,
+        new Map<String, Object>{ 'ResponseCode' => 1, 'Description' => 'Invalid request' }
+      )
+      .always('Transactions/Transaction', 200, TestDataFactory.txSuccess(777, '1234'));
+    run(new List<Charge__c>{ a2 });
+    Charge__c r = reload(a2.Id);
+    Assert.areEqual('Failed', r.Status__c);
+    Assert.areEqual('Config', r.Error_Category__c);
+    Assert.areEqual('HTTP_400', r.Error_Code__c);
+    Assert.areEqual(0, m.requestsTo('Transactions/Transaction').size(), 'not charged');
+  }
+
+  @IsTest
   static void stoppedPledgeIsSkipped() {
     TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
     Contact c = TestDataFactory.contact('Ben', 'Levi', 'ben@example.com', '0522222222');

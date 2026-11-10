@@ -371,6 +371,62 @@ private class ReconciliationJobTest {
   }
 
   @IsTest
+  static void realNotFoundAnswerClearsTheFlag() {
+    // HTTP 400 + 9998 is Cardcom's "not found" (production, 10.11.2026): the unknown attempt is cleared, not retried forever
+    setup();
+    Charge__c a1 = charge('AM', 'Failed', null, true);
+    CardcomMock.install()
+      .always(LIST_PATH, 200, page(new List<Object>()))
+      .always(
+        FIND_PATH,
+        400,
+        new Map<String, Object>{
+          'ResponseCode' => 9998,
+          'Description' => 'ExternalUniqTranId not found - there is not successful transaction for this ExternalUniqTranId'
+        }
+      );
+    runFor(DAY);
+    Assert.isFalse([SELECT Needs_Reconciliation__c FROM Charge__c WHERE Id = :a1.Id].Needs_Reconciliation__c);
+    Assert.areEqual(0, [SELECT COUNT() FROM Reconciliation_Issue__c]);
+  }
+
+  @IsTest
+  static void realNotFoundAnswerOpensMissingInCardcom() {
+    // Per-charge verification: a Success charge Cardcom answers 400 + 9998 for → Missing_In_Cardcom
+    setup();
+    List<Charge__c> cs = threeSuccess();
+    CardcomMock.install()
+      .always(LIST_PATH, 200, page(new List<Object>()))
+      .enqueue(FIND_PATH, 200, found(201, 3))
+      .enqueue(
+        FIND_PATH,
+        400,
+        new Map<String, Object>{
+          'ResponseCode' => 9998,
+          'Description' => 'ExternalUniqTranId not found - there is not successful transaction for this ExternalUniqTranId'
+        }
+      )
+      .enqueue(FIND_PATH, 200, found(203, 3));
+    runFor(DAY);
+    Assert.areEqual(1, [SELECT COUNT() FROM Reconciliation_Issue__c]);
+    Assert.areEqual(cs[1].Id, issuesByType().get('Missing_In_Cardcom').Charge__c);
+  }
+
+  @IsTest
+  static void badRequestLookupOpensNoIssue() {
+    // HTTP 400 without 9998: an error, not "not found" → no Missing_In_Cardcom, unknown attempt keeps its flag
+    setup();
+    Charge__c a1 = charge('AM', 'Failed', null, true); // unknown outcome → lookup by its key
+    charge('PM', 'Success', '202', false); // not in the (empty) list → per-charge lookup
+    CardcomMock.install()
+      .always(LIST_PATH, 200, page(new List<Object>()))
+      .always(FIND_PATH, 400, new Map<String, Object>{ 'ResponseCode' => 1, 'Description' => 'Invalid request' });
+    runFor(DAY);
+    Assert.areEqual(0, [SELECT COUNT() FROM Reconciliation_Issue__c], 'unverified is not missing');
+    Assert.isTrue([SELECT Needs_Reconciliation__c FROM Charge__c WHERE Id = :a1.Id].Needs_Reconciliation__c);
+  }
+
+  @IsTest
   static void usableListIsComparedWithoutLookups() {
     setup();
     charge('AM', 'Success', '201', false);
