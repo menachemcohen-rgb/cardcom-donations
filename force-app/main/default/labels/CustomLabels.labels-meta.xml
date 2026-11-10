@@ -6,7 +6,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Donations: contact email in donor emails</shortDescription>
-        <value>donations@example.org</value>
+        <value>ato770office@gmail.com</value>
     </labels>
     <labels>
         <fullName>Donation_Contact_Phone</fullName>
@@ -14,7 +14,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Donations: contact phone in donor emails</shortDescription>
-        <value>03-0000000</value>
+        <value>*6358</value>
     </labels>
     <labels>
         <fullName>Donation_Impact_Sentence</fullName>
@@ -22,7 +22,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Donations: impact sentence in the thank-you email</shortDescription>
-        <value>התרומה היומית שלך מאפשרת לנו להמשיך בפעילות – תודה שאת/ה איתנו.</value>
+        <value>הצדקה היומית שלך מחזקת את פעילות את&quot;ה למען תלמידי הישיבות, יום אחר יום – תודה שאת/ה שותף/ה.</value>
     </labels>
     <labels>
         <fullName>Donation_Org_Name</fullName>
@@ -30,7 +30,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Donations: organization name in donor emails</shortDescription>
-        <value>שם הארגון</value>
+        <value>איגוד תלמידי הישיבות - העולמי 770</value>
     </labels>
     <labels>
         <fullName>Donation_Signer_Name</fullName>
@@ -38,6 +38,6 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Donations: signer of the thank-you email</shortDescription>
-        <value>צוות הארגון</value>
+        <value>צוות איגוד תלמידי הישיבות - העולמי 770</value>
     </labels>
 </CustomLabels>
