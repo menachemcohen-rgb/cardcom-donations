@@ -2,8 +2,10 @@
 if (!defined('ABSPATH')) exit;
 
 final class Org_Form {
-    const MIN = 1; const MAX = 50;               // mirror of Cardcom_Setting__mdt (Q5) — server SF re-validates
-    const PRESETS = [1, 3, 5, 10];
+    // Amount defaults; override in wp-config.php with ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS ("1,2,3,5,10").
+    // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the amount.
+    const MIN = 1; const MAX = 50;
+    const PRESETS = [1, 2, 3, 5, 10];
 
     // Rate-limit defaults; override in wp-config.php with ORG_DONATION_RL_WINDOW / _SUBMIT_MAX / _LP_MAX.
     const RL_WINDOW = 600;      // seconds, fixed window from the first counted request
@@ -24,6 +26,25 @@ final class Org_Form {
         add_action('wp_ajax_nopriv_org_donation_refresh', [self::class, 'ajax_lp']);
         add_action('wp_ajax_org_donation_submit',         [self::class, 'ajax_submit']);
         add_action('wp_ajax_nopriv_org_donation_submit',  [self::class, 'ajax_submit']);
+    }
+
+    public static function min_amount(): float { return self::amount_cfg('ORG_DONATION_MIN_AMOUNT', self::MIN); }
+    public static function max_amount(): float { return self::amount_cfg('ORG_DONATION_MAX_AMOUNT', self::MAX); }
+
+    /** @return float[] the amount buttons, from ORG_DONATION_PRESETS ("1,2,3,5,10") or the default; values outside min..max dropped. */
+    public static function presets(): array {
+        $raw = orgdon_const('ORG_DONATION_PRESETS');
+        $list = $raw === '' ? self::PRESETS : array_map('trim', explode(',', $raw));
+        $out = [];
+        foreach ($list as $v) {
+            if (is_numeric($v) && (float) $v >= self::min_amount() && (float) $v <= self::max_amount()) $out[] = $v + 0;
+        }
+        return $out ?: self::PRESETS;
+    }
+
+    private static function amount_cfg(string $name, float $default): float {
+        $v = orgdon_const($name);
+        return (is_numeric($v) && (float) $v > 0) ? (float) $v : $default;
     }
 
     public static function window(): int     { return Org_Rate_Limiter::cfg('ORG_DONATION_RL_WINDOW', self::RL_WINDOW); }
@@ -49,10 +70,10 @@ final class Org_Form {
             'nonce'         => wp_create_nonce('org_donation'),
             'cardcomOrigin' => orgdon_const('ORG_CARDCOM_ORIGIN', 'https://secure.cardcom.solutions'),
             'selfOrigin'    => ORG_DONATION_ORIGIN,
-            'min' => self::MIN, 'max' => self::MAX,
+            'min' => self::min_amount(), 'max' => self::max_amount(),
         ]);
         ob_start();
-        $presets = self::PRESETS; $terms_url = orgdon_const('ORG_DONATION_TERMS_URL');
+        $presets = self::presets(); $terms_url = orgdon_const('ORG_DONATION_TERMS_URL');
         include ORGDON_DIR . 'templates/form.php';
         return ob_get_clean();
     }
@@ -63,7 +84,7 @@ final class Org_Form {
      */
     public static function ajax_lp(): void {
         check_ajax_referer('org_donation', 'nonce');
-        $v = Org_Validator::signup(wp_unslash($_POST), self::MIN, self::MAX, false);
+        $v = Org_Validator::signup(wp_unslash($_POST), self::min_amount(), self::max_amount(), false);
         if ($v['errors']) wp_send_json_error(['fields' => $v['errors'], 'message' => 'נא לתקן את השדות המסומנים.'], 422);
         if (!Org_Rate_Limiter::allowed('lp', self::lp_max())) wp_send_json_error(['message' => self::MSG_TOO_MANY], 429);
         Org_Rate_Limiter::count('lp', self::window());
@@ -115,7 +136,7 @@ final class Org_Form {
     /** @return array{0:bool,1:array,2:int} */
     private static function submit_once(array $in, ?string $lp): array {
         if (!Org_Rate_Limiter::allowed('submit', self::submit_max())) return [false, ['message' => 'בוצעו ניסיונות רבים. נסו שוב מאוחר יותר.'], 429];
-        $v = Org_Validator::signup($in, self::MIN, self::MAX);
+        $v = Org_Validator::signup($in, self::min_amount(), self::max_amount());
         if ($v['errors']) return [false, ['fields' => $v['errors'], 'message' => 'נא להשלים את פרטי הטופס וללחוץ "סיום".'], 422];
         Org_Rate_Limiter::count('submit', self::window());     // only real (valid) submissions are counted
         $payload = $v['data'] + ['clientIp' => Org_Rate_Limiter::ip()];

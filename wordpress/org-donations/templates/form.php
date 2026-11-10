@@ -38,7 +38,7 @@
         <?php endforeach; ?>
         <label class="orgdon-chip orgdon-chip-other"><input type="radio" name="amount_preset" value="other"><span>סכום אחר</span></label>
       </div>
-      <input id="od-amount-other" name="amount_other" type="number" min="<?= esc_attr(Org_Form::MIN) ?>" max="<?= esc_attr(Org_Form::MAX) ?>" step="0.01" dir="ltr" hidden aria-label="סכום אחר">
+      <input id="od-amount-other" name="amount_other" type="number" min="<?= esc_attr(Org_Form::min_amount()) ?>" max="<?= esc_attr(Org_Form::max_amount()) ?>" step="0.01" dir="ltr" hidden aria-label="סכום אחר">
       <span class="orgdon-err" data-for="amount" role="alert"></span>
     </fieldset>
 
