@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help>מתי נכשל לאחרונה ניסיון חיוב של ההוראה. הניסיון עצמו מופיע בטאב החיובים.</help>
+    <label>חיוב שנכשל לאחרונה</label>
+    <name>Last_Failure_At__c</name>
+</CustomFieldTranslation>

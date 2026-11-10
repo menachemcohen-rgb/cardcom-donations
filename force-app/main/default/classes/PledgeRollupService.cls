@@ -94,6 +94,23 @@ public without sharing class PledgeRollupService {
       }
     }
 
+    // D38: document the last failed attempt on the pledge (the attempt itself keeps its own error fields)
+    for (Charge__c f : [
+      SELECT Pledge__c, Executed_At__c, Error_Code__c, Error_Message__c
+      FROM Charge__c
+      WHERE Pledge__c IN :ids AND Status__c = 'Failed' AND Executed_At__c != NULL
+      ORDER BY Executed_At__c DESC
+      LIMIT 2000
+    ]) {
+      Opportunity c = changes.get(f.Pledge__c);
+      if (c == null || c.Last_Failure_At__c != null)
+        continue; // newest first: keep the first one per pledge
+      c.Last_Failure_At__c = f.Executed_At__c;
+      c.Last_Failure_Error__c = ((f.Error_Code__c == null ? '' : f.Error_Code__c) + ' ' + (f.Error_Message__c == null ? '' : f.Error_Message__c))
+        .trim()
+        .left(255);
+    }
+
     Integer maxFail = ChargeSettings.get().Max_Consecutive_Failures__c == null
       ? null
       : ChargeSettings.get().Max_Consecutive_Failures__c.intValue();

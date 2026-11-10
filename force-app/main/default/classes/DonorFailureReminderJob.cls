@@ -39,5 +39,6 @@ public without sharing class DonorFailureReminderJob implements Schedulable, Dat
   }
 
   public void finish(Database.BatchableContext bc) {
+    StaffAlertService.weeklyFailedDigest(); // D38: staff list of the open payment issues, with what to do
   }
 }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- D38 failure documentation, staff alerts, report (part 3). Deploy after release-d37.xml. -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ChargeDispatcher</members>
+        <members>DonorFailureReminderJob</members>
+        <members>PledgeRollupService</members>
+        <members>StaffAlertService</members>
+        <members>StaffFailureAlertsTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Alert_State__c.Run_Failure_Sent_At__c</members>
+        <members>Opportunity.Last_Failure_At__c</members>
+        <members>Opportunity.Last_Failure_Error__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>Opportunity-iw</members>
+        <name>CustomObjectTranslation</name>
+    </types>
+    <types>
+        <members>Opportunity-Micro Donation Pledge Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>Donations_Admin</members>
+        <members>Donations_Integration</members>
+        <members>Donations_Internal_Read</members>
+        <members>Donations_Staff</members>
+        <name>PermissionSet</name>
+    </types>
+    <types>
+        <members>Donations/Unpaid_Charges</members>
+        <name>Report</name>
+    </types>
+    <version>62.0</version>
+</Package>
