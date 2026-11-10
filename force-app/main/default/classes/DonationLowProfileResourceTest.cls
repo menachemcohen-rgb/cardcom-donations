@@ -58,7 +58,7 @@ private class DonationLowProfileResourceTest {
     Test.stopTest();
     Assert.areEqual(200, RestContext.response.statusCode);
     Assert.areEqual('Secondary', TestDataFactory.responseJson().get('terminal'));
-    Assert.areEqual('callout:Cardcom/api/v11/LowProfile/Create', m.requestsTo('LowProfile/Create')[0].getEndpoint());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/Create', m.requestsTo('LowProfile/Create')[0].getEndpoint());
     Assert.areEqual(2002, m.lastBody('LowProfile/Create').get('TerminalNumber'));
   }
 

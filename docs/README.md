@@ -89,8 +89,8 @@ Production: the full path (build, validate, quick deploy, manual steps) is in [`
    - Production: the client's terminal.
    - Principal access is granted only through `Donations_Integration`.
    - **Second terminal (D39, optional).** The client's main terminal doesn't clear Diners cards, and their second terminal doesn't
-     clear American Express. Both terminals are in one Cardcom account, so the same `Cardcom_EC` credential (ApiName/ApiPassword)
-     serves both; nothing more to enter here. To take both: set
+     clear American Express. To take both: enter the second terminal's `ApiName` and `ApiPassword` the same way in External
+     Credential `Cardcom_Secondary_EC` (Named Credential `Cardcom_Secondary`), set
      `Cardcom_Setting__mdt.Default.Secondary_Terminal_Number__c`, and turn the Diners option on in WordPress
      (`ORG_DONATION_DINERS`, `docs/wp-install.md`). Empty `Secondary_Terminal_Number__c` = one terminal, nothing else changes.
      A token is charged only on the terminal that created it: the pledge keeps it in `Cardcom_Terminal__c`.

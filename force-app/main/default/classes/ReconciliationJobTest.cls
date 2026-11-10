@@ -443,8 +443,8 @@ private class ReconciliationJobTest {
     runFor(DAY);
     List<HttpRequest> reqs = m.requestsTo(LIST_PATH);
     Assert.areEqual(2, reqs.size());
-    Assert.areEqual('callout:Cardcom/api/v11/' + LIST_PATH, reqs[1].getEndpoint()); // same credential for both terminals
-    Assert.areEqual(1001, ((Map<String, Object>) JSON.deserializeUntyped(reqs[0].getBody())).get('LimitForTerminal'));
+    Assert.areEqual('callout:Cardcom/api/v11/' + LIST_PATH, reqs[0].getEndpoint());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/' + LIST_PATH, reqs[1].getEndpoint());
     Assert.areEqual(2002, ((Map<String, Object>) JSON.deserializeUntyped(reqs[1].getBody())).get('LimitForTerminal'));
     Assert.areEqual(0, [SELECT COUNT() FROM Reconciliation_Issue__c]);
     Assert.areEqual(0, [SELECT COUNT() FROM Charge__c WHERE Needs_Reconciliation__c = TRUE]);
