@@ -1,8 +1,9 @@
 /**
  * Cardcom API v11 client. CLAUDE.md B5.9 (authoritative, Part C E8). Credentials come from Named Credential merge fields only.
- * D39: two terminals. PRIMARY (Named Credential Cardcom, Terminal_Number__c) takes every card except Diners; SECONDARY
- * (Named Credential Cardcom_Secondary, Secondary_Terminal_Number__c) is the Diners terminal. A token works only on the terminal
- * that created it, so every call names its terminal; a blank terminal means PRIMARY (pledges older than D39).
+ * D39: two terminals in one Cardcom account, so one Named Credential (Cardcom) and one API user serve both; only the
+ * terminal number differs. PRIMARY (Terminal_Number__c) takes every card except Diners; SECONDARY (Secondary_Terminal_Number__c)
+ * is the Diners terminal. A token works only on the terminal that created it, so every call names its terminal; a blank
+ * terminal means PRIMARY (pledges older than D39).
  */
 public without sharing class CardcomService {
   public class CardcomException extends Exception {
@@ -35,18 +36,10 @@ public without sharing class CardcomService {
       out.add(SECONDARY);
     return out;
   }
-  static String nc(String t) {
-    return terminalKey(t) == SECONDARY ? 'Cardcom_Secondary' : 'Cardcom';
-  }
-  static String api(String t) {
-    return 'callout:' + nc(t) + '/api/v11/';
-  }
-  static String an(String t) {
-    return '{!$Credential.' + nc(t) + '_EC.ApiName}';
-  }
-  static String ap(String t) {
-    return '{!$Credential.' + nc(t) + '_EC.ApiPassword}';
-  }
+  // One account for both terminals (D39): same Named Credential and API user; the terminal is chosen by TerminalNumber.
+  static final String API = 'callout:Cardcom/api/v11/';
+  static final String AN = '{!$Credential.Cardcom_EC.ApiName}';
+  static final String AP = '{!$Credential.Cardcom_EC.ApiPassword}';
 
   public static Cardcom_Setting__mdt settings() {
     return settingsOverride != null ? settingsOverride : Cardcom_Setting__mdt.getInstance('Default');
@@ -58,7 +51,7 @@ public without sharing class CardcomService {
     return n.longValue();
   }
   static Map<String, Object> withTerminal(String t) {
-    return new Map<String, Object>{ 'TerminalNumber' => terminalNumber(t), 'ApiName' => an(t) };
+    return new Map<String, Object>{ 'TerminalNumber' => terminalNumber(t), 'ApiName' => AN };
   }
   static Boolean isRecurring(String t) {
     return (terminalKey(t) == SECONDARY ? settings().Secondary_Is_Recurring_Terminal__c : settings().Is_Recurring_Terminal__c) == true;
@@ -70,7 +63,7 @@ public without sharing class CardcomService {
   }
   public static Map<String, Object> post(String terminal, String path, Map<String, Object> body) {
     HttpRequest req = new HttpRequest();
-    req.setEndpoint(api(terminal) + path);
+    req.setEndpoint(API + path);
     req.setMethod('POST');
     req.setHeader('Content-Type', 'application/json; charset=utf-8');
     req.setTimeout(30000);
@@ -219,8 +212,8 @@ public without sharing class CardcomService {
   public static List<TxnSummary> listTransactions(String terminal, Date d, Integer page, Integer pageSize) {
     String dd = Datetime.newInstance(d, Time.newInstance(12, 0, 0, 0)).format('ddMMyyyy');
     Map<String, Object> b = new Map<String, Object>{
-      'ApiName' => an(terminal),
-      'ApiPassword' => ap(terminal),
+      'ApiName' => AN,
+      'ApiPassword' => AP,
       'FromDate' => dd,
       'ToDate' => dd,
       'TranStatus' => 'All',
@@ -249,10 +242,10 @@ public without sharing class CardcomService {
   }
 
   // ---- B5.7 ----
-  /** Documents are issued with the primary terminal's credentials (one Cardcom company, D39). */
+  /** Documents are issued by the Cardcom account, which owns both terminals (D39), so one receipt covers charges on either. */
   public static Map<String, Object> createDocument(Map<String, Object> body) {
-    body.put('ApiName', an(PRIMARY));
-    body.put('ApiPassword', ap(PRIMARY));
+    body.put('ApiName', AN);
+    body.put('ApiPassword', AP);
     return post(PRIMARY, 'Documents/CreateDocument', body);
   }
 

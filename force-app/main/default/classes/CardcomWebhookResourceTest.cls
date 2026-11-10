@@ -75,7 +75,10 @@ private class CardcomWebhookResourceTest {
     Test.getEventBus().deliver();
     Test.stopTest();
     Assert.areEqual(1, m.requestsTo('LowProfile/GetLpResult').size());
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', m.requestsTo('LowProfile/GetLpResult')[0].getEndpoint());
+    Assert.areEqual(
+      2002,
+      ((Map<String, Object>) JSON.deserializeUntyped(m.requestsTo('LowProfile/GetLpResult')[0].getBody())).get('TerminalNumber')
+    );
     Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Opportunity WHERE LowProfileId__c = 'lp-0000000001'].Cardcom_Terminal__c);
   }
 }

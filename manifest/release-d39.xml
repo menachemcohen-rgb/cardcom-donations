@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- D39: second Cardcom terminal for Diners cards. sf project deploy start -x manifest/release-d39.xml
-     Then by hand: ApiName/ApiPassword in External Credential Cardcom_Secondary_EC, Secondary_Terminal_Number__c in Cardcom Setting. -->
+     Both terminals are in one Cardcom account: the existing Named Credential Cardcom / External Credential Cardcom_EC serve both.
+     Then by hand: Secondary_Terminal_Number__c (and Secondary_Is_Recurring_Terminal__c if it applies) in Cardcom Setting. -->
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>CardChangeService</members>
@@ -43,14 +44,6 @@
         <members>Opportunity-iw</members>
         <members>Pledge_Card_History__c-iw</members>
         <name>CustomObjectTranslation</name>
-    </types>
-    <types>
-        <members>Cardcom_Secondary_EC</members>
-        <name>ExternalCredential</name>
-    </types>
-    <types>
-        <members>Cardcom_Secondary</members>
-        <name>NamedCredential</name>
     </types>
     <types>
         <members>Opportunity-Micro Donation Pledge Layout</members>

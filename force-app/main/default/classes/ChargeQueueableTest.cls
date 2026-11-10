@@ -222,11 +222,14 @@ private class ChargeQueueableTest {
     Charge__c c1 = TestDataFactory.pendingCharge(ps[1], WED, 'AM', 1, null);
     CardcomMock m = CardcomMock.install().always('Transactions/Transaction', 200, TestDataFactory.txSuccess(987654321L, '4321'));
     run(new List<Charge__c>{ c0, c1 });
-    Map<String, String> endpointByKey = new Map<String, String>();
-    for (HttpRequest r : m.requestsTo('Transactions/Transaction'))
-      endpointByKey.put((String) ((Map<String, Object>) JSON.deserializeUntyped(r.getBody())).get('ExternalUniqTranId'), r.getEndpoint());
-    Assert.areEqual('callout:Cardcom/api/v11/Transactions/Transaction', endpointByKey.get(c0.Attempt_Key__c));
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/Transactions/Transaction', endpointByKey.get(c1.Attempt_Key__c));
+    Map<String, Object> terminalByKey = new Map<String, Object>();
+    for (HttpRequest r : m.requestsTo('Transactions/Transaction')) {
+      Assert.areEqual('callout:Cardcom/api/v11/Transactions/Transaction', r.getEndpoint()); // one Named Credential for both
+      Map<String, Object> b = (Map<String, Object>) JSON.deserializeUntyped(r.getBody());
+      terminalByKey.put((String) b.get('ExternalUniqTranId'), b.get('TerminalNumber'));
+    }
+    Assert.areEqual(1001, terminalByKey.get(c0.Attempt_Key__c));
+    Assert.areEqual(2002, terminalByKey.get(c1.Attempt_Key__c));
     Assert.areEqual('Primary', [SELECT Cardcom_Terminal__c FROM Charge__c WHERE Id = :c0.Id].Cardcom_Terminal__c);
     Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Charge__c WHERE Id = :c1.Id].Cardcom_Terminal__c);
   }
