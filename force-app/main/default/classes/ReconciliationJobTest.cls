@@ -334,7 +334,10 @@ private class ReconciliationJobTest {
     runFor(DAY);
 
     Assert.areEqual(3, m.requestsTo(FIND_PATH).size(), 'one lookup per Success charge');
-    Assert.areEqual(cs[0].Attempt_Key__c, ((Map<String, Object>) JSON.deserializeUntyped(m.requestsTo(FIND_PATH)[0].getBody())).get('ExternalUniqTranId'));
+    Assert.areEqual(
+      cs[0].Attempt_Key__c,
+      ((Map<String, Object>) JSON.deserializeUntyped(m.requestsTo(FIND_PATH)[0].getBody())).get('ExternalUniqTranId')
+    );
     Map<String, Reconciliation_Issue__c> is = issuesByType();
     Assert.areEqual(2, [SELECT COUNT() FROM Reconciliation_Issue__c], 'not every charge is "missing" any more');
     Assert.areEqual(cs[1].Id, is.get('Missing_In_Cardcom').Charge__c);
@@ -425,5 +428,25 @@ private class ReconciliationJobTest {
     Assert.areEqual('X-A1', ReconciliationJob.chargedKey(c));
     c.Error_Code__c = null;
     Assert.areEqual('X-A2', ReconciliationJob.chargedKey(c));
+  }
+
+  @IsTest
+  static void bothTerminalsAreListedAndMerged() {
+    // D39: a charge of the secondary terminal is found in that terminal's list
+    setup();
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    Charge__c primary = charge('AM', 'Success', '100', true);
+    Charge__c secondary = charge('PM', 'Success', '200', true);
+    CardcomMock m = CardcomMock.install()
+      .enqueue(LIST_PATH, 200, page(new List<Object>{ row(100, 3, 0, false, 'Debit') }))
+      .enqueue(LIST_PATH, 200, page(new List<Object>{ row(200, 3, 0, false, 'Debit') }));
+    runFor(DAY);
+    List<HttpRequest> reqs = m.requestsTo(LIST_PATH);
+    Assert.areEqual(2, reqs.size());
+    Assert.areEqual('callout:Cardcom/api/v11/' + LIST_PATH, reqs[0].getEndpoint());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/' + LIST_PATH, reqs[1].getEndpoint());
+    Assert.areEqual(2002, ((Map<String, Object>) JSON.deserializeUntyped(reqs[1].getBody())).get('LimitForTerminal'));
+    Assert.areEqual(0, [SELECT COUNT() FROM Reconciliation_Issue__c]);
+    Assert.areEqual(0, [SELECT COUNT() FROM Charge__c WHERE Needs_Reconciliation__c = TRUE]);
   }
 }

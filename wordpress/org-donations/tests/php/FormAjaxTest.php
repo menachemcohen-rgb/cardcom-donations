@@ -151,4 +151,24 @@ final class FormAjaxTest extends TestCase
         $this->assertSame(5, Org_Form::submit_max());
         $this->assertSame(10, Org_Form::lp_max());
     }
+
+    /** D39: the Diners box sends the card session and the pledge to the second Cardcom terminal; without it, the main one. */
+    public function testDinersBoxChoosesTheSecondTerminal(): void
+    {
+        if (!defined('ORG_DONATION_DINERS')) define('ORG_DONATION_DINERS', true);
+        $sent = [];
+        $reply = $GLOBALS['orgdon_test_http_reply'];
+        $GLOBALS['orgdon_test_http_reply'] = function ($url, $args) use (&$sent, $reply) {
+            $sent[] = [parse_url($url, PHP_URL_PATH), json_decode($args['body'], true)];
+            return $reply($url, $args);
+        };
+        $this->assertTrue($this->call('ajax_lp', $this->form(['diners' => '1']))->ok);
+        $this->assertTrue($this->call('ajax_lp', $this->form())->ok);
+        $this->assertTrue($this->call('ajax_submit', $this->form(['diners' => '1', 'lp_id' => self::LP]))->ok);
+        $this->assertSame('/services/apexrest/donations/lowprofile', $sent[0][0]);
+        $this->assertSame('Secondary', $sent[0][1]['terminal']);
+        $this->assertSame('Primary', $sent[1][1]['terminal']);
+        $this->assertSame('/services/apexrest/donations/pledge', $sent[2][0]);
+        $this->assertSame('Secondary', $sent[2][1]['terminal']);
+    }
 }

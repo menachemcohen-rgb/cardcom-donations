@@ -43,4 +43,34 @@ private class DonationLowProfileResourceTest {
     Assert.areEqual(400, RestContext.response.statusCode);
     Assert.areEqual('CARDCOM_ERROR', TestDataFactory.responseJson().get('error'));
   }
+
+  @IsTest
+  static void dinersCardOpensOnTheSecondaryTerminal() {
+    // D39
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
+    TestDataFactory.rest(
+      '/services/apexrest/donations/lowprofile',
+      new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
+    );
+    Test.startTest();
+    DonationLowProfileResource.create();
+    Test.stopTest();
+    Assert.areEqual(200, RestContext.response.statusCode);
+    Assert.areEqual('Secondary', TestDataFactory.responseJson().get('terminal'));
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/Create', m.requestsTo('LowProfile/Create')[0].getEndpoint());
+    Assert.areEqual(2002, m.lastBody('LowProfile/Create').get('TerminalNumber'));
+  }
+
+  @IsTest
+  static void secondaryTerminalNotConfiguredIsRejected() {
+    TestDataFactory.settings();
+    TestDataFactory.rest(
+      '/services/apexrest/donations/lowprofile',
+      new Map<String, Object>{ 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
+    );
+    DonationLowProfileResource.create();
+    Assert.areEqual(400, RestContext.response.statusCode);
+    Assert.areEqual('TERMINAL_NOT_CONFIGURED', TestDataFactory.responseJson().get('error'));
+  }
 }

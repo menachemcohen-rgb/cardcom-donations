@@ -24,6 +24,7 @@ define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
 define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c
 define('ORG_DONATION_MIN_AMOUNT', 1);                // optional, default 1;  keep = Min_Amount__c
 define('ORG_DONATION_MAX_AMOUNT', 50);               // optional, default 50; keep = Max_Amount__c
+define('ORG_DONATION_DINERS', true);                 // optional (D39): shows "הכרטיס שלי הוא דיינרס"; needs the second terminal in Salesforce (section 6)
 define('ORG_BEHIND_CLOUDFLARE', true);                                     // only if the site is proxied by Cloudflare
 // Rate limits per visitor IP (fixed window from the first counted request). Only counted: card sessions created for a
 // valid form, and valid pledge submissions. Page loads, validation errors and retries of an accepted submission don't count.
@@ -65,6 +66,9 @@ Follow `docs/wp-cache-exclusions.md` (WP Rocket / LiteSpeed / Cloudflare / CSP /
 ## 6. Salesforce side
 - `Cardcom_Setting__mdt.Default.Allowed_Return_Hosts__c` = the site's host (e.g. `www.<site>`), otherwise Salesforce refuses to create
   the payment page (`BAD_RETURN_URL`).
+- Diners (D39): the form option `ORG_DONATION_DINERS` works only when `Cardcom_Setting__mdt.Default.Secondary_Terminal_Number__c`
+  and External Credential `Cardcom_Secondary_EC` are filled (README step 7); otherwise the card page of a Diners donor doesn't open
+  (`TERMINAL_NOT_CONFIGURED`). The donor page shows its own Diners box whenever Salesforce has the second terminal.
 - The External Client App's IP restrictions include the web server's outgoing IP (README step 10).
 
 ## 7. Check

@@ -101,6 +101,7 @@ final class Org_Portal {
                 'min'       => (float) ($b['minAmount'] ?? 1),
                 'max'       => (float) ($b['maxAmount'] ?? 50),
                 'presets'   => array_map('floatval', (array) ($b['presets'] ?? [1, 3, 5, 10])),
+                'diners'    => !empty($b['dinersTerminal']),   // D39: Salesforce has a second (Diners) terminal
             ]);
         }
         $err = $r['body']['error'] ?? '';
@@ -141,7 +142,9 @@ final class Org_Portal {
     /** Card replacement only (the amount is changed in its own tab). */
     public static function ajax_card(): void {
         $t = self::guard('card', 5, 3600);
-        $r = self::call('/donor/card', ['token' => $t, 'returnUrlBase' => home_url('/cardcom-return/')]);
+        $payload = ['token' => $t, 'returnUrlBase' => home_url('/cardcom-return/')];
+        if (!empty($_POST['diners'])) $payload['terminal'] = 'Secondary';   // D39: the new card is a Diners card
+        $r = self::call('/donor/card', $payload);
         if ($r['code'] === 200 && !empty($r['body']['url']) && preg_match(self::LP_RE, (string) ($r['body']['lowProfileId'] ?? ''))) {
             wp_send_json_success(['lpId' => $r['body']['lowProfileId'], 'url' => esc_url_raw($r['body']['url']), 'expiresAt' => $r['body']['expiresAt'] ?? null]);
         }

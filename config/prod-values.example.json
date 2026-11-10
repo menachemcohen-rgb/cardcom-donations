@@ -1,6 +1,7 @@
 {
-  "_comment": "Copy to config/prod-values.local.json (ignored by Git) and fill in. Values of Cardcom_Setting__mdt.Default for production (B2.6). No passwords here: ApiName/ApiPassword go into the External Credential, the donor-link secret into Donor_Link_Setting in Setup.",
+  "_comment": "Copy to config/prod-values.local.json (ignored by Git) and fill in. Values of Cardcom_Setting__mdt.Default for production (B2.6). No passwords here: ApiName/ApiPassword go into the External Credentials (Cardcom_EC; Cardcom_Secondary_EC for the Diners terminal, D39 — leave Secondary_Terminal_Number__c null for one terminal), the donor-link secret into Donor_Link_Setting in Setup.",
   "Terminal_Number__c": null,
+  "Secondary_Terminal_Number__c": null,
   "Webhook_Url__c": "https://<prod-site-domain>.my.salesforce-sites.com/cardcom/services/apexrest/cardcom/webhook",
   "Allowed_Return_Hosts__c": "<www.client-site.org.il>",
   "Donor_Portal_Base_Url__c": "https://<www.client-site.org.il>/donor/",
@@ -14,6 +15,7 @@
   "Amount_Presets__c": "1,3,5,10",
   "Send_Donor_Charge_Email__c": false,
   "Is_Recurring_Terminal__c": false,
+  "Secondary_Is_Recurring_Terminal__c": false,
   "Lp_JValidate_Type__c": 2,
   "Receipt_Payment_Mode__c": "CreditCardLines",
   "labels": {

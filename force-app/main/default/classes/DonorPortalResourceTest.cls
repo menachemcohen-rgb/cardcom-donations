@@ -260,10 +260,68 @@ private class DonorPortalResourceTest {
   static void cardWithAnAmountOutOfRangeIsRefusedBeforeCardcom() {
     setup();
     CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-card-0000000009'));
-    Map<String, Object> r = call('card', new Map<String, Object>{ 'token' => link('card'), 'returnUrlBase' => TestDataFactory.RETURN_URL, 'amount' => 999 });
+    Map<String, Object> r = call(
+      'card',
+      new Map<String, Object>{ 'token' => link('card'), 'returnUrlBase' => TestDataFactory.RETURN_URL, 'amount' => 999 }
+    );
     Assert.areEqual(400, RestContext.response.statusCode);
     Assert.areEqual('AMOUNT_RANGE', r.get('error'));
     Assert.areEqual(0, m.requestsTo('LowProfile/Create').size());
     Assert.areEqual(0, [SELECT COUNT() FROM Card_Change_Request__c]);
+  }
+
+  // ---- D39: card replacement on the secondary (Diners) terminal ----
+  @IsTest
+  static void dinersOptionFollowsTheSecondaryTerminalSetting() {
+    setup();
+    Map<String, Object> off = call(
+      'card',
+      new Map<String, Object>{ 'token' => link('card'), 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
+    );
+    Assert.areEqual(400, RestContext.response.statusCode);
+    Assert.areEqual('TERMINAL_NOT_CONFIGURED', off.get('error'));
+    Assert.areEqual(false, call('context', new Map<String, Object>{ 'token' => link('card') }).get('dinersTerminal'));
+
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    Assert.areEqual(true, call('context', new Map<String, Object>{ 'token' => link('card') }).get('dinersTerminal'));
+  }
+
+  @IsTest
+  static void dinersCardReplacementStartsOnTheSecondaryTerminal() {
+    setup();
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-card-0000000001'));
+    Test.startTest();
+    call(
+      'card',
+      new Map<String, Object>{ 'token' => link('card'), 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
+    );
+    Test.stopTest();
+    Assert.areEqual(200, RestContext.response.statusCode);
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/Create', m.requestsTo('LowProfile/Create')[0].getEndpoint());
+    Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Card_Change_Request__c].Cardcom_Terminal__c);
+  }
+
+  @IsTest
+  static void completedDinersCardMovesThePledgeToTheSecondaryTerminal() {
+    setup();
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    Card_Change_Request__c late = new Card_Change_Request__c(
+      Pledge__c = p.Id,
+      LowProfileId__c = 'lp-card-0000000002',
+      Status__c = 'Pending',
+      Link_Version__c = 1,
+      Cardcom_Terminal__c = 'Secondary'
+    );
+    insert late;
+    Test.setCreatedDate(late.Id, Datetime.now().addMinutes(-1));
+    CardcomMock m = CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-card-0000000002', 'CARD-x'));
+    Test.startTest();
+    Map<String, Object> r = call('card/status', new Map<String, Object>{ 'token' => link('card'), 'lowProfileId' => 'lp-card-0000000002' });
+    Test.stopTest();
+    Assert.areEqual('Completed', r.get('status'));
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', m.requestsTo('LowProfile/GetLpResult')[0].getEndpoint());
+    Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Opportunity WHERE Id = :p.Id].Cardcom_Terminal__c);
+    Assert.areEqual('Primary', [SELECT Cardcom_Terminal__c FROM Pledge_Card_History__c].Cardcom_Terminal__c, 'the replaced token');
   }
 }

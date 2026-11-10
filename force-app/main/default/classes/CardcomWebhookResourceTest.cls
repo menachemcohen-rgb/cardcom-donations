@@ -61,4 +61,21 @@ private class CardcomWebhookResourceTest {
     Assert.areEqual(0, [SELECT COUNT() FROM AsyncApexJob WHERE ApexClass.Name = 'CardcomLpResultJob']);
     Assert.areEqual(200, RestContext.response.statusCode);
   }
+
+  @IsTest
+  static void terminalOnTheWebhookUrlIsAskedFirst() {
+    // D39: the secondary terminal's WebHookUrl ends with ?terminal=Secondary
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    CardcomMock m = CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-0000000001', 'SIGNUP-x'));
+    Test.startTest();
+    call(
+      JSON.serialize(new Map<String, Object>{ 'LowProfileId' => 'lp-0000000001', 'ResponseCode' => 0 }),
+      new Map<String, String>{ 'terminal' => 'Secondary' }
+    );
+    Test.getEventBus().deliver();
+    Test.stopTest();
+    Assert.areEqual(1, m.requestsTo('LowProfile/GetLpResult').size());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', m.requestsTo('LowProfile/GetLpResult')[0].getEndpoint());
+    Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Opportunity WHERE LowProfileId__c = 'lp-0000000001'].Cardcom_Terminal__c);
+  }
 }

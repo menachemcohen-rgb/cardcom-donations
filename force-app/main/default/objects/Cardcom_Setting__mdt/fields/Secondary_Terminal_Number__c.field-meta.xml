@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Secondary_Terminal_Number__c</fullName>
+    <description>D39. Second Cardcom terminal, used for Diners cards (the primary terminal doesn't clear Diners). Empty = one terminal only. Its ApiName/ApiPassword are in External Credential Cardcom_Secondary_EC. Not secret.</description>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Secondary Terminal Number</label>
+    <precision>10</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

@@ -129,4 +129,61 @@ private class CardcomServiceTest {
     Assert.isFalse(s.contains('secret'), 'password must be removed');
     Assert.isNull(CardcomService.redact(null));
   }
+
+  // ---- D39: two terminals ----
+  @IsTest
+  static void secondaryTerminalUsesItsOwnCredentialNumberAndWebhookHint() {
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    CardcomService.settings().Secondary_Is_Recurring_Terminal__c = true;
+    CardcomMock m = CardcomMock.install()
+      .enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000002'))
+      .enqueue('Transactions/Transaction', 200, new Map<String, Object>{ 'ResponseCode' => 0, 'TranzactionId' => 5 })
+      .enqueue('Transactions/Transaction', 200, new Map<String, Object>{ 'ResponseCode' => 0, 'TranzactionId' => 6 });
+    Test.startTest();
+    CardcomService.createTokenLowProfile(CardcomService.SECONDARY, 'SIGNUP-abc', TestDataFactory.RETURN_URL, 'x');
+    CardcomService.chargeToken(CardcomService.SECONDARY, 'tok', '0928', 3, 'k-A1');
+    CardcomService.chargeToken(null, 'tok', '0928', 3, 'k-A2'); // blank terminal = primary
+    Test.stopTest();
+    HttpRequest req = m.requestsTo('LowProfile/Create')[0];
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/Create', req.getEndpoint());
+    Assert.isTrue(req.getBody().contains('{!$Credential.Cardcom_Secondary_EC.ApiName}'), req.getBody());
+    Map<String, Object> b = m.lastBody('LowProfile/Create');
+    Assert.areEqual(2002, b.get('TerminalNumber'));
+    Assert.areEqual(CardcomService.settings().Webhook_Url__c + '?terminal=Secondary', b.get('WebHookUrl'));
+
+    List<HttpRequest> tx = m.requestsTo('Transactions/Transaction');
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/Transactions/Transaction', tx[0].getEndpoint());
+    Map<String, Object> first = (Map<String, Object>) JSON.deserializeUntyped(tx[0].getBody());
+    Assert.areEqual(2002, first.get('TerminalNumber'));
+    Assert.areEqual(true, ((Map<String, Object>) first.get('Advanced')).get('IsAutoRecurringPayment'));
+    Assert.areEqual('callout:Cardcom/api/v11/Transactions/Transaction', tx[1].getEndpoint());
+    Map<String, Object> second = (Map<String, Object>) JSON.deserializeUntyped(tx[1].getBody());
+    Assert.areEqual(1001, second.get('TerminalNumber'));
+    Assert.isFalse(((Map<String, Object>) second.get('Advanced')).containsKey('IsAutoRecurringPayment'));
+  }
+
+  @IsTest
+  static void terminalHelpers() {
+    TestDataFactory.settings();
+    Assert.areEqual(CardcomService.PRIMARY, CardcomService.terminalKey(null));
+    Assert.areEqual(CardcomService.PRIMARY, CardcomService.terminalKey('diners'));
+    Assert.areEqual(CardcomService.SECONDARY, CardcomService.terminalKey('Secondary'));
+    Assert.areEqual(CardcomService.PRIMARY, CardcomService.otherTerminal('Secondary'));
+    Assert.isFalse(CardcomService.hasSecondary());
+    Assert.areEqual(1, CardcomService.terminals().size());
+    try {
+      CardcomService.getLpResult(CardcomService.SECONDARY, 'lp-0000000001');
+      Assert.fail('expected TerminalConfigException');
+    } catch (CardcomService.TerminalConfigException e) {
+      Assert.isTrue(e.getMessage().contains('Secondary'), e.getMessage());
+    }
+    CardcomService.settings().Secondary_Terminal_Number__c = 2002;
+    Assert.areEqual(2, CardcomService.terminals().size());
+    CardcomService.settings().Webhook_Url__c = 'https://x.example/hook?a=1';
+    Assert.areEqual('https://x.example/hook?a=1&terminal=Secondary', CardcomService.webhookUrl(CardcomService.SECONDARY));
+    Assert.areEqual('https://x.example/hook?a=1', CardcomService.webhookUrl(null));
+    Assert.isTrue(CardcomService.isLpKnown(CardcomMock.lpSuccess('lp-0000000001', 'SIGNUP-x')));
+    Assert.isTrue(CardcomService.isLpKnown(CardcomMock.lpPending('lp-0000000001')));
+    Assert.isFalse(CardcomService.isLpKnown(CardcomMock.lpFailed('lp-0000000001')));
+  }
 }

@@ -88,6 +88,12 @@ Production: the full path (build, validate, quick deploy, manual steps) is in [`
      They're public, but B5.0א says not to copy them anywhere else in the repo, so this README only points to them.
    - Production: the client's terminal.
    - Principal access is granted only through `Donations_Integration`.
+   - **Second terminal (D39, optional).** The client's main terminal doesn't clear Diners cards, and their second terminal doesn't
+     clear American Express. To take both: enter the second terminal's `ApiName` and `ApiPassword` the same way in External
+     Credential `Cardcom_Secondary_EC` (Named Credential `Cardcom_Secondary`), set
+     `Cardcom_Setting__mdt.Default.Secondary_Terminal_Number__c`, and turn the Diners option on in WordPress
+     (`ORG_DONATION_DINERS`, `docs/wp-install.md`). Empty `Secondary_Terminal_Number__c` = one terminal, nothing else changes.
+     A token is charged only on the terminal that created it: the pledge keeps it in `Cardcom_Terminal__c`.
 8. **Donor-link secret.** Setup → Custom Metadata Types → Donor Link Setting → Manage Records → `Default`: set `Secret__c` to 64
    random hex characters (for example `openssl rand -hex 32`). Leave `Previous_Secret__c` empty until the first rotation.
    The type is Protected and the deployed record has an empty secret.

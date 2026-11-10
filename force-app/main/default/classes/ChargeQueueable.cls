@@ -28,6 +28,8 @@ public without sharing class ChargeQueueable implements Queueable, Database.Allo
         ExternalUniqTranId__c,
         Verify_Attempt_Key__c,
         Status__c,
+        Cardcom_Terminal__c,
+        Pledge__r.Cardcom_Terminal__c,
         Pledge__r.StageName,
         Pledge__r.Token__c,
         Pledge__r.CardExpirationMMYY__c,
@@ -54,15 +56,21 @@ public without sharing class ChargeQueueable implements Queueable, Database.Allo
         break; // left Pending for the next link
       try {
         // 1) previous attempt ended with unknown outcome → ask Cardcom before charging again
+        // D39: the previous attempt's terminal was copied to this attempt (ChargeOutcomeHandler.scheduleRetry); the card, and
+        // with it the terminal, may have been replaced since.
+        String terminal = CardcomService.terminalKey(c.Pledge__r.Cardcom_Terminal__c);
         if (String.isNotBlank(c.Verify_Attempt_Key__c)) {
-          Map<String, Object> prev = CardcomService.findSuccessByExternalId(c.Verify_Attempt_Key__c);
+          String prevTerminal = c.Cardcom_Terminal__c == null ? terminal : c.Cardcom_Terminal__c;
+          Map<String, Object> prev = CardcomService.findSuccessByExternalId(prevTerminal, c.Verify_Attempt_Key__c);
           if (prev != null) {
             results.add(ChargeOutcomeHandler.alreadyCharged(c, prev));
             continue;
           }
         }
         // 2) charge (ExternalUniqTranId = per-attempt key, ExternalUniqUniqTranIdResponse = true)
+        c.Cardcom_Terminal__c = terminal; // the terminal this attempt is sent to
         Map<String, Object> resp = CardcomService.chargeToken(
+          terminal,
           c.Pledge__r.Token__c,
           c.Pledge__r.CardExpirationMMYY__c,
           c.Amount__c,
@@ -73,6 +81,8 @@ public without sharing class ChargeQueueable implements Queueable, Database.Allo
         String l4 = resp.get('Last4CardDigitsString') == null ? null : String.valueOf(resp.get('Last4CardDigitsString'));
         if (c.Status__c == 'Success' && String.isNotBlank(l4) && l4 != c.Pledge__r.Last4__c)
           last4ByPledge.put(c.Pledge__c, l4);
+      } catch (CardcomService.TerminalConfigException e) {
+        results.add(ChargeOutcomeHandler.fromConfigError(c, 'CONFIG_ERROR', e)); // terminal number missing: nothing was sent
       } catch (CardcomService.CardcomHttpException e) {
         results.add(
           e.status == 401 ||

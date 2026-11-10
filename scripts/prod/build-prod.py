@@ -27,9 +27,9 @@ SVS_NAMES = ["OpportunityStage", "ContactRole", "OpportunityType"]
 REQUIRED = ["Terminal_Number__c", "Webhook_Url__c", "Allowed_Return_Hosts__c", "Donor_Portal_Base_Url__c",
             "Org_Wide_Email_Address__c", "Failure_Notify_Emails__c", "Integration_User_Id__c", "Terms_Url__c"]
 PLACEHOLDERS = ["ORG.org.il", "https://ORG/", "https://ORG.", "example.org", "example.com"]
-NUMERIC = {"Terminal_Number__c", "Batch_Size__c", "Currency_Iso__c", "Lp_JValidate_Type__c", "Max_Amount__c",
+NUMERIC = {"Terminal_Number__c", "Secondary_Terminal_Number__c", "Batch_Size__c", "Currency_Iso__c", "Lp_JValidate_Type__c", "Max_Amount__c",
            "Min_Amount__c", "Recon_Page_Size__c"}
-BOOLEAN = {"Holiday_Auto_Detect__c", "Is_Recurring_Terminal__c", "Optional_Verify_On_Open__c",
+BOOLEAN = {"Holiday_Auto_Detect__c", "Is_Recurring_Terminal__c", "Secondary_Is_Recurring_Terminal__c", "Optional_Verify_On_Open__c",
            "Receipt_Link_Deal_Numbers__c", "Recon_Report_Unknown__c", "Send_Donor_Charge_Email__c"}
 
 

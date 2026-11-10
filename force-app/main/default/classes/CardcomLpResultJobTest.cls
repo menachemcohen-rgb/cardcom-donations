@@ -149,4 +149,57 @@ private class CardcomLpResultJobTest {
     runJob(new List<String>{ 'lp-card-000001', 'lp-card-000002' });
     Assert.areEqual(1, [SELECT COUNT() FROM Opportunity], 'card-change results never create pledges');
   }
+
+  // ---- D39: two terminals ----
+  static String terminalOf(String lp) {
+    return [SELECT Cardcom_Terminal__c FROM Opportunity WHERE LowProfileId__c = :lp AND Type = :PLEDGE_TYPE].Cardcom_Terminal__c;
+  }
+
+  @IsTest
+  static void webhookHintAsksTheSecondaryTerminalFirst() {
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    ContactMatcher.skipDuplicateRules = true;
+    CardcomMock m = CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-0000000001', 'SIGNUP-x'));
+    Test.startTest();
+    System.enqueueJob(
+      new CardcomLpResultJob(new List<String>{ 'lp-0000000001' }, new Map<String, String>{ 'lp-0000000001' => 'Secondary' })
+    );
+    Test.stopTest();
+    List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
+    Assert.areEqual(1, reqs.size());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
+    Assert.areEqual('Secondary', terminalOf('lp-0000000001'), 'the token is charged on the terminal that created it');
+  }
+
+  @IsTest
+  static void unknownOnTheFirstTerminalFallsBackToTheOther() {
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    ContactMatcher.skipDuplicateRules = true;
+    insert TestDataFactory.submittedPledge('lp-0000000001', 'donor@example.com', '0521234567'); // no terminal → primary first
+    CardcomMock m = CardcomMock.install()
+      .enqueue('LowProfile/GetLpResult', 200, CardcomMock.lpFailed('lp-0000000001'))
+      .enqueue('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-0000000001', 'SIGNUP-x'));
+    runJob(new List<String>{ 'lp-0000000001' });
+    List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
+    Assert.areEqual(2, reqs.size());
+    Assert.areEqual('callout:Cardcom/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[1].getEndpoint());
+    Assert.areEqual('Active', byLp('lp-0000000001').StageName);
+    Assert.areEqual('Secondary', terminalOf('lp-0000000001'));
+  }
+
+  @IsTest
+  static void pledgeTerminalIsAskedFirst() {
+    TestDataFactory.settings().Secondary_Terminal_Number__c = 2002;
+    ContactMatcher.skipDuplicateRules = true;
+    Opportunity p = TestDataFactory.submittedPledge('lp-0000000001', 'donor@example.com', '0521234567');
+    p.Cardcom_Terminal__c = 'Secondary'; // set by the form submit (DonationPledgeResource)
+    insert p;
+    CardcomMock m = CardcomMock.install().always('LowProfile/GetLpResult', 200, CardcomMock.lpSuccess('lp-0000000001', 'SIGNUP-x'));
+    runJob(new List<String>{ 'lp-0000000001' });
+    List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
+    Assert.areEqual(1, reqs.size());
+    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
+    Assert.areEqual('Secondary', terminalOf('lp-0000000001'));
+  }
 }

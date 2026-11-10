@@ -3,6 +3,16 @@
     <description>Fundraising staff (B2.7): read-only on pledges and charges, can clear donor review flags. No Israeli ID, no tokens, no stop.</description>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Charge__c.Cardcom_Terminal__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Opportunity.Cardcom_Terminal__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Charge__c.Cardcom_Approval_Number__c</field>
         <readable>true</readable>
     </fieldPermissions>

@@ -39,11 +39,18 @@ global without sharing class DonationPledgeResource {
           p.Donor_Tax_Id__c = String.isBlank(s(q, 'taxId')) ? null : s(q, 'taxId').leftPad(9, '0');
           String freq = s(q, 'frequency');
           p.Frequency__c = freq;
-          p.Charge_Amount__c = MicroPledges.hasSlot(freq, MicroPledges.SLOT_SHACHARIT) ? slotAmount(q, 'shacharitAmount').setScale(2) : null;
+          p.Charge_Amount__c = MicroPledges.hasSlot(freq, MicroPledges.SLOT_SHACHARIT)
+            ? slotAmount(q, 'shacharitAmount').setScale(2)
+            : null;
           p.Mincha_Amount__c = MicroPledges.hasSlot(freq, MicroPledges.SLOT_MINCHA) ? slotAmount(q, 'minchaAmount').setScale(2) : null;
           p.Donor_Submitted__c = true;
           p.Terms_Accepted_At__c = Datetime.now();
           p.Client_Ip__c = s(q, 'clientIp') == null ? null : s(q, 'clientIp').left(45);
+          // D39: where the card page was opened. Only a first guess for GetLpResult; the verified terminal is written with the token.
+          if (ex.isEmpty() || !ex[0].Lp_Processed__c)
+            p.Cardcom_Terminal__c = s(q, 'terminal') == CardcomService.SECONDARY && CardcomService.hasSecondary()
+              ? CardcomService.SECONDARY
+              : CardcomService.PRIMARY;
           if (ex.isEmpty()) {
             // Two concurrent submits of one LowProfileId both see no row; the Unique LowProfileId__c rejects the second insert.
             // Answer it like any replay instead of a 500, so one LowProfileId never yields two pledges (or two Contacts).

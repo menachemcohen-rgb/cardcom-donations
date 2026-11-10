@@ -53,6 +53,9 @@
 
     <section id="orgdon-panel-card" role="tabpanel" aria-labelledby="orgdon-tab-card" data-panel="card" hidden>
       <p>אפשר להחליף את הכרטיס שממנו נגבית התרומה. הכרטיס הקודם יישאר בתוקף עד שהחדש יישמר.</p>
+      <div class="orgdon-row orgdon-diners" data-role="card-diners-wrap" hidden>
+        <label><input type="checkbox" data-role="card-diners" value="1"> <span>הכרטיס החדש הוא דיינרס (Diners)</span></label>
+      </div>
       <button type="button" class="orgdon-btn" data-role="card-start">החלפת כרטיס</button>
       <div class="orgdon-card" data-role="card-frame-wrap" hidden>
         <iframe title="טופס כרטיס אשראי מאובטח של Cardcom" data-role="card-frame" allow="payment" referrerpolicy="no-referrer"></iframe>

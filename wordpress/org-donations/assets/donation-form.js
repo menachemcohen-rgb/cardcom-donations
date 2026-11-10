@@ -88,7 +88,19 @@
     if (hint) hint.hidden = on;
   }
 
+  const dinersBox = () => $('diners');   // present only when the Diners terminal is enabled (cfg.diners)
+  const isDiners = () => !!(dinersBox() && dinersBox().checked);
+
   form.addEventListener('change', (e) => {
+    if (e.target.name === 'diners') {
+      // Each terminal has its own card page: drop the open session, the donor opens the right one with "המשך".
+      if (lpId && !cardSaved) {
+        clearTimeout(timer); lpId = null; lpExpires = 0;
+        if (iframe) iframe.src = 'about:blank';
+        showCard(false); msg.textContent = '';
+      }
+      return;
+    }
     const m = /^(shacharit|mincha)_preset$/.exec(e.target.name || '');
     if (m) $(m[1] + '_other').hidden = e.target.value !== 'other';
     syncPickers();
@@ -131,7 +143,7 @@
       first_name: $('first_name').value, last_name: $('last_name').value, email: $('email').value,
       phone: $('phone').value, tax_id: $('tax_id').value,
       frequency: freq() || '', shacharit_amount: a.shacharit, mincha_amount: a.mincha, same_amount: sameAmount() ? '1' : '',
-      terms: $('terms').checked ? '1' : '',
+      terms: $('terms').checked ? '1' : '', diners: isDiners() ? '1' : '',
     };
   }
 
@@ -212,10 +224,12 @@
     if (m.status === 'ok') {
       // The form is sent automatically after the card is saved; "סיום" appears only if that send fails (retry without the card).
       cardSaved = true; clearTimeout(timer);
+      if (dinersBox()) dinersBox().disabled = true;   // the saved card belongs to the terminal chosen above
       finishBtn.disabled = false;
       submit();
     } else {
-      msg.textContent = 'פרטי הכרטיס לא נקלטו. נסו שוב.';
+      msg.textContent = 'פרטי הכרטיס לא נקלטו. נסו שוב.' +
+        (cfg.diners && !isDiners() ? ' אם הכרטיס הוא דיינרס, יש לסמן "הכרטיס שלי הוא דיינרס".' : '');
       lpExpires = 0; openCard();
     }
   });
