@@ -83,6 +83,35 @@ private class CardcomServiceTest {
   }
 
   @IsTest
+  static void externalIdNotFoundIsHttp400With9998() {
+    // The real answer for an unknown key (production, 10.11.2026): HTTP 400 + ResponseCode 9998 → "not found", not an error
+    TestDataFactory.settings();
+    String path = 'Transactions/GetTransactionByExternalUniqTran';
+    CardcomMock.install()
+      .enqueue(
+        path,
+        400,
+        new Map<String, Object>{
+          'ResponseCode' => 9998,
+          'Description' => 'ExternalUniqTranId not found - there is not successful transaction for this ExternalUniqTranId'
+        }
+      )
+      .enqueue(path, 400, new Map<String, Object>{ 'ResponseCode' => 1, 'Description' => 'Invalid request' })
+      .enqueue(path, 400, 'Bad Request')
+      .enqueue(path, 401, new Map<String, Object>{ 'ResponseCode' => 9998, 'Description' => 'x' });
+    Assert.isNull(CardcomService.findSuccessByExternalId('k-not-found'));
+    for (Integer i = 0; i < 3; i++) {
+      try {
+        CardcomService.findSuccessByExternalId('k' + i);
+        Assert.fail('HTTP 400 without 9998, and any 401, must stay an error (configuration), never "not found"');
+      } catch (CardcomService.CardcomHttpException e) {
+        Assert.areEqual(i < 2 ? 400 : 401, e.status);
+        Assert.areEqual(i == 0 ? 1 : (i == 1 ? null : 9998), e.responseCode);
+      }
+    }
+  }
+
+  @IsTest
   static void listTransactionsParsesRows() {
     TestDataFactory.settings();
     CardcomMock m = CardcomMock.install()
