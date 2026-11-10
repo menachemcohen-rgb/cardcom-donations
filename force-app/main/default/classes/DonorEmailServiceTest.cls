@@ -125,4 +125,11 @@ private class DonorEmailServiceTest {
     Test.stopTest();
     Assert.isNotNull(id);
   }
+
+  @IsTest
+  static void signatureNamesTheOrgOnce() {
+    String sig = DonorEmailService.signature();
+    Assert.isTrue(sig.contains(System.Label.Donation_Org_Name));
+    Assert.areEqual(sig.indexOf(System.Label.Donation_Org_Name), sig.lastIndexOf(System.Label.Donation_Org_Name));
+  }
 }
