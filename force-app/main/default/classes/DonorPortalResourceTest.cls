@@ -38,8 +38,12 @@ private class DonorPortalResourceTest {
     setup();
     Charge__c pending = TestDataFactory.charge(p, Date.newInstance(2026, 11, 4), 'AM');
     insert pending;
-    Map<String, Object> r = call('amount', new Map<String, Object>{ 'token' => link('amount'), 'amount' => 5, 'clientIp' => '1.2.3.4' });
+    Map<String, Object> r = call(
+      'amount',
+      new Map<String, Object>{ 'token' => link('amount'), 'shacharitAmount' => 5, 'clientIp' => '1.2.3.4' }
+    );
     Assert.areEqual(true, r.get('changed'));
+    Assert.areEqual(5, ((Decimal) r.get('shacharitAmount')).intValue());
     Assert.areEqual(5, [SELECT Charge_Amount__c FROM Opportunity WHERE Id = :p.Id].Charge_Amount__c.intValue());
     Assert.areEqual(
       3,
@@ -49,11 +53,47 @@ private class DonorPortalResourceTest {
     Pledge_Change_Log__c l = [SELECT Change_Type__c, Old_Value__c, New_Value__c, Source__c FROM Pledge_Change_Log__c];
     Assert.areEqual('Amount', l.Change_Type__c);
     Assert.areEqual('Donor_Portal', l.Source__c);
-    Assert.areEqual('5.00', l.New_Value__c);
+    Assert.areEqual('שחרית 5.00', l.New_Value__c);
 
-    r = call('amount', new Map<String, Object>{ 'token' => link('amount'), 'amount' => '5.00' });
+    r = call('amount', new Map<String, Object>{ 'token' => link('amount'), 'shacharitAmount' => '5.00' });
     Assert.areEqual(false, r.get('changed'), 'same amount: no change, no log');
     Assert.areEqual(1, [SELECT COUNT() FROM Pledge_Change_Log__c]);
+  }
+
+  @IsTest
+  static void shacharitAndMinchaAmountsChangeSeparately() {
+    // D36
+    setup();
+    Map<String, Object> r = call('amount', new Map<String, Object>{ 'token' => link('amount'), 'minchaAmount' => 8 });
+    Assert.areEqual(200, RestContext.response.statusCode, String.valueOf(r));
+    Opportunity after = [SELECT Charge_Amount__c, Mincha_Amount__c FROM Opportunity WHERE Id = :p.Id];
+    Assert.areEqual(3, after.Charge_Amount__c.intValue(), 'Shacharit unchanged');
+    Assert.areEqual(8, after.Mincha_Amount__c.intValue());
+    Assert.areEqual('מנחה 8.00', [SELECT New_Value__c FROM Pledge_Change_Log__c].New_Value__c);
+    r = call('amount', new Map<String, Object>{ 'token' => link('amount'), 'amount' => 4 });
+    after = [SELECT Charge_Amount__c, Mincha_Amount__c FROM Opportunity WHERE Id = :p.Id];
+    Assert.areEqual(4, after.Charge_Amount__c.intValue(), 'legacy amount sets every slot of the pledge');
+    Assert.areEqual(4, after.Mincha_Amount__c.intValue());
+    r = call('context', new Map<String, Object>{ 'token' => link('amount') });
+    Assert.areEqual(4, ((Decimal) r.get('shacharitAmount')).intValue());
+    Assert.areEqual(4, ((Decimal) r.get('minchaAmount')).intValue());
+  }
+
+  @IsTest
+  static void slotThePledgeDoesNotHaveIsIgnored() {
+    setup();
+    update new Opportunity(Id = p.Id, Frequency__c = 'OnceDaily');
+    call('amount', new Map<String, Object>{ 'token' => link('amount'), 'minchaAmount' => 9 });
+    Assert.isNull([SELECT Mincha_Amount__c FROM Opportunity WHERE Id = :p.Id].Mincha_Amount__c);
+  }
+
+  @IsTest
+  static void donorCannotStopThePledge() {
+    // D36: stop by phone only
+    setup();
+    call('stop', new Map<String, Object>{ 'token' => link('card') });
+    Assert.areEqual(404, RestContext.response.statusCode);
+    Assert.areEqual('Active', [SELECT StageName FROM Opportunity WHERE Id = :p.Id].StageName);
   }
 
   @IsTest
@@ -225,68 +265,5 @@ private class DonorPortalResourceTest {
     Assert.areEqual('AMOUNT_RANGE', r.get('error'));
     Assert.areEqual(0, m.requestsTo('LowProfile/Create').size());
     Assert.areEqual(0, [SELECT COUNT() FROM Card_Change_Request__c]);
-  }
-
-  // ---------------------------------------------------------------- donor stops the pledge
-  /** Stands in for the integration user: VR_Status_Change_Permission needs Stop_Pledge_Charges (or the integration user). */
-  static User withStopPermission() {
-    User u;
-    System.runAs(new User(Id = UserInfo.getUserId())) {
-      String uniq = String.valueOf(Crypto.getRandomInteger()).replace('-', '');
-      u = new User(
-        ProfileId = UserInfo.getProfileId(),
-        Username = 'portal-int-' + uniq + '@example.com.test',
-        Email = 'int@example.com',
-        LastName = 'Integration',
-        Alias = 'pint',
-        TimeZoneSidKey = 'Asia/Jerusalem',
-        LocaleSidKey = 'iw_IL',
-        EmailEncodingKey = 'UTF-8',
-        LanguageLocaleKey = 'en_US'
-      );
-      insert u;
-      PermissionSet ps = new PermissionSet(Name = 'Test_Portal_Stop_' + uniq, Label = 'Test Portal Stop ' + uniq);
-      insert ps;
-      CustomPermission cp = [SELECT Id FROM CustomPermission WHERE DeveloperName = 'Stop_Pledge_Charges'];
-      insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = cp.Id);
-      insert new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
-    }
-    return u;
-  }
-
-  @IsTest
-  static void donorStopsThePledgeWithEitherLink() {
-    setup();
-    Charge__c pending = TestDataFactory.pendingCharge(p, Date.newInstance(2026, 11, 5), 'AM', 1, null);
-    Integer alertsBefore = StaffAlertService.sentCount;
-    Map<String, Object> r;
-    System.runAs(withStopPermission()) {
-      r = call('stop', new Map<String, Object>{ 'token' => link('card'), 'clientIp' => '1.2.3.4' });
-    }
-    Assert.areEqual(200, RestContext.response.statusCode, String.valueOf(r));
-    Assert.areEqual('Stopped', r.get('status'));
-    Opportunity after = [SELECT StageName, Stop_Reason__c, Stopped_At__c FROM Opportunity WHERE Id = :p.Id];
-    Assert.areEqual('Stopped', after.StageName);
-    Assert.areEqual('Donor_Request', after.Stop_Reason__c);
-    Assert.isNotNull(after.Stopped_At__c);
-    Charge__c c = [SELECT Status__c, Error_Code__c FROM Charge__c WHERE Id = :pending.Id];
-    Assert.areEqual('Skipped', c.Status__c, 'no further charges');
-    Pledge_Change_Log__c l = [SELECT Change_Type__c, Source__c FROM Pledge_Change_Log__c WHERE Pledge__c = :p.Id];
-    Assert.areEqual('Stop', l.Change_Type__c);
-    Assert.areEqual('Donor_Portal', l.Source__c);
-    Assert.areEqual(alertsBefore + 1, StaffAlertService.sentCount, 'staff emailed');
-
-    call('context', new Map<String, Object>{ 'token' => link('amount') });
-    Assert.areEqual(403, RestContext.response.statusCode, 'links stop working once stopped');
-    call('stop', new Map<String, Object>{ 'token' => link('amount') });
-    Assert.areEqual(403, RestContext.response.statusCode, 'stopping twice is refused');
-  }
-
-  @IsTest
-  static void stopWithABadLinkChangesNothing() {
-    setup();
-    call('stop', new Map<String, Object>{ 'token' => 'x.y' });
-    Assert.areEqual(403, RestContext.response.statusCode);
-    Assert.areEqual('Active', [SELECT StageName FROM Opportunity WHERE Id = :p.Id].StageName);
   }
 }

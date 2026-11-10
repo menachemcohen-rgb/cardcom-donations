@@ -23,7 +23,7 @@ final class FormAjaxTest extends TestCase
     private function form(array $over = []): array
     {
         return array_merge(['first_name' => 'ישראל', 'last_name' => 'ישראלי', 'email' => 'a@example.com', 'phone' => '0521234567',
-            'tax_id' => '', 'amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'], $over);
+            'tax_id' => '', 'shacharit_amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'], $over);
     }
 
     private function call(string $method, array $post): OrgdonTestJson
@@ -41,11 +41,11 @@ final class FormAjaxTest extends TestCase
     public function testNoCardSessionForAnInvalidForm(): void
     {
         foreach (['0', '51', '3.333', ''] as $amount) {
-            $r = $this->call('ajax_lp', $this->form(['amount' => $amount]));
+            $r = $this->call('ajax_lp', $this->form(['shacharit_amount' => $amount]));
             $this->assertFalse($r->ok, "amount $amount");
             $this->assertSame(422, $r->status);
-            $this->assertArrayHasKey('amount', $r->data['fields']);
-            $this->assertSame('סכום לא תקין – נא לבחור סכום בין 1 ל-50 ₪', $r->data['fields']['amount'], 'existing message text');
+            $this->assertArrayHasKey('shacharit_amount', $r->data['fields']);
+            $this->assertSame('סכום לא תקין – נא לבחור סכום בין 1 ל-50 ₪', $r->data['fields']['shacharit_amount'], 'existing message text');
         }
         $r = $this->call('ajax_lp', $this->form(['email' => 'nope', 'phone' => '03-1234567', 'first_name' => '']));
         $this->assertSame(422, $r->status);
@@ -96,7 +96,7 @@ final class FormAjaxTest extends TestCase
     public function testValidationErrorsAndPageLoadsAreNotRateCounted(): void
     {
         for ($i = 0; $i < 20; $i++) {
-            $r = $this->call('ajax_submit', $this->form(['amount' => '0', 'lp_id' => self::LP]));
+            $r = $this->call('ajax_submit', $this->form(['shacharit_amount' => '0', 'lp_id' => self::LP]));
             $this->assertSame(422, $r->status, "attempt $i is a validation error, not a rate-limit block");
         }
         $this->assertTrue(Org_Rate_Limiter::allowed('submit', Org_Form::submit_max()));
@@ -106,6 +106,43 @@ final class FormAjaxTest extends TestCase
         }
         $blocked = $this->call('ajax_submit', $this->form(['lp_id' => '0f3c2b1a-1111-2222-3333-999999999999']));
         $this->assertSame(429, $blocked->status);
+    }
+
+    /** The JSON sent to Salesforce /donations/pledge for each frequency. */
+    public function testPledgePayloadPerFrequency(): void
+    {
+        $sent = [];
+        $GLOBALS['orgdon_test_http_reply'] = function ($url, $args) use (&$sent) {
+            $sent[] = json_decode($args['body'], true);
+            return ['code' => 200, 'body' => json_encode(['pledgeId' => '006x', 'status' => 'Pending_Verification'])];
+        };
+        $cases = [
+            ['TwiceDaily', ['shacharit_amount' => '3', 'mincha_amount' => '5'], 3, 5],
+            ['TwiceDaily', ['shacharit_amount' => '4', 'mincha_amount' => '', 'same_amount' => '1'], 4, 4],
+            ['OnceDaily',  ['shacharit_amount' => '2', 'mincha_amount' => '9'], 2, null],
+            ['MinchaOnly', ['shacharit_amount' => '', 'mincha_amount' => '6.5'], null, 6.5],
+        ];
+        foreach ($cases as $i => [$freq, $amounts, $sh, $mi]) {
+            $lp = sprintf('0f3c2b1a-1111-2222-3333-%012d', 100 + $i);
+            $this->assertTrue($this->call('ajax_submit', array_merge($this->form(['frequency' => $freq, 'lp_id' => $lp]), $amounts))->ok, $freq);
+            $p = $sent[$i];
+            $this->assertSame($freq, $p['frequency']);
+            $this->assertEquals($sh, $p['shacharitAmount'], "$freq shacharit");
+            $this->assertEquals($mi, $p['minchaAmount'], "$freq mincha");
+            $this->assertArrayHasKey('shacharitAmount', $p, 'null is sent, not omitted');
+            $this->assertArrayHasKey('minchaAmount', $p);
+            $this->assertArrayNotHasKey('amount', $p);
+            $this->assertSame($lp, $p['lowProfileId']);
+            $this->assertSame('203.0.113.9', $p['clientIp']);
+        }
+    }
+
+    public function testSalesforceValidationFieldsReachTheAmountInputs(): void
+    {
+        $GLOBALS['orgdon_test_http_reply'] = fn($u, $a) => ['code' => 400, 'body' => json_encode(['error' => 'VALIDATION', 'fields' => ['minchaAmount']])];
+        $r = $this->call('ajax_submit', $this->form(['frequency' => 'MinchaOnly', 'mincha_amount' => '3', 'lp_id' => self::LP]));
+        $this->assertSame(422, $r->status);
+        $this->assertSame(['mincha_amount'], array_keys($r->data['fields']));
     }
 
     public function testDefaultsWhenConstantsAreMissing(): void

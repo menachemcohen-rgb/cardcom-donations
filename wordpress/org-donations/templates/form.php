@@ -2,7 +2,7 @@
 <div class="orgdon" dir="rtl" lang="he">
   <form id="orgdon-form" novalidate>
     <h2 class="orgdon-title">הצטרפות להוראת תרומה יומית</h2>
-    <p class="orgdon-sub">ללא חיוב בשבת ובחגים; ביום שישי ובערב חג יבוצע חיוב כפול.</p>
+    <p class="orgdon-sub">חיוב בזמן תפילת שחרית ו/או מנחה. ללא חיוב בשבת ובחגים; ביום שישי ובערב חג יבוצע חיוב כפול.</p>
 
     <div class="orgdon-row">
       <label for="od-first">שם פרטי *</label>
@@ -31,23 +31,36 @@
     </div>
 
     <fieldset class="orgdon-row">
-      <legend>סכום לכל חיוב *</legend>
-      <div class="orgdon-chips">
-        <?php foreach ($presets as $i => $p): ?>
-          <label class="orgdon-chip"><input type="radio" name="amount_preset" value="<?= esc_attr($p) ?>" <?= $i === 0 ? 'checked' : '' ?>><span><?= esc_html($p) ?> ₪</span></label>
-        <?php endforeach; ?>
-        <label class="orgdon-chip orgdon-chip-other"><input type="radio" name="amount_preset" value="other"><span>סכום אחר</span></label>
-      </div>
-      <input id="od-amount-other" name="amount_other" type="number" min="<?= esc_attr(Org_Form::min_amount()) ?>" max="<?= esc_attr(Org_Form::max_amount()) ?>" step="0.01" dir="ltr" hidden aria-label="סכום אחר">
-      <span class="orgdon-err" data-for="amount" role="alert"></span>
-    </fieldset>
-
-    <fieldset class="orgdon-row">
       <legend>תדירות *</legend>
-      <label class="orgdon-chip"><input type="radio" name="frequency" value="OnceDaily" checked><span>פעם ביום (בוקר)</span></label>
-      <label class="orgdon-chip"><input type="radio" name="frequency" value="TwiceDaily"><span>פעמיים ביום (בוקר וערב)</span></label>
+      <label class="orgdon-chip"><input type="radio" name="frequency" value="TwiceDaily" checked><span>שחרית ומנחה</span></label>
+      <label class="orgdon-chip"><input type="radio" name="frequency" value="OnceDaily"><span>רק שחרית</span></label>
+      <label class="orgdon-chip"><input type="radio" name="frequency" value="MinchaOnly"><span>רק מנחה</span></label>
       <span class="orgdon-err" data-for="frequency" role="alert"></span>
     </fieldset>
+
+<?php
+// One amount picker per prayer (preset chips + "סכום אחר"). Visibility follows the frequency (assets/donation-form.js).
+$pickers = [
+    'shacharit' => ['label' => 'סכום לשחרית *', 'hidden' => false],
+    'mincha'    => ['label' => 'סכום למנחה *',  'hidden' => true],   // default: שחרית ומנחה with "אותו סכום" checked
+];
+foreach ($pickers as $prayer => $pk): ?>
+    <fieldset class="orgdon-row" data-prayer="<?= esc_attr($prayer) ?>"<?= $pk['hidden'] ? ' hidden' : '' ?>>
+      <legend><?= esc_html($pk['label']) ?></legend>
+      <div class="orgdon-chips">
+        <?php foreach ($presets as $i => $p): ?>
+          <label class="orgdon-chip"><input type="radio" name="<?= esc_attr($prayer) ?>_preset" value="<?= esc_attr($p) ?>" <?= $i === 0 ? 'checked' : '' ?>><span><?= esc_html($p) ?> ₪</span></label>
+        <?php endforeach; ?>
+        <label class="orgdon-chip orgdon-chip-other"><input type="radio" name="<?= esc_attr($prayer) ?>_preset" value="other"><span>סכום אחר</span></label>
+      </div>
+      <input id="od-<?= esc_attr($prayer) ?>-other" name="<?= esc_attr($prayer) ?>_other" type="number" min="<?= esc_attr(Org_Form::min_amount()) ?>" max="<?= esc_attr(Org_Form::max_amount()) ?>" step="0.01" dir="ltr" hidden aria-label="<?= esc_attr($prayer === 'shacharit' ? 'סכום אחר לשחרית' : 'סכום אחר למנחה') ?>">
+      <span class="orgdon-err" data-for="<?= esc_attr($prayer) ?>_amount" role="alert"></span>
+    </fieldset>
+<?php if ($prayer === 'shacharit'): ?>
+    <div class="orgdon-row orgdon-same" data-role="same-amount">
+      <label><input type="checkbox" name="same_amount" value="1" checked> <span>אותו סכום בשחרית ובמנחה</span></label>
+    </div>
+<?php endif; endforeach; ?>
 
     <p class="orgdon-estimate" aria-live="polite"></p>
 

@@ -1,6 +1,7 @@
 /**
  * Donor portal API for the WordPress page (B4 /donor/*, B6.10, B6.10.1), adapted to the pledge Opportunity (Part C):
- * amount = Charge_Amount__c (D16: applies to charges created after the change), status = StageName.
+ * amounts = Charge_Amount__c (Shacharit) and Mincha_Amount__c (Mincha) (D36; D16: they apply to charges created after the change),
+ * status = StageName. Donors can't stop the pledge here (D36: by phone only).
  * Called server-to-server by WordPress through the External Client App (D27); the browser never talks to Salesforce.
  */
 @RestResource(urlMapping='/donor/*')
@@ -31,13 +32,10 @@ global without sharing class DonorPortalResource {
           out = context(token, ip, (String) body.get('verifyCode'));
         }
         when 'amount' {
-          out = amount(token, ip, body.get('amount'));
+          out = amount(token, ip, body);
         }
         when 'card' {
           out = card(token, ip, (String) body.get('returnUrlBase'), body.get('amount'));
-        }
-        when 'stop' {
-          out = stop(token, ip);
         }
         when 'card/status' {
           out = cardStatus(token, ip, (String) body.get('lowProfileId'));
@@ -82,7 +80,9 @@ global without sharing class DonorPortalResource {
     return new Map<String, Object>{
       'action' => DonorLinkToken.parse(token).action,
       'firstName' => String.isNotBlank(p.Donor_Contact__r.FirstName) ? p.Donor_Contact__r.FirstName : p.Donor_First_Name__c,
-      'amount' => p.Charge_Amount__c,
+      'amount' => MicroPledges.amountFor(p, MicroPledges.SLOT_SHACHARIT),
+      'shacharitAmount' => p.Charge_Amount__c,
+      'minchaAmount' => p.Mincha_Amount__c,
       'frequency' => p.Frequency__c,
       'last4' => p.Last4__c,
       'expMMYY' => p.CardExpirationMMYY__c,
@@ -120,23 +120,48 @@ global without sharing class DonorPortalResource {
     return a.setScale(2);
   }
 
-  static Map<String, Object> amount(String token, String ip, Object rawAmount) {
+  /**
+   * New amount per charge for the slots the pledge has (D36): body shacharitAmount and/or minchaAmount; a missing key leaves that
+   * slot alone. A legacy `amount` with neither key sets every slot the pledge has. One Pledge_Change_Log__c per changed slot.
+   */
+  static Map<String, Object> amount(String token, String ip, Map<String, Object> body) {
     Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
-    Decimal a = validAmount(rawAmount);
-    if (a == p.Charge_Amount__c)
-      return new Map<String, Object>{ 'ok' => true, 'amount' => a, 'changed' => false };
-    Decimal old = p.Charge_Amount__c;
-    update new Opportunity(Id = p.Id, Charge_Amount__c = a); // D16: applies from the next created charge
-    insert new Pledge_Change_Log__c(
+    Boolean legacy = !body.containsKey('shacharitAmount') && !body.containsKey('minchaAmount') && body.get('amount') != null;
+    Boolean hasSh = MicroPledges.hasSlot(p.Frequency__c, MicroPledges.SLOT_SHACHARIT);
+    Boolean hasMi = MicroPledges.hasSlot(p.Frequency__c, MicroPledges.SLOT_MINCHA);
+    Object rawSh = legacy ? body.get('amount') : body.get('shacharitAmount');
+    Object rawMi = legacy ? body.get('amount') : body.get('minchaAmount');
+    Decimal newSh = hasSh && rawSh != null && String.isNotBlank(String.valueOf(rawSh)) ? validAmount(rawSh) : p.Charge_Amount__c;
+    Decimal newMi = hasMi && rawMi != null && String.isNotBlank(String.valueOf(rawMi)) ? validAmount(rawMi) : p.Mincha_Amount__c;
+    List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
+    if (newSh != p.Charge_Amount__c)
+      logs.add(amountLog(p, ip, 'שחרית', p.Charge_Amount__c, newSh));
+    if (newMi != p.Mincha_Amount__c)
+      logs.add(amountLog(p, ip, 'מנחה', p.Mincha_Amount__c, newMi));
+    if (!logs.isEmpty()) {
+      update new Opportunity(Id = p.Id, Charge_Amount__c = newSh, Mincha_Amount__c = newMi); // D16: from the next created charge
+      insert logs;
+    }
+    Opportunity now = new Opportunity(Charge_Amount__c = newSh, Mincha_Amount__c = newMi);
+    return new Map<String, Object>{
+      'ok' => true,
+      'changed' => !logs.isEmpty(),
+      'shacharitAmount' => newSh,
+      'minchaAmount' => newMi,
+      'amount' => MicroPledges.amountFor(now, MicroPledges.SLOT_SHACHARIT)
+    };
+  }
+
+  static Pledge_Change_Log__c amountLog(Opportunity p, String ip, String slotHe, Decimal oldV, Decimal newV) {
+    return new Pledge_Change_Log__c(
       Pledge__c = p.Id,
       Change_Type__c = 'Amount',
-      Old_Value__c = String.valueOf(old),
-      New_Value__c = String.valueOf(a),
+      Old_Value__c = (slotHe + ' ' + (oldV == null ? '-' : String.valueOf(oldV))).left(255),
+      New_Value__c = (slotHe + ' ' + (newV == null ? '-' : String.valueOf(newV))).left(255),
       Source__c = 'Donor_Portal',
       Client_Ip__c = ip == null ? null : ip.left(45),
       Link_Version__c = p.Link_Version__c
     );
-    return new Map<String, Object>{ 'ok' => true, 'amount' => a, 'changed' => true };
   }
 
   /**
@@ -188,32 +213,13 @@ global without sharing class DonorPortalResource {
         st = CardChangeService.complete(lpId, r);
     }
     String pledgeType = MicroPledges.TYPE;
-    Opportunity now = [SELECT Last4__c, Charge_Amount__c FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType];
+    Opportunity now = [SELECT Last4__c, Charge_Amount__c, Mincha_Amount__c FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType];
     return new Map<String, Object>{
       'status' => st,
       'last4' => st == 'Completed' ? now.Last4__c : null,
-      'amount' => now.Charge_Amount__c
+      'amount' => MicroPledges.amountFor(now, MicroPledges.SLOT_SHACHARIT),
+      'shacharitAmount' => now.Charge_Amount__c,
+      'minchaAmount' => now.Mincha_Amount__c
     };
-  }
-
-  /**
-   * The donor stops the pledge from the donor page (with either link). Same effect as staff "הפסקת חיובים" (B6.8): Stopped,
-   * reason Donor_Request; OpportunityTrigger skips the Pending charges and logs it (source Donor_Portal). Staff are emailed.
-   * Resuming stays a staff action. Links stop working afterwards (verify requires Active).
-   */
-  static Map<String, Object> stop(String token, String ip) {
-    Opportunity p = DonorLinkToken.verify(token, BOTH, ip);
-    OpportunityTriggerHandler.sourceOverride = 'Donor_Portal';
-    update new Opportunity(
-      Id = p.Id,
-      StageName = MicroPledges.STAGE_STOPPED,
-      Stop_Reason__c = 'Donor_Request',
-      Stop_Reason_Details__c = 'הופסק ע"י התורם בדף האישי',
-      Stopped_At__c = Datetime.now(),
-      Stopped_By__c = UserInfo.getUserId()
-    );
-    OpportunityTriggerHandler.sourceOverride = null;
-    StaffAlertService.donorStopped(p.Id);
-    return new Map<String, Object>{ 'ok' => true, 'status' => MicroPledges.STAGE_STOPPED };
   }
 }

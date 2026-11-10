@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Org Donations (Cardcom + Salesforce)
  * Description: טופס הוראת תרומה יומית ודף אישי לתורם.
- * Version: 1.1.4
+ * Version: 1.2.0
  * Requires PHP: 8.0
  * Text Domain: org-donations
  */
 if (!defined('ABSPATH')) exit;
 
-define('ORGDON_VER', '1.1.4');
+define('ORGDON_VER', '1.2.0');
 define('ORGDON_DIR', plugin_dir_path(__FILE__));
 define('ORGDON_URL', plugin_dir_url(__FILE__));
 

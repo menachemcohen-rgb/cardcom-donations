@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Slot__c</fullName>
-    <label>Slot</label>
+    <label>Prayer</label>
     <required>true</required>
     <type>Picklist</type>
     <valueSet>
@@ -11,12 +11,12 @@
             <value>
                 <fullName>AM</fullName>
                 <default>false</default>
-                <label>AM</label>
+                <label>Shacharit</label>
             </value>
             <value>
                 <fullName>PM</fullName>
                 <default>false</default>
-                <label>PM</label>
+                <label>Mincha</label>
             </value>
         </valueSetDefinition>
     </valueSet>

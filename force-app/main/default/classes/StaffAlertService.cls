@@ -9,7 +9,6 @@
 public without sharing class StaffAlertService {
   @TestVisible
   static Integer sentCount = 0;
-  static final Map<String, String> FREQ_HE = new Map<String, String>{ 'OnceDaily' => 'פעם ביום', 'TwiceDaily' => 'פעמיים ביום' };
 
   // ---------------------------------------------------------------- B6.9.4: consecutive failures
   public static void failureStreak(Set<Id> pledgeIds) {
@@ -21,6 +20,7 @@ public without sharing class StaffAlertService {
         Name,
         Pledge_Number__c,
         Charge_Amount__c,
+        Mincha_Amount__c,
         Frequency__c,
         Consecutive_Failures__c,
         Last4__c,
@@ -64,7 +64,7 @@ public without sharing class StaffAlertService {
         '<tr><td>' +
         EmailUtil.esc(c.Scheduled_Date__c == null ? null : c.Scheduled_Date__c.format()) +
         '</td><td>' +
-        EmailUtil.esc(c.Slot__c) +
+        EmailUtil.esc(MicroPledges.slotHe(c.Slot__c)) +
         '</td><td>' +
         EmailUtil.esc(c.Attempt_Number__c == null ? null : c.Attempt_Number__c.intValue()) +
         '</td><td>' +
@@ -94,15 +94,15 @@ public without sharing class StaffAlertService {
       '<p>ההוראה: ' +
       EmailUtil.esc(p.Pledge_Number__c) +
       ' · ' +
-      EmailUtil.esc(p.Charge_Amount__c) +
-      ' ₪ · ' +
-      EmailUtil.esc(FREQ_HE.get(p.Frequency__c)) +
+      EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
+      ' · ' +
+      EmailUtil.esc(MicroPledges.amountsHe(p)) +
       ' · כרטיס המסתיים ב-' +
       EmailUtil.esc(p.Last4__c) +
       ', תוקף ' +
       EmailUtil.esc(exp) +
       '</p>' +
-      '<table border="1" cellpadding="4" style="border-collapse:collapse"><tr><th>תאריך</th><th>סבב</th><th>ניסיון</th><th>קוד</th><th>תיאור</th></tr>' +
+      '<table border="1" cellpadding="4" style="border-collapse:collapse"><tr><th>תאריך</th><th>תפילה</th><th>ניסיון</th><th>קוד</th><th>תיאור</th></tr>' +
       rows +
       '</table>' +
       '<p><a href="' +
@@ -347,43 +347,6 @@ public without sharing class StaffAlertService {
     );
     markSent('Email_Limit_Sent_On__c');
     return true;
-  }
-
-  /** The donor stopped the pledge from the donor page. Sent every time (one per stop). */
-  public static void donorStopped(Id pledgeId) {
-    String pledgeType = MicroPledges.TYPE;
-    List<Opportunity> ps = [
-      SELECT Id, Pledge_Number__c, Charge_Amount__c, Frequency__c, Donor_Contact__r.Name, Donor_Contact__r.Email, Donor_Contact__r.MobilePhone
-      FROM Opportunity
-      WHERE Id = :pledgeId AND Type = :pledgeType
-    ];
-    if (ps.isEmpty())
-      return;
-    Opportunity p = ps[0];
-    String donor = p.Donor_Contact__r == null ? '' : p.Donor_Contact__r.Name;
-    send(
-      'תורם הפסיק את הוראת התרומה – ' + donor + ' (' + p.Pledge_Number__c + ')',
-      wrap(
-        '<p>התורם ' +
-          EmailUtil.esc(donor) +
-          ' הפסיק את הוראת התרומה בדף האישי. לא יבוצעו חיובים נוספים.</p>' +
-          '<p>ההוראה: ' +
-          EmailUtil.esc(p.Pledge_Number__c) +
-          ' · ' +
-          EmailUtil.esc(p.Charge_Amount__c) +
-          ' ₪ · ' +
-          EmailUtil.esc(FREQ_HE.get(p.Frequency__c)) +
-          '</p>' +
-          '<p>פרטי התורם: ' +
-          EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.Email) +
-          ' · ' +
-          EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.MobilePhone) +
-          '</p>' +
-          '<p>לחידוש ההוראה: כפתור "חידוש חיובים" ברשומה. <a href="' +
-          EmailUtil.recordUrl(p.Id) +
-          '">לצפייה ברשומה</a></p>'
-      )
-    );
   }
 
   /** 09:00 SUN-FRI (B9 "Donations Daily Alerts"). */

@@ -3,11 +3,15 @@
     <label>תדירות</label>
     <name>Frequency__c</name>
     <picklistValues>
-        <masterLabel>Once a Day</masterLabel>
-        <translation>פעם ביום</translation>
+        <masterLabel>Shacharit Only</masterLabel>
+        <translation>רק שחרית</translation>
     </picklistValues>
     <picklistValues>
-        <masterLabel>Twice a Day</masterLabel>
-        <translation>פעמיים ביום</translation>
+        <masterLabel>Shacharit and Mincha</masterLabel>
+        <translation>שחרית ומנחה</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Mincha Only</masterLabel>
+        <translation>רק מנחה</translation>
     </picklistValues>
 </CustomFieldTranslation>

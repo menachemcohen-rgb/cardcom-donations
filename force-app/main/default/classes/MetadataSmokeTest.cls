@@ -122,6 +122,7 @@ private class MetadataSmokeTest {
         new F('Match_Method__c', P),
         new F('Frequency__c', P),
         new F('Charge_Amount__c', CUR).num(8, 2),
+        new F('Mincha_Amount__c', CUR).num(8, 2),
         new F('LowProfileId__c', S).len(64),
         new F('Token__c', Schema.DisplayType.ENCRYPTEDSTRING).len(64),
         new F('CardExpirationMMYY__c', S).len(4),
@@ -169,7 +170,7 @@ private class MetadataSmokeTest {
     Assert.isTrue(childFound, 'Contact.Donor_Pledges__r child relationship');
 
     Assert.areEqual(
-      new Set<String>{ 'OnceDaily', 'TwiceDaily' },
+      new Set<String>{ 'OnceDaily', 'TwiceDaily', 'MinchaOnly' },
       picklistValues(Opportunity.SObjectType, 'Frequency__c'),
       'Frequency__c values'
     );

@@ -2,9 +2,14 @@
 public with sharing class ChargePlannerBatch implements Database.Batchable<SObject> {
   final Date runDate;
   final String slot;
+  final Boolean oneRun;
   public ChargePlannerBatch(Date runDate, String slot) {
+    this(runDate, slot, false);
+  }
+  public ChargePlannerBatch(Date runDate, String slot, Boolean oneRun) {
     this.runDate = runDate;
     this.slot = slot;
+    this.oneRun = oneRun == true;
   }
 
   public Database.QueryLocator start(Database.BatchableContext bc) {
@@ -22,7 +27,7 @@ public with sharing class ChargePlannerBatch implements Database.Batchable<SObje
   public void execute(Database.BatchableContext bc, List<Opportunity> scope) {
     Set<Id> ids = new Map<Id, Opportunity>(scope).keySet();
     ChargePlanner.insertAttempts(
-      ChargePlanner.buildAll(ChargePlanner.queryPledges(runDate, ids), ChargeCalendar.logicalDatesFor(runDate), slot, runDate)
+      ChargePlanner.buildAll(ChargePlanner.queryPledges(runDate, ids), ChargePlanner.runSlots(runDate, slot, oneRun), runDate)
     );
   }
 
