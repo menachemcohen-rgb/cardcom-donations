@@ -21,6 +21,9 @@ define('ORG_CARDCOM_ORIGIN',     'https://secure.cardcom.solutions');     // def
 define('ORG_DONATION_TERMS_URL', 'https://www.<site>/terms-recurring/');  // Q8; missing → the terms text shows without the link
 define('ORG_DONATION_CONTACT_PHONE', '03-0000000');                       // shown on the donor page (B13 T-Y01)
 define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
+define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c
+define('ORG_DONATION_MIN_AMOUNT', 1);                // optional, default 1;  keep = Min_Amount__c
+define('ORG_DONATION_MAX_AMOUNT', 50);               // optional, default 50; keep = Max_Amount__c
 define('ORG_BEHIND_CLOUDFLARE', true);                                     // only if the site is proxied by Cloudflare
 // Rate limits per visitor IP (fixed window from the first counted request). Only counted: card sessions created for a
 // valid form, and valid pledge submissions. Page loads, validation errors and retries of an accepted submission don't count.
