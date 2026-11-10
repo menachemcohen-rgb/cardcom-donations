@@ -67,7 +67,7 @@ Follow `docs/wp-cache-exclusions.md` (WP Rocket / LiteSpeed / Cloudflare / CSP /
 - `Cardcom_Setting__mdt.Default.Allowed_Return_Hosts__c` = the site's host (e.g. `www.<site>`), otherwise Salesforce refuses to create
   the payment page (`BAD_RETURN_URL`).
 - Diners (D39): the form option `ORG_DONATION_DINERS` works only when `Cardcom_Setting__mdt.Default.Secondary_Terminal_Number__c`
-  and External Credential `Cardcom_Secondary_EC` are filled (README step 7); otherwise the card page of a Diners donor doesn't open
+  is filled (README step 7; the second terminal uses the same `Cardcom_EC` credential); otherwise the card page of a Diners donor doesn't open
   (`TERMINAL_NOT_CONFIGURED`). The donor page shows its own Diners box whenever Salesforce has the second terminal.
 - The External Client App's IP restrictions include the web server's outgoing IP (README step 10).
 
