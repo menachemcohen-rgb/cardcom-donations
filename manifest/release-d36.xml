@@ -13,6 +13,7 @@
         <members>DonorLinkToken</members>
         <members>DonorPortalResource</members>
         <members>DonorPortalResourceTest</members>
+        <members>MetadataSmokeTest</members>
         <members>MicroPledges</members>
         <members>StaffAlertService</members>
         <name>ApexClass</name>
