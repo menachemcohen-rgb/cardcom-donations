@@ -28,14 +28,47 @@ private class DonationPledgeResourceTest {
       fields.add((String) f);
     Assert.isTrue(
       fields.containsAll(
-        new Set<String>{ 'firstName', 'lastName', 'email', 'phone', 'taxId', 'amount', 'frequency', 'termsAccepted', 'lowProfileId' }
+        new Set<String>{ 'firstName', 'lastName', 'email', 'phone', 'taxId', 'frequency', 'termsAccepted', 'lowProfileId' }
       ),
       String.valueOf(fields)
     );
     Assert.isTrue(DonationPledgeResource.validate(body('lp-0000000001')).isEmpty());
     Map<String, Object> high = body('lp-0000000001');
     high.put('amount', 51);
-    Assert.areEqual(new List<String>{ 'amount' }, DonationPledgeResource.validate(high));
+    Assert.areEqual(new List<String>{ 'shacharitAmount', 'minchaAmount' }, DonationPledgeResource.validate(high), 'legacy amount');
+    Map<String, Object> mincha = body('lp-0000000001');
+    mincha.remove('amount');
+    mincha.put('frequency', 'MinchaOnly');
+    Assert.areEqual(new List<String>{ 'minchaAmount' }, DonationPledgeResource.validate(mincha));
+    mincha.put('minchaAmount', 4);
+    Assert.isTrue(DonationPledgeResource.validate(mincha).isEmpty());
+  }
+
+  @IsTest
+  static void storesTheAmountOfEachPrayer() {
+    // D36
+    TestDataFactory.settings();
+    Map<String, Object> b = body('lp-0000000003');
+    b.remove('amount');
+    b.put('shacharitAmount', 2);
+    b.put('minchaAmount', 5);
+    TestDataFactory.rest('/services/apexrest/donations/pledge', b);
+    DonationPledgeResource.submit();
+    Assert.areEqual(200, RestContext.response.statusCode, RestContext.response.responseBody.toString());
+    Opportunity p = [SELECT Charge_Amount__c, Mincha_Amount__c FROM Opportunity WHERE LowProfileId__c = 'lp-0000000003'];
+    Assert.areEqual(2, p.Charge_Amount__c.intValue());
+    Assert.areEqual(5, p.Mincha_Amount__c.intValue());
+
+    b = body('lp-0000000004');
+    b.remove('amount');
+    b.put('frequency', 'MinchaOnly');
+    b.put('shacharitAmount', null);
+    b.put('minchaAmount', 6);
+    TestDataFactory.rest('/services/apexrest/donations/pledge', b);
+    DonationPledgeResource.submit();
+    p = [SELECT Charge_Amount__c, Mincha_Amount__c FROM Opportunity WHERE LowProfileId__c = 'lp-0000000004'];
+    Assert.isNull(p.Charge_Amount__c, 'Mincha only: no Shacharit amount');
+    Assert.areEqual(6, p.Mincha_Amount__c.intValue());
   }
 
   @IsTest

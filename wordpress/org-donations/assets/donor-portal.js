@@ -1,5 +1,7 @@
 (function () {
   'use strict';
+  // Pure helpers, exposed for the JS tests (tests/js) — hoisted function declarations below.
+  window.OrgDonPortalUtil = { prayers: prayers, amountPayload: amountPayload };
   const cfg = window.ORGDON_PORTAL; const root = document.getElementById('orgdon-portal');
   if (!cfg || !root) return;
   const $ = (sel) => root.querySelector(sel);
@@ -9,7 +11,7 @@
   let token = cfg.token || sessionStorage.getItem(KEY) || '';
   if (cfg.token) { sessionStorage.setItem(KEY, cfg.token); }
   if (location.search) history.replaceState(null, '', location.pathname);
-  let ctx = null; let lpId = null; let pollTimer = null; let pollUntil = 0; let pendingAmount = null;
+  let ctx = null; let lpId = null; let pollTimer = null; let pollUntil = 0;
 
   function show(view) { root.querySelectorAll('[data-view]').forEach((el) => { el.hidden = el.dataset.view !== view; }); }
   function msg(text, kind) {
@@ -44,39 +46,78 @@
     return '****' + ctx.last4 + (ctx.exp ? ', תוקף ' + ctx.exp : '');
   }
 
+  /** Which prayers a frequency charges (Salesforce API values). */
+  function prayers(f) {
+    return { shacharit: f === 'TwiceDaily' || f === 'OnceDaily', mincha: f === 'TwiceDaily' || f === 'MinchaOnly' };
+  }
+  /** Fields posted to org_portal_amount: only the prayers the pledge charges; Mincha = Shacharit when "אותו סכום" is checked. */
+  function amountPayload(f, same, shacharit, mincha) {
+    const inc = prayers(f); const out = {};
+    if (inc.shacharit) out.shacharitAmount = String(shacharit);
+    if (inc.mincha) out.minchaAmount = String(f === 'TwiceDaily' && same ? shacharit : mincha);
+    return out;
+  }
+
+  /** Summary rows: "סכום לשחרית" / "סכום למנחה" according to the frequency. */
+  function renderAmounts() {
+    const inc = prayers(ctx.frequencyCode);
+    ['shacharit', 'mincha'].forEach((p) => {
+      const on = inc[p] && ctx[p + 'Amount'] != null;
+      $('[data-role=' + p + '-row]').hidden = !on;
+      if (on) $('[data-role=' + p + '-amount]').textContent = money(ctx[p + 'Amount']);
+    });
+  }
+
   function renderMain() {
     $('[data-role=first-name]').textContent = ctx.firstName || '';
-    $('[data-role=amount]').textContent = money(ctx.amount);
+    renderAmounts();
     $('[data-role=frequency]').textContent = ctx.frequency;
     $('[data-role=card]').textContent = cardText();
     $('[data-role=contact]').textContent = cfg.contactLine;
-    chips($('[data-role=presets]'), 'preset', false);
-    chips($('[data-role=card-presets]'), 'card_preset', true);
-    [$('#orgdon-other'), $('#orgdon-card-other')].forEach((other) => {
-      other.min = ctx.min; other.max = ctx.max; other.placeholder = 'בין ' + ctx.min + ' ל-' + ctx.max;
-    });
+    renderPickers();
     show('main');
     tab(cfg.action || ctx.action || 'amount');
   }
 
-  /** Amount chips (presets, the current amount checked). withOther: the card panel has its own "סכום אחר" chip inside the box. */
-  function chips(box, name, withOther) {
+  /** One picker per charged prayer, pre-selected with its current amount; "אותו סכום" for TwiceDaily (checked when equal). */
+  function renderPickers() {
+    const inc = prayers(ctx.frequencyCode);
+    ['shacharit', 'mincha'].forEach((p) => {
+      root.querySelector('[data-prayer=' + p + ']').hidden = !inc[p];
+      $('[data-role=' + p + '-other-wrap]').hidden = true;
+      $('[data-role=' + p + '-err]').textContent = '';
+      if (!inc[p]) return;
+      chips($('[data-role=' + p + '-presets]'), p + '_preset', ctx[p + 'Amount']);
+      const other = $('#orgdon-' + p + '-other');
+      other.min = ctx.min; other.max = ctx.max; other.placeholder = 'בין ' + ctx.min + ' ל-' + ctx.max;
+    });
+    const twice = ctx.frequencyCode === 'TwiceDaily';
+    const same = root.querySelector('input[name=same_amount]');
+    $('[data-role=same-amount]').hidden = !twice;
+    same.checked = twice && ctx.shacharitAmount != null && Number(ctx.shacharitAmount) === Number(ctx.minchaAmount);
+    syncSame();
+  }
+  function syncSame() {
+    if (ctx.frequencyCode !== 'TwiceDaily') return;
+    root.querySelector('[data-prayer=mincha]').hidden = root.querySelector('input[name=same_amount]').checked;
+  }
+
+  /** Amount chips (presets + the current amount if it isn't one of them, checked) and a "סכום אחר" chip. */
+  function chips(box, name, current) {
     box.textContent = '';
     const values = ctx.presets.map(Number);
-    if (values.indexOf(Number(ctx.amount)) < 0 && withOther) values.push(Number(ctx.amount)); // keep the current amount selectable
+    if (current != null && values.indexOf(Number(current)) < 0) values.push(Number(current));   // keep the current amount selectable
     values.forEach((p) => {
       const l = document.createElement('label'); l.className = 'orgdon-chip';
       const i = document.createElement('input'); i.type = 'radio'; i.name = name; i.value = String(p);
-      if (p === Number(ctx.amount)) i.checked = true;
+      if (current != null && p === Number(current)) i.checked = true;
       const s = document.createElement('span'); s.textContent = money(p).replace(/\.00$/, '') + ' ₪';
       l.append(i, s); box.append(l);
     });
-    if (withOther) {
-      const l = document.createElement('label'); l.className = 'orgdon-chip orgdon-chip-other';
-      const i = document.createElement('input'); i.type = 'radio'; i.name = name; i.value = 'other';
-      const s = document.createElement('span'); s.textContent = 'סכום אחר';
-      l.append(i, s); box.append(l);
-    }
+    const l = document.createElement('label'); l.className = 'orgdon-chip orgdon-chip-other';
+    const i = document.createElement('input'); i.type = 'radio'; i.name = name; i.value = 'other';
+    const s = document.createElement('span'); s.textContent = 'סכום אחר';
+    l.append(i, s); box.append(l);
   }
 
   /** Amount chosen in a chip group: a valid string, '' if invalid (error shown), or null when nothing is selected. */
@@ -86,15 +127,13 @@
     const a = sel.value === 'other' ? otherInput.value.replace(',', '.') : sel.value;
     const n = Number(a);
     if (!a || isNaN(n) || n < ctx.min || n > ctx.max || !/^\d+(\.\d{1,2})?$/.test(a)) {
-      const t = 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
-      if (errEl && sel.value === 'other') errEl.textContent = t; else msg(t, 'error');
+      errEl.textContent = 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
       return '';
     }
     return a;
   }
 
   function tab(name) {
-    const confirmBox = $('[data-role=stop-confirm]'); if (confirmBox) { confirmBox.hidden = true; $('[data-role=stop-ask]').hidden = false; }
     root.querySelectorAll('[data-tab]').forEach((b) => { const on = b.dataset.tab === name; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
     root.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== name; });
     msg('');
@@ -110,19 +149,34 @@
 
   // 4) amount
   root.addEventListener('change', (e) => {
-    if (e.target.name === 'preset') $('[data-role=other-wrap]').hidden = e.target.value !== 'other';
-    if (e.target.name === 'card_preset') $('[data-role=card-other-wrap]').hidden = e.target.value !== 'other';
+    const m = /^(shacharit|mincha)_preset$/.exec(e.target.name || '');
+    if (m) $('[data-role=' + m[1] + '-other-wrap]').hidden = e.target.value !== 'other';
+    if (e.target.name === 'same_amount') syncSame();
   });
   root.querySelector('.orgdon-amount-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const err = $('[data-role=amount-err]'); err.textContent = '';
-    const a = chosenAmount('preset', $('#orgdon-other'), err);
-    if (a === null) { msg('נא לבחור סכום.', 'error'); return; }
-    if (a === '') return;
+    e.preventDefault(); msg('');
+    const inc = prayers(ctx.frequencyCode);
+    const same = ctx.frequencyCode === 'TwiceDaily' && root.querySelector('input[name=same_amount]').checked;
+    const chosen = {}; let bad = false;
+    ['shacharit', 'mincha'].forEach((p) => {
+      $('[data-role=' + p + '-err]').textContent = '';
+      if (!inc[p] || (p === 'mincha' && same)) return;
+      const a = chosenAmount(p + '_preset', $('#orgdon-' + p + '-other'), $('[data-role=' + p + '-err]'));
+      if (a === null) { $('[data-role=' + p + '-err]').textContent = 'נא לבחור סכום.'; bad = true; }
+      else if (a === '') bad = true;
+      else chosen[p] = a;
+    });
+    if (bad) return;
     const btn = e.submitter || root.querySelector('.orgdon-amount-form .orgdon-btn'); btn.disabled = true;
-    const j = await post('amount', { amount: a });
+    const j = await post('amount', amountPayload(ctx.frequencyCode, same, chosen.shacharit, chosen.mincha));
     btn.disabled = false;
-    if (j.success) { ctx.amount = j.data.amount; $('[data-role=amount]').textContent = money(ctx.amount); msg(j.data.message, 'ok'); return; }
+    if (j.success) {
+      if (j.data.shacharitAmount != null) ctx.shacharitAmount = Number(j.data.shacharitAmount);
+      if (j.data.minchaAmount != null) ctx.minchaAmount = Number(j.data.minchaAmount);
+      renderAmounts(); renderPickers();
+      msg(j.data.message, 'ok');
+      return;
+    }
     if (j.data && j.data.invalid) return invalid(j.data.message);
     msg((j.data && j.data.message) || 'אירעה שגיאה. נסו שוב.', 'error');
   });
@@ -131,14 +185,8 @@
   const frameWrap = $('[data-role=card-frame-wrap]'); const frame = $('[data-role=card-frame]');
   $('[data-role=card-start]').addEventListener('click', async (e) => {
     const btn = e.currentTarget; msg('');
-    const err = $('[data-role=card-amount-err]'); err.textContent = '';
-    const a = chosenAmount('card_preset', $('#orgdon-card-other'), err);
-    if (a === '') return;
-    // one step: the new amount (if any) goes with the card and is applied once the new card is saved
-    const data = a !== null && Number(a) !== Number(ctx.amount) ? { amount: a } : {};
-    pendingAmount = data.amount ? Number(data.amount) : null;
     btn.disabled = true;
-    const j = await post('card', data);
+    const j = await post('card', {});
     btn.disabled = false;
     if (!j.success) { if (j.data && j.data.invalid) return invalid(j.data.message); msg((j.data && j.data.message) || 'לא ניתן לטעון כעת את טופס התשלום.', 'error'); return; }
     lpId = j.data.lpId; frame.src = j.data.url; frameWrap.hidden = false; btn.hidden = true;
@@ -158,7 +206,7 @@
   async function poll() {
     clearTimeout(pollTimer);
     const j = await post('card_status', { lpId });
-    if (j.success && j.data.status === 'Completed') return cardDone(j.data.last4, j.data.amount);
+    if (j.success && j.data.status === 'Completed') return cardDone(j.data);
     if (j.success && (j.data.status === 'Failed' || j.data.status === 'Expired')) return cardFailed();
     if (j.data && j.data.invalid) return invalid(j.data.message);
     if (Date.now() > pollUntil) {
@@ -168,42 +216,20 @@
     }
     pollTimer = setTimeout(poll, 3000);
   }
-  function cardDone(last4, amount) {
+  function cardDone(d) {
+    const last4 = d.last4;
     $('[data-role=card-wait]').hidden = true; lpId = null;
     if (last4) { ctx.last4 = last4; ctx.exp = null; }
     $('[data-role=card]').textContent = last4 ? '****' + last4 : 'כרטיס חדש';
-    let text = last4 ? 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס המסתיים ב-' + last4 + '.'
-                     : 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס החדש.';
-    if (pendingAmount !== null && amount != null && Number(amount) === pendingAmount) {
-      ctx.amount = Number(amount); $('[data-role=amount]').textContent = money(ctx.amount);
-      text += ' הסכום עודכן ל-' + money(ctx.amount) + ' ₪ לכל חיוב.';
-    }
-    pendingAmount = null;
-    msg(text, 'ok');
+    // refresh the summary with the amounts Salesforce returns (unchanged by a card replacement)
+    if (d.shacharitAmount != null) ctx.shacharitAmount = Number(d.shacharitAmount);
+    if (d.minchaAmount != null) ctx.minchaAmount = Number(d.minchaAmount);
+    renderAmounts();
+    msg(last4 ? 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס המסתיים ב-' + last4 + '.'
+              : 'פרטי הכרטיס עודכנו בהצלחה. החיוב הבא יתבצע בכרטיס החדש.', 'ok');
     $('[data-role=card-start]').hidden = false;
   }
 
-  // 6) stop the pledge (asks first)
-  $('[data-role=stop-ask]').addEventListener('click', () => {
-    msg(''); $('[data-role=stop-ask]').hidden = true; $('[data-role=stop-confirm]').hidden = false;
-    $('[data-role=stop-yes]').focus();
-  });
-  $('[data-role=stop-no]').addEventListener('click', () => {
-    $('[data-role=stop-confirm]').hidden = true; $('[data-role=stop-ask]').hidden = false;
-  });
-  $('[data-role=stop-yes]').addEventListener('click', async (e) => {
-    const btn = e.currentTarget; btn.disabled = true;
-    const j = await post('stop', { confirm: '1' });
-    btn.disabled = false;
-    if (j.success) {
-      sessionStorage.removeItem(KEY);
-      root.querySelectorAll('.orgdon-tabs, [data-panel]').forEach((el) => { el.hidden = true; });
-      msg(j.data.message, 'ok');
-      return;
-    }
-    if (j.data && j.data.invalid) return invalid(j.data.message);
-    msg((j.data && j.data.message) || 'אירעה שגיאה. נסו שוב.', 'error');
-  });
   function cardFailed() {
     $('[data-role=card-wait]').hidden = true; lpId = null;
     msg('פרטי הכרטיס לא נקלטו והכרטיס הקודם נשאר בתוקף. ניתן לנסות שוב.', 'error');

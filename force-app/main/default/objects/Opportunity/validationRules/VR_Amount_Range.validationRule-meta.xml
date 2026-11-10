@@ -2,12 +2,14 @@
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>VR_Amount_Range</fullName>
     <active>true</active>
-    <description>B2.2 via Part C C2 (Charge_Amount__c).</description>
+    <description>B2.2 via Part C C2; Shacharit (Charge_Amount__c) and Mincha (Mincha_Amount__c) amounts, D36.</description>
     <errorConditionFormula>AND(
     ISPICKVAL(Type, 'Daily Donation Pledge'),
     OR(
         Charge_Amount__c &lt; $CustomMetadata.Cardcom_Setting__mdt.Default.Min_Amount__c,
-        Charge_Amount__c &gt; $CustomMetadata.Cardcom_Setting__mdt.Default.Max_Amount__c
+        Charge_Amount__c &gt; $CustomMetadata.Cardcom_Setting__mdt.Default.Max_Amount__c,
+        Mincha_Amount__c &lt; $CustomMetadata.Cardcom_Setting__mdt.Default.Min_Amount__c,
+        Mincha_Amount__c &gt; $CustomMetadata.Cardcom_Setting__mdt.Default.Max_Amount__c
     )
 )</errorConditionFormula>
     <errorDisplayField>Charge_Amount__c</errorDisplayField>

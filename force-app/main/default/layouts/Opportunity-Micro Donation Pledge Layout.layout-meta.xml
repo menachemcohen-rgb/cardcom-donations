@@ -41,12 +41,16 @@
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
+                <field>Frequency__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
                 <field>Charge_Amount__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
-                <field>Frequency__c</field>
+                <behavior>Edit</behavior>
+                <field>Mincha_Amount__c</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Required</behavior>

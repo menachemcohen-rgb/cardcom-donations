@@ -64,24 +64,85 @@ private class ChargePlannerTest {
   }
 
   @IsTest
-  static void fridayChargesFridayAndShabbat() {
-    // TC12
+  static void fridayShacharitRunChargesOnlyFriday() {
+    // D36: Shabbat goes with the eve's Mincha run
     TestDataFactory.chargeEngine(TestDataFactory.FRI_0600);
-    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    TestDataFactory.activePledges(1, 'OnceDaily');
+    TestDataFactory.activePledges(1, 'TwiceDaily');
     Assert.areEqual(2, ChargePlanner.plan(FRI, 'AM'));
-    List<Charge__c> cs = charges();
-    Assert.areEqual(FRI, cs[0].Scheduled_Date__c);
-    Assert.areEqual(FRI.addDays(1), cs[1].Scheduled_Date__c);
-    Assert.areNotEqual(cs[0].ExternalUniqTranId__c, cs[1].ExternalUniqTranId__c);
-    Assert.areEqual(FRI, cs[1].Run_Date__c, 'Shabbat charge is sent on Friday');
+    for (Charge__c c : charges()) {
+      Assert.areEqual(FRI, c.Scheduled_Date__c);
+      Assert.areEqual('AM', c.Slot__c);
+    }
   }
 
   @IsTest
-  static void erevRoshHashanaChargesThreeDays() {
-    // TC13
-    TestDataFactory.chargeEngine(Datetime.newInstance(2026, 9, 11, 6, 0, 0));
+  static void fridayMinchaRunChargesFridayMinchaAndAllOfShabbat() {
+    // TC12 (D36): Shacharit-only → Shabbat Shacharit; both → Friday Mincha + Shabbat Shacharit and Mincha; Mincha-only → Friday + Shabbat Mincha
+    TestDataFactory.chargeEngine(Datetime.newInstance(2026, 11, 6, 11, 0, 0));
+    Opportunity once = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    Opportunity both = TestDataFactory.activePledges(1, 'TwiceDaily')[0];
+    Opportunity mincha = TestDataFactory.activePledges(1, 'MinchaOnly')[0];
+    Assert.areEqual(1 + 3 + 2, ChargePlanner.plan(FRI, 'PM'));
+    Map<Id, List<String>> got = new Map<Id, List<String>>();
+    for (Charge__c c : charges()) {
+      if (!got.containsKey(c.Pledge__c))
+        got.put(c.Pledge__c, new List<String>());
+      got.get(c.Pledge__c).add(String.valueOf(c.Scheduled_Date__c.day()) + c.Slot__c);
+      Assert.areEqual(FRI, c.Run_Date__c, 'all sent on Friday');
+    }
+    Assert.areEqual(new List<String>{ '7AM' }, got.get(once.Id));
+    Assert.areEqual(new Set<String>{ '6PM', '7AM', '7PM' }, new Set<String>(got.get(both.Id)));
+    Assert.areEqual(new Set<String>{ '6PM', '7PM' }, new Set<String>(got.get(mincha.Id)));
+  }
+
+  @IsTest
+  static void erevRoshHashanaMinchaRunChargesTheTwoDaysOfChag() {
+    // TC13 (D36): 11.9 Friday, 12–13.9 Rosh Hashana + Shabbat
+    TestDataFactory.chargeEngine(Datetime.newInstance(2026, 9, 11, 11, 0, 0));
     TestDataFactory.activePledges(1, 'OnceDaily');
-    Assert.areEqual(3, ChargePlanner.plan(Date.newInstance(2026, 9, 11), 'AM'));
+    Assert.areEqual(1, ChargePlanner.plan(Date.newInstance(2026, 9, 11), 'AM'));
+    Assert.areEqual(2, ChargePlanner.plan(Date.newInstance(2026, 9, 11), 'PM'));
+  }
+
+  @IsTest
+  static void minchaOnlyIsChargedOnlyInMinchaWithItsAmount() {
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity m = TestDataFactory.activePledges(1, 'MinchaOnly')[0];
+    update new Opportunity(Id = m.Id, Charge_Amount__c = null, Mincha_Amount__c = 7);
+    Assert.areEqual(0, ChargePlanner.plan(WED, 'AM'));
+    Assert.areEqual(1, ChargePlanner.plan(WED, 'PM'));
+    Assert.areEqual(7, [SELECT Amount__c FROM Charge__c].Amount__c.intValue());
+  }
+
+  @IsTest
+  static void separateShacharitAndMinchaAmounts() {
+    TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
+    Opportunity b = TestDataFactory.activePledges(1, 'TwiceDaily')[0];
+    update new Opportunity(Id = b.Id, Charge_Amount__c = 2, Mincha_Amount__c = 5);
+    ChargePlanner.plan(WED, 'AM');
+    ChargePlanner.plan(WED, 'PM');
+    Map<String, Decimal> bySlot = new Map<String, Decimal>();
+    for (Charge__c c : charges())
+      bySlot.put(c.Slot__c, c.Amount__c);
+    Assert.areEqual(2, bySlot.get('AM').intValue());
+    Assert.areEqual(5, bySlot.get('PM').intValue());
+  }
+
+  @IsTest
+  static void oneRunADayPlansEverySlot() {
+    TestDataFactory.chargeEngine(TestDataFactory.FRI_0600);
+    TestDataFactory.activePledges(1, 'TwiceDaily');
+    Assert.areEqual(4, ChargePlanner.plan(FRI, 'AM', true), 'Friday and Shabbat, Shacharit and Mincha');
+  }
+
+  @IsTest
+  static void runSlotsOnARegularDayAndOnAnEve() {
+    Assert.areEqual(1, ChargePlanner.runSlots(WED, 'AM', false).size());
+    Assert.areEqual(1, ChargePlanner.runSlots(WED, 'PM', false).size());
+    Assert.areEqual(1, ChargePlanner.runSlots(FRI, 'AM', false).size());
+    Assert.areEqual(3, ChargePlanner.runSlots(FRI, 'PM', false).size());
+    Assert.areEqual(0, ChargePlanner.runSlots(FRI.addDays(1), 'PM', false).size(), 'Shabbat');
   }
 
   @IsTest
@@ -125,19 +186,22 @@ private class ChargePlannerTest {
   static void blankTokenIsSkippedInApex() {
     // E15: no Token__c condition in the SOQL; checked here instead.
     Opportunity noToken = new Opportunity(Frequency__c = 'OnceDaily', Charge_Amount__c = 3);
-    Assert.isTrue(ChargePlanner.buildAll(new List<Opportunity>{ noToken }, new List<Date>{ WED }, 'AM', WED).isEmpty());
+    Assert.isTrue(
+      ChargePlanner.buildAll(new List<Opportunity>{ noToken }, new List<ChargePlanner.RunSlot>{ new ChargePlanner.RunSlot(WED, 'AM') }, WED)
+        .isEmpty()
+    );
   }
 
   @IsTest
   static void bulkFridayStaysInsideLimits() {
-    TestDataFactory.chargeEngine(TestDataFactory.FRI_0600);
+    TestDataFactory.chargeEngine(Datetime.newInstance(2026, 11, 6, 11, 0, 0));
     TestDataFactory.activePledges(200, 'TwiceDaily');
     Integer dmlBefore = Limits.getDmlStatements();
     Integer queriesBefore = Limits.getQueries();
-    Assert.areEqual(400, ChargePlanner.plan(FRI, 'AM'));
+    Assert.areEqual(600, ChargePlanner.plan(FRI, 'PM'), 'Friday Mincha + Shabbat Shacharit and Mincha');
     Assert.isTrue(Limits.getQueries() - queriesBefore <= 6, 'planning uses a constant number of queries');
     Assert.isTrue(Limits.getDmlStatements() - dmlBefore <= 3, 'one insert for all attempts (+ the lock)');
-    Assert.areEqual(400, [SELECT COUNT() FROM Charge__c]);
+    Assert.areEqual(600, [SELECT COUNT() FROM Charge__c]);
   }
 
   @IsTest

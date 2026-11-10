@@ -14,12 +14,17 @@
             <value>
                 <fullName>OnceDaily</fullName>
                 <default>false</default>
-                <label>Once a Day</label>
+                <label>Shacharit Only</label>
             </value>
             <value>
                 <fullName>TwiceDaily</fullName>
                 <default>false</default>
-                <label>Twice a Day</label>
+                <label>Shacharit and Mincha</label>
+            </value>
+            <value>
+                <fullName>MinchaOnly</fullName>
+                <default>false</default>
+                <label>Mincha Only</label>
             </value>
         </valueSetDefinition>
     </valueSet>

@@ -1,6 +1,8 @@
 /**
  * POST /donations/pledge (B4, B6.2), adapted to the pledge Opportunity (Part C C1/C2):
- * the pledge is an Opportunity of Type = Daily Donation Pledge, amount per charge is Charge_Amount__c, status is StageName.
+ * the pledge is an Opportunity of Type = Daily Donation Pledge, status is StageName.
+ * D36: frequency TwiceDaily (Shacharit and Mincha) / OnceDaily (Shacharit only) / MinchaOnly; shacharitAmount → Charge_Amount__c,
+ * minchaAmount → Mincha_Amount__c, each required when the frequency includes it. A legacy `amount` stands for any missing one.
  */
 @RestResource(urlMapping='/donations/pledge')
 global without sharing class DonationPledgeResource {
@@ -35,8 +37,10 @@ global without sharing class DonationPledgeResource {
           p.Donor_Email__c = s(q, 'email').toLowerCase();
           p.Donor_Phone__c = ContactMatcher.normPhone(s(q, 'phone'));
           p.Donor_Tax_Id__c = String.isBlank(s(q, 'taxId')) ? null : s(q, 'taxId').leftPad(9, '0');
-          p.Charge_Amount__c = Decimal.valueOf(String.valueOf(q.get('amount'))).setScale(2);
-          p.Frequency__c = s(q, 'frequency');
+          String freq = s(q, 'frequency');
+          p.Frequency__c = freq;
+          p.Charge_Amount__c = MicroPledges.hasSlot(freq, MicroPledges.SLOT_SHACHARIT) ? slotAmount(q, 'shacharitAmount').setScale(2) : null;
+          p.Mincha_Amount__c = MicroPledges.hasSlot(freq, MicroPledges.SLOT_MINCHA) ? slotAmount(q, 'minchaAmount').setScale(2) : null;
           p.Donor_Submitted__c = true;
           p.Terms_Accepted_At__c = Datetime.now();
           p.Client_Ip__c = s(q, 'clientIp') == null ? null : s(q, 'clientIp').left(45);
@@ -83,6 +87,23 @@ global without sharing class DonationPledgeResource {
     throw new CardcomService.CardcomException('Pledge insert failed: ' + sr.getErrors()[0].getMessage());
   }
 
+  static Decimal num(Map<String, Object> m, String k) {
+    Object v = m.get(k);
+    if (v == null || String.isBlank(String.valueOf(v)))
+      return null;
+    try {
+      return Decimal.valueOf(String.valueOf(v));
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /** The slot's amount from the request; a legacy `amount` stands in when the slot's own key is missing. */
+  static Decimal slotAmount(Map<String, Object> q, String key) {
+    Decimal a = num(q, key);
+    return a != null || q.containsKey(key) ? a : num(q, 'amount');
+  }
+
   static String s(Map<String, Object> m, String k) {
     Object v = m.get(k);
     return v == null ? null : String.valueOf(v).trim();
@@ -104,20 +125,23 @@ global without sharing class DonationPledgeResource {
       bad.add('phone');
     if (String.isNotBlank(id) && !ContactMatcher.validIsraeliId(id))
       bad.add('taxId');
-    Decimal a;
-    try {
-      a = Decimal.valueOf(String.valueOf(q.get('amount')));
-    } catch (Exception e) {
-      a = null;
-    }
-    if (a == null || a < st.Min_Amount__c || a > st.Max_Amount__c || a.scale() > 2)
-      bad.add('amount');
-    if (!new Set<String>{ 'OnceDaily', 'TwiceDaily' }.contains(s(q, 'frequency')))
+    String freq = s(q, 'frequency');
+    if (!MicroPledges.FREQUENCIES.contains(freq)) {
       bad.add('frequency');
+    } else {
+      if (MicroPledges.hasSlot(freq, MicroPledges.SLOT_SHACHARIT) && !inRange(slotAmount(q, 'shacharitAmount'), st))
+        bad.add('shacharitAmount');
+      if (MicroPledges.hasSlot(freq, MicroPledges.SLOT_MINCHA) && !inRange(slotAmount(q, 'minchaAmount'), st))
+        bad.add('minchaAmount');
+    }
     if (q.get('termsAccepted') != true)
       bad.add('termsAccepted');
     if (String.isBlank(s(q, 'lowProfileId')) || !Pattern.matches('[A-Za-z0-9-]{10,64}', s(q, 'lowProfileId')))
       bad.add('lowProfileId');
     return bad;
+  }
+
+  static Boolean inRange(Decimal a, Cardcom_Setting__mdt st) {
+    return a != null && a >= st.Min_Amount__c && a <= st.Max_Amount__c && a.scale() <= 2;
   }
 }

@@ -2,10 +2,10 @@
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionCalls>
         <name>Apply_Schedule</name>
-        <label>Apply Charge Schedule</label>
+        <label>Save Charge Times</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
-        <actionName>DonationSetup</actionName>
+        <actionName>ChargeTimesAction</actionName>
         <actionType>apex</actionType>
         <connector>
             <targetReference>Result_Screen</targetReference>
@@ -14,6 +14,30 @@
             <targetReference>Error_Screen</targetReference>
         </faultConnector>
         <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>shacharitTime</name>
+            <value>
+                <elementReference>Shacharit_Time</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>minchaTime</name>
+            <value>
+                <elementReference>Mincha_Time</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>eveShacharitTime</name>
+            <value>
+                <elementReference>Eve_Shacharit_Time</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>eveMinchaTime</name>
+            <value>
+                <elementReference>Eve_Mincha_Time</elementReference>
+            </value>
+        </inputParameters>
         <outputParameters>
             <assignToReference>varOk</assignToReference>
             <name>ok</name>
@@ -49,12 +73,17 @@
             <label>Yes</label>
         </rules>
     </decisions>
-    <description>B9.1/B9.2: shows the current charge times from Charge_Settings__c and re-schedules the Donations jobs (DonationSetup.applyScheduleInvocable). Gated by Custom Permission Manage_Charge_Schedule (also checked in Apex).</description>
+    <description>B9.1/B9.2, D36: edits the Shacharit/Mincha charge times (regular day and eve) in Charge_Settings__c and re-schedules the Donations jobs (ChargeTimesAction). Gated by Custom Permission Manage_Charge_Schedule (also checked in Apex).</description>
     <environments>Default</environments>
     <formulas>
         <name>fAmTime</name>
         <dataType>String</dataType>
         <expression>{!$Setup.Charge_Settings__c.AM_Time__c}</expression>
+    </formulas>
+    <formulas>
+        <name>fCutoff</name>
+        <dataType>String</dataType>
+        <expression>TEXT({!$Setup.Charge_Settings__c.Friday_Cutoff_Hour__c})</expression>
     </formulas>
     <formulas>
         <name>fEveAmTime</name>
@@ -70,21 +99,6 @@
         <name>fPmTime</name>
         <dataType>String</dataType>
         <expression>{!$Setup.Charge_Settings__c.PM_Time__c}</expression>
-    </formulas>
-    <formulas>
-        <name>fReceiptTime</name>
-        <dataType>String</dataType>
-        <expression>{!$Setup.Charge_Settings__c.Receipt_Time__c}</expression>
-    </formulas>
-    <formulas>
-        <name>fReconcileTime</name>
-        <dataType>String</dataType>
-        <expression>{!$Setup.Charge_Settings__c.Reconcile_Time__c}</expression>
-    </formulas>
-    <formulas>
-        <name>fRetryMinute</name>
-        <dataType>String</dataType>
-        <expression>TEXT({!$Setup.Charge_Settings__c.Retry_Minute__c})</expression>
     </formulas>
     <interviewLabel>Apply Charge Schedule {!$Flow.CurrentDateTime}</interviewLabel>
     <label>Apply Charge Schedule</label>
@@ -104,7 +118,7 @@
     <runInMode>DefaultMode</runInMode>
     <screens>
         <name>Current_Settings_Screen</name>
-        <label>זמני חיוב נוכחיים</label>
+        <label>שעות החיוב</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <allowBack>false</allowBack>
@@ -114,11 +128,76 @@
             <targetReference>Apply_Schedule</targetReference>
         </connector>
         <fields>
-            <name>Current_Values</name>
-            <fieldText>&lt;p&gt;&lt;b&gt;זמני החיוב שיוחלו (שעון ישראל):&lt;/b&gt;&lt;/p&gt;&lt;p&gt;בוקר: {!fAmTime} · ערב: {!fPmTime}&lt;/p&gt;&lt;p&gt;שישי/ערב חג: {!fEveAmTime} ו-{!fEvePmTime}&lt;/p&gt;&lt;p&gt;ניסיונות חוזרים: דקה {!fRetryMinute} בכל שעה&lt;/p&gt;&lt;p&gt;קבלות: {!fReceiptTime} · התאמה לילית: {!fReconcileTime}&lt;/p&gt;&lt;p&gt;לחיצה על "החל" מתזמנת מחדש את ריצות החיוב. חיובים שכבר תוכננו אינם משתנים.&lt;/p&gt;</fieldText>
+            <name>Intro_Text</name>
+            <fieldText>&lt;p&gt;&lt;b&gt;שעות החיוב (שעון ישראל, HH:mm)&lt;/b&gt;&lt;/p&gt;&lt;p&gt;ביום רגיל יש ריצת שחרית וריצת מנחה. בערב שבת וערב חג הריצות מוקדמות, ושבת או החג מחויבים יחד עם המנחה. ריצת המנחה בערב שבת חייבת להיות לפני {!fCutoff}:00.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
-        <nextOrFinishButtonLabel>החל</nextOrFinishButtonLabel>
+        <fields>
+            <name>Shacharit_Time</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>fAmTime</elementReference>
+            </defaultValue>
+            <fieldText>שחרית – יום רגיל</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;למשל 08:00&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;שעה בפורמט HH:mm, למשל 08:00&lt;/p&gt;</errorMessage>
+                <formulaExpression>REGEX({!Shacharit_Time}, &quot;([01][0-9]|2[0-3]):[0-5][0-9]&quot;)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Mincha_Time</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>fPmTime</elementReference>
+            </defaultValue>
+            <fieldText>מנחה – יום רגיל</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;למשל 20:00&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;שעה בפורמט HH:mm, למשל 08:00&lt;/p&gt;</errorMessage>
+                <formulaExpression>REGEX({!Mincha_Time}, &quot;([01][0-9]|2[0-3]):[0-5][0-9]&quot;)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Eve_Shacharit_Time</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>fEveAmTime</elementReference>
+            </defaultValue>
+            <fieldText>שחרית – ערב שבת / ערב חג</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;למשל 06:00&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;שעה בפורמט HH:mm, למשל 08:00&lt;/p&gt;</errorMessage>
+                <formulaExpression>REGEX({!Eve_Shacharit_Time}, &quot;([01][0-9]|2[0-3]):[0-5][0-9]&quot;)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Eve_Mincha_Time</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>fEvePmTime</elementReference>
+            </defaultValue>
+            <fieldText>מנחה – ערב שבת / ערב חג (כולל שבת או החג)</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;למשל 11:00&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;שעה בפורמט HH:mm, למשל 08:00&lt;/p&gt;</errorMessage>
+                <formulaExpression>REGEX({!Eve_Mincha_Time}, &quot;([01][0-9]|2[0-3]):[0-5][0-9]&quot;)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Footer_Text</name>
+            <fieldText>&lt;p&gt;בלחיצה על "שמור והחל" ריצות החיוב מתוזמנות מחדש. חיובים שכבר תוכננו אינם משתנים.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <nextOrFinishButtonLabel>שמור והחל</nextOrFinishButtonLabel>
         <showFooter>true</showFooter>
         <showHeader>true</showHeader>
     </screens>
@@ -132,7 +211,7 @@
         <allowPause>false</allowPause>
         <fields>
             <name>Error_Text</name>
-            <fieldText>&lt;p&gt;לא ניתן להחיל את זמני החיוב: {!$Flow.FaultMessage}&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;לא ניתן לשמור את שעות החיוב: {!$Flow.FaultMessage}&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <showFooter>true</showFooter>

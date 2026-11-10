@@ -4,6 +4,7 @@
     <fields>Name</fields>
     <fields>StageName</fields>
     <fields>Charge_Amount__c</fields>
+    <fields>Mincha_Amount__c</fields>
     <fields>Frequency__c</fields>
     <fields>Last4__c</fields>
     <fields>Card_Expiry_Date__c</fields>

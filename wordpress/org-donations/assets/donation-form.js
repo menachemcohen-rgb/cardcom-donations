@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   // Pure helpers, exposed for the JS tests (tests/js) — hoisted function declarations below.
-  window.OrgDonUtil = { validId: validId, perMonth: perMonth, normPhone: normPhone, validAmount: validAmount };
+  window.OrgDonUtil = { validId: validId, perMonth: perMonth, perWeek: perWeek, prayers: prayers, normPhone: normPhone, validAmount: validAmount };
   const cfg = window.ORGDON || {};
   const form = document.getElementById('orgdon-form');
   if (!form) return;
@@ -24,18 +24,47 @@
   const setErr = (k, t) => { const el = form.querySelector(`.orgdon-err[data-for="${k}"]`); if (el) el.textContent = t || ''; };
   const clearErrs = () => form.querySelectorAll('.orgdon-err').forEach((e) => (e.textContent = ''));
 
-  function amount() {
-    const p = form.querySelector('input[name="amount_preset"]:checked');
-    return p && p.value === 'other' ? $('amount_other').value : (p ? p.value : '');
+  const freq = () => (form.querySelector('input[name="frequency"]:checked') || {}).value;
+  /** Amount chosen in one prayer's picker ('shacharit' | 'mincha'), as typed. */
+  function pickerAmount(prayer) {
+    const p = form.querySelector(`input[name="${prayer}_preset"]:checked`);
+    return p && p.value === 'other' ? $(prayer + '_other').value : (p ? p.value : '');
+  }
+  const sameAmount = () => freq() === 'TwiceDaily' && $('same_amount').checked;
+  /** Amount per prayer; '' for a prayer the frequency doesn't charge. Mincha = Shacharit when "אותו סכום" is checked. */
+  function amounts() {
+    const inc = prayers(freq());
+    const sh = inc.shacharit ? pickerAmount('shacharit') : '';
+    const mi = inc.mincha ? (sameAmount() ? sh : pickerAmount('mincha')) : '';
+    return { shacharit: sh, mincha: mi };
+  }
+  /** Shows the pickers of the prayers the frequency charges; the Mincha picker is hidden while "אותו סכום" is checked. */
+  function syncPickers() {
+    const inc = prayers(freq());
+    const sh = form.querySelector('[data-prayer="shacharit"]'), mi = form.querySelector('[data-prayer="mincha"]');
+    const same = form.querySelector('[data-role="same-amount"]');
+    if (sh) sh.hidden = !inc.shacharit;
+    if (same) same.hidden = freq() !== 'TwiceDaily';
+    if (mi) mi.hidden = !inc.mincha || sameAmount();
   }
   function estimate() {
-    const a = parseFloat(amount()); const f = form.querySelector('input[name="frequency"]:checked')?.value;
+    const a = amounts(); const f = freq();
     const el = form.querySelector('.orgdon-estimate');
-    if (!a || !f) { el.textContent = ''; return; }
-    el.textContent = `הערכה: כ-${perMonth(a, f)} ₪ בחודש (${f === 'TwiceDaily' ? '14' : '7'} חיובים בשבוע).`;
+    const sh = parseFloat(a.shacharit) || 0, mi = parseFloat(a.mincha) || 0;
+    if (!f || (!sh && !mi)) { el.textContent = ''; return; }
+    el.textContent = `הערכה: כ-${perMonth(sh, mi, f)} ₪ בחודש (${perWeek(f)} חיובים בשבוע).`;
   }
-  /** Every calendar day is charged (rest days in advance), so a month ≈ 30.4 charges per daily slot. */
-  function perMonth(a, f) { return Math.round(a * (f === 'TwiceDaily' ? 2 : 1) * 30.4); }
+  /** Which prayers a frequency charges (Salesforce API values). */
+  function prayers(f) {
+    return { shacharit: f === 'TwiceDaily' || f === 'OnceDaily', mincha: f === 'TwiceDaily' || f === 'MinchaOnly' };
+  }
+  /** Every calendar day is charged (rest days in advance), so a month ≈ 30.4 charges per prayer. */
+  function perMonth(shacharit, mincha, f) {
+    const inc = prayers(f);
+    return Math.round(((inc.shacharit ? Number(shacharit) || 0 : 0) + (inc.mincha ? Number(mincha) || 0 : 0)) * 30.4);
+  }
+  /** 7 charges a week per included prayer. */
+  function perWeek(f) { const inc = prayers(f); return 7 * ((inc.shacharit ? 1 : 0) + (inc.mincha ? 1 : 0)); }
   /** Same rules as the PHP validator and Salesforce (N61). */
   function normPhone(v) {
     let d = String(v || '').replace(/\D/g, '');
@@ -60,7 +89,9 @@
   }
 
   form.addEventListener('change', (e) => {
-    if (e.target.name === 'amount_preset') $('amount_other').hidden = e.target.value !== 'other';
+    const m = /^(shacharit|mincha)_preset$/.exec(e.target.name || '');
+    if (m) $(m[1] + '_other').hidden = e.target.value !== 'other';
+    syncPickers();
     estimate();
     // Edited after the card step was opened: an invalid form must not be able to save a card.
     if (lpId && !cardSaved && !validate()) {
@@ -68,6 +99,7 @@
       msg.textContent = 'נא לתקן את השדות המסומנים.';
     }
   });
+  syncPickers();
   estimate();
 
   function validate() {
@@ -79,7 +111,11 @@
     req('phone', 'נא להזין מספר נייד ישראלי תקין', (v) => normPhone(v) !== null);
     const id = $('tax_id').value.trim();
     if (id && !validId(id)) { setErr('tax_id', 'מספר תעודת הזהות אינו תקין'); ok = false; }
-    if (!validAmount(amount(), cfg.min, cfg.max)) { setErr('amount', `סכום לא תקין – נא לבחור סכום בין ${cfg.min} ל-${cfg.max} ₪`); ok = false; }
+    const inc = prayers(freq()); const a = amounts();
+    if (!freq()) { setErr('frequency', 'נא לבחור תדירות'); ok = false; }
+    ['shacharit', 'mincha'].forEach((p) => {
+      if (inc[p] && !validAmount(a[p], cfg.min, cfg.max)) { setErr(p + '_amount', `סכום לא תקין – נא לבחור סכום בין ${cfg.min} ל-${cfg.max} ₪`); ok = false; }
+    });
     if (!$('terms').checked) { setErr('terms', 'יש לאשר את תנאי ההוראה'); ok = false; }
     return ok;
   }
@@ -90,10 +126,12 @@
   }
 
   function fields() {
+    const a = amounts();
     return {
       first_name: $('first_name').value, last_name: $('last_name').value, email: $('email').value,
-      phone: $('phone').value, tax_id: $('tax_id').value, amount: amount(),
-      frequency: form.querySelector('input[name="frequency"]:checked').value, terms: $('terms').checked ? '1' : '',
+      phone: $('phone').value, tax_id: $('tax_id').value,
+      frequency: freq() || '', shacharit_amount: a.shacharit, mincha_amount: a.mincha, same_amount: sameAmount() ? '1' : '',
+      terms: $('terms').checked ? '1' : '',
     };
   }
 

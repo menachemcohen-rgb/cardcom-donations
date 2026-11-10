@@ -100,6 +100,7 @@ public without sharing class DonorLinkToken {
         StageName,
         Link_Version__c,
         Charge_Amount__c,
+        Mincha_Amount__c,
         Frequency__c,
         Last4__c,
         CardExpirationMMYY__c,

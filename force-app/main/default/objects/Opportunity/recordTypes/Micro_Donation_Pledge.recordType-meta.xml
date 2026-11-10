@@ -16,6 +16,10 @@
             <fullName>TwiceDaily</fullName>
             <default>false</default>
         </values>
+        <values>
+            <fullName>MinchaOnly</fullName>
+            <default>false</default>
+        </values>
     </picklistValues>
     <picklistValues>
         <picklist>Match_Method__c</picklist>

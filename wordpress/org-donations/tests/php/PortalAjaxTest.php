@@ -1,7 +1,7 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/** Donor page: stop the pledge, and a new amount sent together with the card replacement. */
+/** Donor page: Shacharit/Mincha amounts, card replacement (card only), no stop endpoint. */
 final class PortalAjaxTest extends TestCase
 {
     private const TOKEN = 'eyJwIjoiMDA2eCIsImEiOiJjYXJkIiwidiI6MX0.signature_abcdefghij';
@@ -15,10 +15,10 @@ final class PortalAjaxTest extends TestCase
             $GLOBALS['orgdon_test_sent'][] = json_decode($args['body'], true);
             if (str_ends_with($url, '/donor/card'))
                 return ['code' => 200, 'body' => json_encode(['lowProfileId' => 'lp-card-0000000009', 'url' => 'https://secure.cardcom.solutions/EA/x', 'expiresAt' => 'x'])];
-            if (str_ends_with($url, '/donor/stop'))
-                return ['code' => 200, 'body' => json_encode(['ok' => true, 'status' => 'Stopped'])];
             if (str_ends_with($url, '/donor/card/status'))
-                return ['code' => 200, 'body' => json_encode(['status' => 'Completed', 'last4' => '1234', 'amount' => 7])];
+                return ['code' => 200, 'body' => json_encode(['status' => 'Completed', 'last4' => '1234', 'amount' => 7, 'shacharitAmount' => 7, 'minchaAmount' => 5])];
+            if (str_ends_with($url, '/donor/amount'))
+                return ['code' => 200, 'body' => json_encode(['ok' => true, 'changed' => true, 'shacharitAmount' => 4, 'minchaAmount' => 6.5, 'amount' => 4])];
             return ['code' => 404, 'body' => '{}'];
         };
         $_SERVER['REMOTE_ADDR'] = '203.0.113.' . random_int(1, 250);
@@ -31,56 +31,93 @@ final class PortalAjaxTest extends TestCase
         $this->fail('no JSON response');
     }
 
-    public function testCardCarriesTheNewAmount(): void
+    public function testCardSendsNoAmount(): void
     {
-        $r = $this->call('ajax_card', ['amount' => '7']);
+        $r = $this->call('ajax_card', ['amount' => '7', 'shacharitAmount' => '7']);
         $this->assertTrue($r->ok);
-        $this->assertEquals(7, $GLOBALS['orgdon_test_sent'][0]['amount']);
+        $this->assertSame(['token', 'returnUrlBase', 'clientIp'], array_keys($GLOBALS['orgdon_test_sent'][0]), 'card change = card only');
     }
 
-    public function testCardWithoutAmountSendsNone(): void
+    public function testCardStatusReturnsTheAmounts(): void
     {
-        $this->assertTrue($this->call('ajax_card', [])->ok);
-        $this->assertArrayNotHasKey('amount', $GLOBALS['orgdon_test_sent'][0]);
+        $r = $this->call('ajax_card_status', ['lpId' => 'lp-card-0000000009']);
+        $this->assertSame('Completed', $r->data['status']);
+        $this->assertSame('1234', $r->data['last4']);
+        $this->assertSame(7.0, $r->data['shacharitAmount']);
+        $this->assertSame(5.0, $r->data['minchaAmount']);
     }
 
-    public function testCardWithABadAmountNeverReachesSalesforce(): void
+    public function testAmountForwardsOnlyTheGivenPrayers(): void
     {
-        $r = $this->call('ajax_card', ['amount' => '7.123']);
-        $this->assertSame(422, $r->status);
+        $r = $this->call('ajax_amount', ['shacharitAmount' => '4', 'minchaAmount' => '6,5']);
+        $this->assertTrue($r->ok);
+        $this->assertStringEndsWith('/donor/amount', $GLOBALS['orgdon_test_http'][0]);
+        $sent = $GLOBALS['orgdon_test_sent'][0];
+        $this->assertSame(['token', 'shacharitAmount', 'minchaAmount', 'clientIp'], array_keys($sent));
+        $this->assertEquals(4, $sent['shacharitAmount']);
+        $this->assertEquals(6.5, $sent['minchaAmount']);
+        $this->assertSame('הסכום עודכן: שחרית 4.00 ₪, מנחה 6.50 ₪, החל מהחיוב הבא. תודה!', $r->data['message']);
+        $this->assertSame(4.0, $r->data['shacharitAmount']);
+        $this->assertSame(6.5, $r->data['minchaAmount']);
+
+        $GLOBALS['orgdon_test_sent'] = [];
+        $GLOBALS['orgdon_test_http_reply'] = function ($u, $args) {
+            $GLOBALS['orgdon_test_sent'][] = json_decode($args['body'], true);
+            return ['code' => 200, 'body' => json_encode(['ok' => true, 'changed' => true, 'shacharitAmount' => null, 'minchaAmount' => 3, 'amount' => 3])];
+        };
+        $r = $this->call('ajax_amount', ['minchaAmount' => '3']);
+        $this->assertArrayNotHasKey('shacharitAmount', $GLOBALS['orgdon_test_sent'][0], 'omitted when not included');
+        $this->assertSame('הסכום עודכן: מנחה 3.00 ₪, החל מהחיוב הבא. תודה!', $r->data['message']);
+    }
+
+    public function testAmountUnchanged(): void
+    {
+        $GLOBALS['orgdon_test_http_reply'] = fn($u, $a) => ['code' => 200, 'body' => json_encode(['ok' => true, 'changed' => false, 'shacharitAmount' => 3, 'minchaAmount' => null, 'amount' => 3])];
+        $r = $this->call('ajax_amount', ['shacharitAmount' => '3']);
+        $this->assertSame('הסכומים לא השתנו.', $r->data['message']);
+    }
+
+    public function testAmountBadInputNeverReachesSalesforce(): void
+    {
+        $this->assertSame(422, $this->call('ajax_amount', ['shacharitAmount' => '7.123'])->status);
+        $this->assertSame(422, $this->call('ajax_amount', [])->status, 'no amount at all');
+        $this->assertSame(422, $this->call('ajax_amount', ['amount' => '5'])->status, 'the old single amount is not accepted');
         $this->assertSame([], $GLOBALS['orgdon_test_http']);
     }
 
-    public function testCardAmountOutOfRangeFromSalesforce(): void
+    public function testAmountOutOfRangeFromSalesforce(): void
     {
         $GLOBALS['orgdon_test_http_reply'] = fn($u, $a) => ['code' => 400, 'body' => json_encode(['error' => 'AMOUNT_RANGE'])];
-        $r = $this->call('ajax_card', ['amount' => '999']);
-        $this->assertSame(422, $r->status);
-        $this->assertSame('amount', $r->data['field']);
+        $this->assertSame(422, $this->call('ajax_amount', ['minchaAmount' => '999'])->status);
     }
 
-    public function testCardStatusReturnsTheAmount(): void
+    public function testContextMapsFrequencyAndAmounts(): void
     {
-        $r = $this->call('ajax_card_status', ['lpId' => 'lp-card-0000000009']);
-        $this->assertSame(7.0, $r->data['amount']);
-        $this->assertSame('1234', $r->data['last4']);
+        foreach ([
+            ['TwiceDaily', 3, 5, 'שחרית ומנחה', 3.0, 5.0],
+            ['OnceDaily', 3, null, 'רק שחרית', 3.0, null],
+            ['MinchaOnly', null, 4, 'רק מנחה', null, 4.0],
+        ] as [$code, $sh, $mi, $he, $esh, $emi]) {
+            $GLOBALS['orgdon_test_http_reply'] = fn($u, $a) => ['code' => 200, 'body' => json_encode([
+                'action' => 'amount', 'firstName' => 'דנה', 'amount' => $sh ?? $mi, 'frequency' => $code,
+                'shacharitAmount' => $sh, 'minchaAmount' => $mi, 'last4' => '1234', 'expMMYY' => '0930',
+                'minAmount' => 1, 'maxAmount' => 50, 'presets' => [1, 3, 5]])];
+            $d = $this->call('ajax_context', [])->data;
+            $this->assertSame($he, $d['frequency']);
+            $this->assertSame($code, $d['frequencyCode']);
+            $this->assertSame($esh, $d['shacharitAmount'], $code);
+            $this->assertSame($emi, $d['minchaAmount'], $code);
+        }
     }
 
-    public function testStopNeedsTheConfirmation(): void
+    public function testStopEndpointIsGone(): void
     {
-        $r = $this->call('ajax_stop', []);
-        $this->assertSame(400, $r->status);
-        $this->assertSame([], $GLOBALS['orgdon_test_http'], 'nothing sent without the confirm step');
-        $r = $this->call('ajax_stop', ['confirm' => '1']);
-        $this->assertTrue($r->ok);
-        $this->assertStringEndsWith('/donor/stop', $GLOBALS['orgdon_test_http'][0]);
-    }
-
-    public function testStopWithAnInvalidLink(): void
-    {
-        $GLOBALS['orgdon_test_http_reply'] = fn($u, $a) => ['code' => 403, 'body' => json_encode(['error' => 'LINK_INVALID'])];
-        $r = $this->call('ajax_stop', ['confirm' => '1']);
-        $this->assertSame(403, $r->status);
-        $this->assertTrue($r->data['invalid']);
+        $this->assertFalse(method_exists(Org_Portal::class, 'ajax_stop'));
+        $src = file_get_contents(dirname(__DIR__, 2) . '/includes/class-org-portal.php')
+             . file_get_contents(dirname(__DIR__, 2) . '/templates/portal.php')
+             . file_get_contents(dirname(__DIR__, 2) . '/assets/donor-portal.js');
+        $this->assertStringNotContainsString('/donor/stop', $src);
+        $this->assertStringNotContainsString('הפסקת', $src);
+        $this->assertStringNotContainsString("'stop'", $src);
     }
 }

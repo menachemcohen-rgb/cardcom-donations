@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 final class Org_Form {
     // Amount defaults; override in wp-config.php with ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS ("1,2,3,5,10").
-    // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the amount.
+    // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the Shacharit/Mincha amounts.
     const MIN = 1; const MAX = 50;
     const PRESETS = [1, 2, 3, 5, 10];
 
@@ -96,7 +96,7 @@ final class Org_Form {
     /** Salesforce returns VALIDATION fields as a list of API names (B4); the form expects field => message (spec-consistency N63). */
     public static function sf_fields(array $fields): array {
         $map = ['firstName' => 'first_name', 'lastName' => 'last_name', 'email' => 'email', 'phone' => 'phone', 'taxId' => 'tax_id',
-                'amount' => 'amount', 'frequency' => 'frequency', 'termsAccepted' => 'terms', 'lowProfileId' => 'card'];
+                'shacharitAmount' => 'shacharit_amount', 'minchaAmount' => 'mincha_amount', 'frequency' => 'frequency', 'termsAccepted' => 'terms', 'lowProfileId' => 'card'];
         $out = [];
         foreach ($fields as $f) {
             if (is_string($f) && isset($map[$f])) $out[$map[$f]] = 'נא לבדוק שדה זה';

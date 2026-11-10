@@ -21,11 +21,12 @@ public with sharing class DonationChargeScheduler implements Schedulable {
     Charge_Settings__c s = ChargeSettings.get();
     if (s.Charging_Enabled__c != true)
       return false; // emergency switch (B2.6)
-    if ((kind == 'PM' || kind == 'EvePM') && s.Runs_Per_Day__c == 1)
-      return false; // one run a day: TwiceDaily charged once (B9.2)
+    Boolean oneRun = s.Runs_Per_Day__c == 1;
+    if ((kind == 'PM' || kind == 'EvePM') && oneRun)
+      return false; // one run a day: the morning run plans every slot (D36)
     if (!ChargeCalendar.shouldRun(kind, today))
       return false;
-    ChargePlanner.plan(today, ChargeCalendar.slotFor(kind));
+    ChargePlanner.plan(today, ChargeCalendar.slotFor(kind), oneRun);
     return true;
   }
 }
