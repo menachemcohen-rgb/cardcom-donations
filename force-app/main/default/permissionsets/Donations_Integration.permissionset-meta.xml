@@ -225,10 +225,6 @@
         <enabled>true</enabled>
         <externalCredentialPrincipal>Cardcom_EC-CardcomTerminal</externalCredentialPrincipal>
     </externalCredentialPrincipalAccesses>
-    <externalCredentialPrincipalAccesses>
-        <enabled>true</enabled>
-        <externalCredentialPrincipal>Cardcom_Secondary_EC-CardcomTerminal</externalCredentialPrincipal>
-    </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
         <field>Card_Change_Request__c.Cardcom_Terminal__c</field>

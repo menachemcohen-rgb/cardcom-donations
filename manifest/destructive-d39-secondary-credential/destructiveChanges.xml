@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Removes the separate credential of the Diners terminal (no longer used: one Cardcom account, D39).
+     Deploy only after manifest/release-d39-one-credential.xml is in the org. -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Cardcom_Secondary</members>
+        <name>NamedCredential</name>
+    </types>
+    <types>
+        <members>Cardcom_Secondary_EC</members>
+        <name>ExternalCredential</name>
+    </types>
+    <version>62.0</version>
+</Package>

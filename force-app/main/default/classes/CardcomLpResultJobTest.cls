@@ -167,7 +167,7 @@ private class CardcomLpResultJobTest {
     Test.stopTest();
     List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
     Assert.areEqual(1, reqs.size());
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
+    Assert.areEqual(2002, ((Map<String, Object>) JSON.deserializeUntyped(reqs[0].getBody())).get('TerminalNumber'));
     Assert.areEqual('Secondary', terminalOf('lp-0000000001'), 'the token is charged on the terminal that created it');
   }
 
@@ -182,8 +182,8 @@ private class CardcomLpResultJobTest {
     runJob(new List<String>{ 'lp-0000000001' });
     List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
     Assert.areEqual(2, reqs.size());
-    Assert.areEqual('callout:Cardcom/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[1].getEndpoint());
+    Assert.areEqual(1001, ((Map<String, Object>) JSON.deserializeUntyped(reqs[0].getBody())).get('TerminalNumber'));
+    Assert.areEqual(2002, ((Map<String, Object>) JSON.deserializeUntyped(reqs[1].getBody())).get('TerminalNumber'));
     Assert.areEqual('Active', byLp('lp-0000000001').StageName);
     Assert.areEqual('Secondary', terminalOf('lp-0000000001'));
   }
@@ -199,7 +199,7 @@ private class CardcomLpResultJobTest {
     runJob(new List<String>{ 'lp-0000000001' });
     List<HttpRequest> reqs = m.requestsTo('LowProfile/GetLpResult');
     Assert.areEqual(1, reqs.size());
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', reqs[0].getEndpoint());
+    Assert.areEqual(2002, ((Map<String, Object>) JSON.deserializeUntyped(reqs[0].getBody())).get('TerminalNumber'));
     Assert.areEqual('Secondary', terminalOf('lp-0000000001'));
   }
 }

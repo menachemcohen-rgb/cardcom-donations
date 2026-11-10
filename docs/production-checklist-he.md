@@ -51,7 +51,7 @@
   - ערך: 64 תווי hex חדשים (`openssl rand -hex 32`).
   - לא הסוד של הסנדבוקס.
 - [ ] Cardcom: External Credential `Cardcom_EC` → ApiName / ApiPassword של הלקוח.
-- [ ] מסוף שני לדיינרס (D39): External Credential `Cardcom_Secondary_EC` → ApiName / ApiPassword של המסוף השני, ו-`Secondary_Terminal_Number__c` ב-Cardcom Setting → Default.
+- [ ] מסוף שני לדיינרס (D39): רק `Secondary_Terminal_Number__c` ב-Cardcom Setting → Default. שני המסופים באותו חשבון Cardcom, ולכן אותו ApiName / ApiPassword שב-`Cardcom_EC` משמש את שניהם.
 - [ ] `sf apex run --file scripts/apex/init-settings.apex` (שינוי באורג).
   - לבדוק Receipt Day = 2.
   - Charging Enabled = false עד העלייה לאוויר.

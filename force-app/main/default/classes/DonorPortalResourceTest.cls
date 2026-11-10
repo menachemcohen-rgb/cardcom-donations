@@ -298,7 +298,10 @@ private class DonorPortalResourceTest {
     );
     Test.stopTest();
     Assert.areEqual(200, RestContext.response.statusCode);
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/Create', m.requestsTo('LowProfile/Create')[0].getEndpoint());
+    Assert.areEqual(
+      2002,
+      ((Map<String, Object>) JSON.deserializeUntyped(m.requestsTo('LowProfile/Create')[0].getBody())).get('TerminalNumber')
+    );
     Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Card_Change_Request__c].Cardcom_Terminal__c);
   }
 
@@ -320,7 +323,10 @@ private class DonorPortalResourceTest {
     Map<String, Object> r = call('card/status', new Map<String, Object>{ 'token' => link('card'), 'lowProfileId' => 'lp-card-0000000002' });
     Test.stopTest();
     Assert.areEqual('Completed', r.get('status'));
-    Assert.areEqual('callout:Cardcom_Secondary/api/v11/LowProfile/GetLpResult', m.requestsTo('LowProfile/GetLpResult')[0].getEndpoint());
+    Assert.areEqual(
+      2002,
+      ((Map<String, Object>) JSON.deserializeUntyped(m.requestsTo('LowProfile/GetLpResult')[0].getBody())).get('TerminalNumber')
+    );
     Assert.areEqual('Secondary', [SELECT Cardcom_Terminal__c FROM Opportunity WHERE Id = :p.Id].Cardcom_Terminal__c);
     Assert.areEqual('Primary', [SELECT Cardcom_Terminal__c FROM Pledge_Card_History__c].Cardcom_Terminal__c, 'the replaced token');
   }
