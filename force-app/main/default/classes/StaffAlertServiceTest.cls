@@ -36,6 +36,7 @@ private class StaffAlertServiceTest {
         Id,
         Pledge_Number__c,
         Charge_Amount__c,
+        Mincha_Amount__c,
         Frequency__c,
         Consecutive_Failures__c,
         Last4__c,
@@ -48,7 +49,7 @@ private class StaffAlertServiceTest {
     ];
     String html = StaffAlertService.failureStreakBody(loaded, 'אבי כהן');
     Assert.isTrue(html.contains('החיובים ממשיכים לפי הלוח'));
-    Assert.isTrue(html.contains('פעמיים ביום'));
+    Assert.isTrue(html.contains('שחרית ומנחה'));
     Assert.isTrue(html.contains('09/28'));
     Assert.isTrue(html.contains('&lt;b&gt;'), 'values are HTML-escaped');
     StaffAlertService.failureStreak(new Set<Id>{ p.Id });
