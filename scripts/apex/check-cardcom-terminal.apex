@@ -1,10 +1,10 @@
-// Read-only check of the Cardcom terminals, per PR #56 (D39): each terminal has its own Named Credential.
-//   Primary   = Named Credential Cardcom           / External Credential Cardcom_EC           / Terminal_Number__c
-//   Secondary = Named Credential Cardcom_Secondary / External Credential Cardcom_Secondary_EC / Secondary_Terminal_Number__c
+// Read-only check of the Cardcom terminals (D39, PR #57): both terminals are in one Cardcom account, one Named Credential.
+//   Primary   = Named Credential Cardcom / External Credential Cardcom_EC / Terminal_Number__c
+//   Secondary = Named Credential Cardcom / External Credential Cardcom_EC / Secondary_Terminal_Number__c (Diners)
 // For each terminal: LowProfile/Create (CreateTokenOnly — a payment page, charges nothing), then GetLpResult on it
 // (expected 5117-5119: page not filled yet). Builds the requests itself, so it works whatever CardcomService version is deployed.
 // Writes nothing to Salesforce. Do NOT open and fill the printed URLs: a saved card would create a pledge with no donor.
-// The running user needs principal access to both External Credentials (permission set Donations_Integration).
+// The running user needs principal access to Cardcom_EC (permission set Donations_Integration).
 //   sf apex run --target-org <alias> --file scripts/apex/check-cardcom-terminal.apex
 Cardcom_Setting__mdt s = Cardcom_Setting__mdt.getInstance('Default');
 Object secondary = null;
@@ -13,7 +13,7 @@ System.debug(LoggingLevel.ERROR, String.format('CHECK primary {0} secondary {1} 
     new List<Object>{ s.Terminal_Number__c, secondary, s.Webhook_Url__c }));
 
 List<List<Object>> terminals = new List<List<Object>>{ new List<Object>{ 'Primary', 'Cardcom', s.Terminal_Number__c } };
-if (secondary != null) terminals.add(new List<Object>{ 'Secondary', 'Cardcom_Secondary', secondary });
+if (secondary != null) terminals.add(new List<Object>{ 'Secondary', 'Cardcom', secondary });
 else System.debug(LoggingLevel.ERROR, 'CHECK secondary terminal number is empty: only the primary is checked');
 
 String returnBase = 'https://ato770.com/cardcom-return/';
