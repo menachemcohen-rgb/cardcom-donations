@@ -25,6 +25,15 @@ final class Org_Validator {
         'MinchaOnly' => ['mincha'],                // רק מנחה
     ];
 
+    /** Error for an amount the validator rejected: above the maximum gets its own message (ATA-6). */
+    public static function amount_error($raw, float $min, float $max): string {
+        $s = str_replace(',', '.', trim((string) $raw));
+        if (preg_match('/^\d+(\.\d{1,2})?$/', $s) && (float) $s > $max) return self::max_message($max);
+        return sprintf('סכום לא תקין – נא לבחור סכום בין %s ל-%s ₪', $min, $max);
+    }
+
+    public static function max_message(float $max): string { return sprintf('הסכום המקסימלי הוא %s ₪ ליום', $max); }
+
     /** Same rule for every amount: min..max, at most 2 decimals. Returns the amount rounded to 2 decimals, or null if invalid. */
     public static function amount($raw, float $min, float $max): ?float {
         $s = str_replace(',', '.', trim((string) $raw));
@@ -50,12 +59,11 @@ final class Org_Validator {
         $prayers        = $freq ? self::PRAYERS[$freq] : [];
         $raw = ['shacharit' => $in['shacharit_amount'] ?? '', 'mincha' => $in['mincha_amount'] ?? ''];
         if ($freq === 'TwiceDaily' && !empty($in['same_amount'])) $raw['mincha'] = $raw['shacharit'];   // "אותו סכום בשחרית ובמנחה"
-        $amountMsg = sprintf('סכום לא תקין – נא לבחור סכום בין %s ל-%s ₪', $min, $max);
         foreach (['shacharit', 'mincha'] as $p) {
             $d[$p . 'Amount'] = null;
             if (!in_array($p, $prayers, true)) continue;      // not charged: sent as null
             $d[$p . 'Amount'] = self::amount($raw[$p], $min, $max);
-            if ($d[$p . 'Amount'] === null) $e[$p . '_amount'] = $amountMsg;
+            if ($d[$p . 'Amount'] === null) $e[$p . '_amount'] = self::amount_error($raw[$p], $min, $max);
         }
         $d['termsAccepted'] = !empty($in['terms']);
         $d['lowProfileId']  = preg_match('/^[0-9a-fA-F-]{20,64}$/', $in['lp_id'] ?? '') ? $in['lp_id'] : null;

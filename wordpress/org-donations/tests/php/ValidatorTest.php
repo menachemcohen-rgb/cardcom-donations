@@ -59,8 +59,10 @@ final class ValidatorTest extends TestCase
             foreach (['0.5', '50.01', '51', '3.333', 'abc', '', '-3'] as $bad) {
                 $this->assertArrayHasKey("{$p}_amount", Org_Validator::signup($this->input(["{$p}_amount" => $bad]), 1, 50)['errors'], "$p $bad");
             }
+            $this->assertSame('הסכום המקסימלי הוא 50 ₪ ליום',
+                Org_Validator::signup($this->input(["{$p}_amount" => '99']), 1, 50)['errors']["{$p}_amount"], 'ATA-6: above max');
             $this->assertSame('סכום לא תקין – נא לבחור סכום בין 1 ל-50 ₪',
-                Org_Validator::signup($this->input(["{$p}_amount" => '99']), 1, 50)['errors']["{$p}_amount"]);
+                Org_Validator::signup($this->input(["{$p}_amount" => '0.5']), 1, 50)['errors']["{$p}_amount"]);
         }
         $this->assertSame(3.5, Org_Validator::signup($this->input(['shacharit_amount' => '3,50']), 1, 50)['data']['shacharitAmount']);
     }

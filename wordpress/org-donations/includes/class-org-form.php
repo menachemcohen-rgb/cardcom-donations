@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 final class Org_Form {
     // Amount defaults; override in wp-config.php with ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS ("1,2,3,5,10").
     // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the Shacharit/Mincha amounts.
-    const MIN = 1; const MAX = 50;
+    const MIN = 1; const MAX = 25;    // ATA-6: at most 25 ₪ per charge (= Cardcom_Setting__mdt.Default.Max_Amount__c)
     const PRESETS = [1, 2, 3, 5, 10];
 
     // Rate-limit defaults; override in wp-config.php with ORG_DONATION_RL_WINDOW / _SUBMIT_MAX / _LP_MAX.
@@ -39,7 +39,20 @@ final class Org_Form {
         foreach ($list as $v) {
             if (is_numeric($v) && (float) $v >= self::min_amount() && (float) $v <= self::max_amount()) $out[] = $v + 0;
         }
-        return $out ?: self::PRESETS;
+        if (!$out) foreach (self::PRESETS as $v) if ($v >= self::min_amount() && $v <= self::max_amount()) $out[] = $v;
+        return $out;
+    }
+
+    // Card frame heights, ATA-6: defaults 880px / 1150px in donation-form.css; override with ORG_DONATION_FRAME_HEIGHT / ORG_DONATION_FRAME_HEIGHT_MOBILE.
+
+    /** Inline CSS variables for the card frame heights, or '' when the defaults in donation-form.css apply. */
+    public static function frame_style(): string {
+        $out = [];
+        foreach (['--orgdon-frame-h' => 'ORG_DONATION_FRAME_HEIGHT', '--orgdon-frame-h-mobile' => 'ORG_DONATION_FRAME_HEIGHT_MOBILE'] as $var => $c) {
+            $v = orgdon_const($c);
+            if (ctype_digit($v) && (int) $v >= 400 && (int) $v <= 3000) $out[] = $var . ':' . (int) $v . 'px';
+        }
+        return implode(';', $out);
     }
 
     private static function amount_cfg(string $name, float $default): float {
@@ -87,8 +100,10 @@ final class Org_Form {
             'selfOrigin'    => ORG_DONATION_ORIGIN,
             'min' => self::min_amount(), 'max' => self::max_amount(),
             'diners' => self::diners_enabled(),
+            'parentOrigin' => orgdon_const('ORG_DONATION_PARENT_ORIGIN', '*'),   // page that embeds the form (Elementor iframe)
         ]);
         ob_start();
+        $frame_style = self::frame_style();
         $presets = self::presets(); $terms_url = orgdon_const('ORG_DONATION_TERMS_URL'); $diners = self::diners_enabled();
         include ORGDON_DIR . 'templates/form.php';
         return ob_get_clean();

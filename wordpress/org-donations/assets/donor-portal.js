@@ -128,7 +128,9 @@
     const a = sel.value === 'other' ? otherInput.value.replace(',', '.') : sel.value;
     const n = Number(a);
     if (!a || isNaN(n) || n < ctx.min || n > ctx.max || !/^\d+(\.\d{1,2})?$/.test(a)) {
-      errEl.textContent = 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
+      errEl.textContent = /^\d+(\.\d{1,2})?$/.test(a) && n > ctx.max
+        ? 'הסכום המקסימלי הוא ' + ctx.max + ' ₪ ליום.'
+        : 'נא לבחור סכום בין ' + ctx.min + ' ל-' + ctx.max + ' ₪.';
       return '';
     }
     return a;

@@ -1,5 +1,5 @@
 <?php if (!defined('ABSPATH')) exit; ?>
-<div class="orgdon" dir="rtl" lang="he">
+<div class="orgdon" dir="rtl" lang="he"<?= !empty($frame_style) ? ' style="' . esc_attr($frame_style) . '"' : '' ?>>
   <form id="orgdon-form" novalidate>
     <h2 class="orgdon-title">הצטרפות להוראת תרומה יומית</h2>
     <p class="orgdon-sub">חיוב בזמן תפילת שחרית ו/או מנחה. ללא חיוב בשבת ובחגים; ביום שישי ובערב חג יבוצע חיוב כפול.</p>

@@ -60,3 +60,10 @@ test('portal amountPayload: only the prayers the pledge charges', () => {
 test('portal: no stop-charges code left', () => {
   assert.ok(!/stop/i.test(portalSrc.replace(/stopPropagation/g, '')), 'donors stop only by phone');
 });
+
+test('amountError: above the maximum has its own message (ATA-6)', () => {
+  const { amountError } = window.OrgDonUtil;
+  assert.equal(amountError('26', 1, 25), 'הסכום המקסימלי הוא 25 ₪ ליום');
+  assert.equal(amountError('0.5', 1, 25), 'סכום לא תקין – נא לבחור סכום בין 1 ל-25 ₪');
+  assert.equal(amountError('abc', 1, 25), 'סכום לא תקין – נא לבחור סכום בין 1 ל-25 ₪');
+});
