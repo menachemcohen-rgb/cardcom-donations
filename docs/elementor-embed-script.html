@@ -1,0 +1,23 @@
+<!-- Org Donations 1.4.0 (ATA-6): paste into an Elementor HTML widget on the page that embeds the donation form in an iframe.
+     On {type:'orgdon-success'} from the form's iframe, scrolls the page to the top of that iframe, where the thank-you dialog is.
+     Inside an iframe, position:fixed is relative to the frame, so without this the dialog can be off the donor's screen.
+     Optional: set ORG_DONATION_ORIGIN below to the form site's origin to accept the message only from it. -->
+<script>
+(function () {
+  var ORG_DONATION_ORIGIN = '';   // e.g. 'https://www.example.org.il'; empty = accept from any of this page's iframes
+  var HEADER_OFFSET = 80;         // px above the iframe left visible (sticky site header); 0 if none
+  window.addEventListener('message', function (ev) {
+    var d = ev.data || {};
+    if (d.type !== 'orgdon-success') return;
+    if (ORG_DONATION_ORIGIN && ev.origin !== ORG_DONATION_ORIGIN) return;
+    var frames = document.getElementsByTagName('iframe');
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow !== ev.source) continue;
+      var top = frames[i].getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
+      var smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      window.scrollTo({ top: Math.max(top, 0), behavior: smooth ? 'smooth' : 'auto' });
+      return;
+    }
+  });
+})();
+</script>

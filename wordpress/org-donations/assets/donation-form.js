@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   // Pure helpers, exposed for the JS tests (tests/js) — hoisted function declarations below.
-  window.OrgDonUtil = { validId: validId, perMonth: perMonth, perWeek: perWeek, prayers: prayers, normPhone: normPhone, validAmount: validAmount };
+  window.OrgDonUtil = { validId: validId, perMonth: perMonth, perWeek: perWeek, prayers: prayers, normPhone: normPhone, validAmount: validAmount, amountError: amountError };
   const cfg = window.ORGDON || {};
   const form = document.getElementById('orgdon-form');
   if (!form) return;
@@ -80,6 +80,20 @@
     return a >= min && a <= max;
   }
 
+  /** Message for an amount validAmount rejected: above the maximum has its own text (ATA-6), same as the PHP validator. */
+  function amountError(v, min, max) {
+    const s = String(v == null ? '' : v).trim();
+    if (/^\d+(\.\d{1,2})?$/.test(s) && parseFloat(s) > max) return `הסכום המקסימלי הוא ${max} ₪ ליום`;
+    return `סכום לא תקין – נא לבחור סכום בין ${min} ל-${max} ₪`;
+  }
+
+  const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /** Brings the card frame into view when it opens (ATA-6); the browser also scrolls an embedding page. */
+  function scrollToCard() {
+    const box = iframe && iframe.closest ? iframe.closest('.orgdon-card') || iframe : iframe;
+    if (box && box.scrollIntoView) box.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+  }
+
   /** Shows/hides the card step. The iframe is only visible while the form is valid and a session exists. */
   function showCard(on) {
     if (!iframe) return;
@@ -126,7 +140,7 @@
     const inc = prayers(freq()); const a = amounts();
     if (!freq()) { setErr('frequency', 'נא לבחור תדירות'); ok = false; }
     ['shacharit', 'mincha'].forEach((p) => {
-      if (inc[p] && !validAmount(a[p], cfg.min, cfg.max)) { setErr(p + '_amount', `סכום לא תקין – נא לבחור סכום בין ${cfg.min} ל-${cfg.max} ₪`); ok = false; }
+      if (inc[p] && !validAmount(a[p], cfg.min, cfg.max)) { setErr(p + '_amount', amountError(a[p], cfg.min, cfg.max)); ok = false; }
     });
     if (!$('terms').checked) { setErr('terms', 'יש לאשר את תנאי ההוראה'); ok = false; }
     return ok;
@@ -166,7 +180,7 @@
     if (opening || cardSaved || !iframe) return;
     msg.textContent = '';
     if (!validate()) { msg.textContent = 'נא לתקן את השדות המסומנים.'; return; }
-    if (lpId && Date.now() < lpExpires - 30000) { showCard(true); return; }   // session still fresh: just show it again
+    if (lpId && Date.now() < lpExpires - 30000) { showCard(true); scrollToCard(); return; }   // session still fresh: just show it again
     opening = true; if (continueBtn) continueBtn.disabled = true;
     const j = await post('org_donation_lp', fields());
     opening = false; if (continueBtn) continueBtn.disabled = false;
@@ -178,7 +192,7 @@
     }
     lpId = j.data.lpId; iframe.src = j.data.url;
     lpExpires = j.data.expiresAt ? new Date(j.data.expiresAt).getTime() : Date.now() + 20 * 60000;
-    showCard(true); schedule();
+    showCard(true); scrollToCard(); schedule();
   }
   if (continueBtn) continueBtn.addEventListener('click', openCard);
 
@@ -200,10 +214,13 @@
     const j = await post('org_donation_submit', Object.assign(fields(), { lp_id: lpId }));
     submitting = false;
     if (j.success || (j.data && j.data.done)) {
+      const text = (j.data && j.data.message) || 'תודה!';
       const thanks = document.createElement('div');
       thanks.className = 'orgdon-thanks'; thanks.setAttribute('role', 'status');
-      thanks.textContent = (j.data && j.data.message) || 'תודה!';
+      thanks.textContent = text;
       form.replaceChildren(thanks);
+      notifyParent();
+      showSuccessModal(text);
       return;
     }
     const d = j.data || {};
@@ -215,6 +232,37 @@
     showServerErrors(d);
     msg.textContent = d.message || 'אירעה שגיאה בשמירה. נסו שוב.';
     finishBtn.hidden = false; finishBtn.disabled = !cardSaved;
+  }
+
+  /**
+   * Tells an embedding page (Elementor iframe) that the pledge was saved, so it can scroll to the top of our frame:
+   * inside an iframe, position:fixed is relative to the frame, not to the donor's screen. No data in the message.
+   */
+  function notifyParent() {
+    if (window.parent === window) return;
+    try { window.parent.postMessage({ type: 'orgdon-success' }, cfg.parentOrigin || '*'); } catch (e) { /* ignore */ }
+  }
+
+  /** Success message as a modal dialog with a close button (ATA-6); the thank-you text also stays in place of the form. */
+  function showSuccessModal(text) {
+    const back = document.createElement('div');
+    back.className = 'orgdon-modal-back' + (window.parent !== window ? ' orgdon-modal-embedded' : '');
+    const box = document.createElement('div');
+    box.className = 'orgdon-modal'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-labelledby', 'orgdon-modal-title'); box.dir = 'rtl'; box.lang = 'he';
+    const h = document.createElement('h2'); h.id = 'orgdon-modal-title'; h.className = 'orgdon-modal-title'; h.textContent = 'תודה רבה!';
+    const p = document.createElement('p'); p.className = 'orgdon-modal-text'; p.textContent = text;
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'orgdon-btn orgdon-modal-close'; close.textContent = 'סגירה';
+    box.append(h, p, close); back.append(box);
+    const prevFocus = document.activeElement;
+    const done = () => { document.removeEventListener('keydown', onKey); back.remove(); if (prevFocus && prevFocus.focus && document.contains(prevFocus)) prevFocus.focus(); };
+    const onKey = (e) => { if (e.key === 'Escape') done(); else if (e.key === 'Tab') { e.preventDefault(); close.focus(); } };
+    close.addEventListener('click', done);
+    back.addEventListener('click', (e) => { if (e.target === back) done(); });
+    document.addEventListener('keydown', onKey);
+    (document.querySelector('.orgdon') || document.body).append(back);
+    close.focus({ preventScroll: true });
+    if (back.scrollIntoView && window.parent !== window) box.scrollIntoView({ block: 'start' });
   }
 
   window.addEventListener('message', (ev) => {

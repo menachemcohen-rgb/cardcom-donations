@@ -23,7 +23,10 @@ define('ORG_DONATION_CONTACT_PHONE', '03-0000000');                       // sho
 define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
 define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c
 define('ORG_DONATION_MIN_AMOUNT', 1);                // optional, default 1;  keep = Min_Amount__c
-define('ORG_DONATION_MAX_AMOUNT', 50);               // optional, default 50; keep = Max_Amount__c
+define('ORG_DONATION_MAX_AMOUNT', 25);               // optional, default 25 (ATA-6); keep = Max_Amount__c. An old 50 here overrides the default!
+define('ORG_DONATION_FRAME_HEIGHT', 880);            // optional (ATA-6): Cardcom frame height in px on desktop (default 880)
+define('ORG_DONATION_FRAME_HEIGHT_MOBILE', 1150);    // optional: on phones (default 1150); the frame never scrolls there
+define('ORG_DONATION_PARENT_ORIGIN', 'https://www.<site>'); // optional: origin of a page that embeds the form in an iframe (Elementor); default '*'
 define('ORG_DONATION_DINERS', true);                 // optional (D39): shows "הכרטיס שלי הוא דיינרס"; needs the second terminal in Salesforce (section 6)
 define('ORG_BEHIND_CLOUDFLARE', true);                                     // only if the site is proxied by Cloudflare
 // Rate limits per visitor IP (fixed window from the first counted request). Only counted: card sessions created for a
@@ -76,6 +79,12 @@ Follow `docs/wp-cache-exclusions.md` (WP Rocket / LiteSpeed / Cloudflare / CSP /
 - Browser DevTools → Network: no request from the browser to Salesforce (only `admin-ajax.php` and `secure.cardcom.solutions`).
 - View Source: no client secret, no Salesforce token, no Salesforce URL.
 - Then run the manual tests in `docs/acceptance.md` (TC01, TC05–TC07, TC10, donor page).
+
+## Embedding the form in an iframe (Elementor)
+When the form page is shown inside an iframe on another page, add `docs/elementor-embed-script.html` to that page
+(Elementor → HTML widget, below the iframe). On a successful pledge the form shows a dialog at the top of its frame
+and sends `{type:'orgdon-success'}`; the script scrolls the page to the top of the iframe so the dialog is on screen.
+The iframe height must hold the whole form including the Cardcom frame: 1750px desktop / 2050px mobile from 1.4.0.
 
 ## Uninstall
 Deleting the plugin removes only its transients (cached Salesforce token, rate-limit counters). Nothing in Salesforce is affected.

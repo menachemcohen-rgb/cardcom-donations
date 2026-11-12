@@ -40,13 +40,16 @@ final class FormAjaxTest extends TestCase
 
     public function testNoCardSessionForAnInvalidForm(): void
     {
-        foreach (['0', '51', '3.333', ''] as $amount) {
+        foreach (['0', '3.333', ''] as $amount) {
             $r = $this->call('ajax_lp', $this->form(['shacharit_amount' => $amount]));
             $this->assertFalse($r->ok, "amount $amount");
             $this->assertSame(422, $r->status);
             $this->assertArrayHasKey('shacharit_amount', $r->data['fields']);
-            $this->assertSame('סכום לא תקין – נא לבחור סכום בין 1 ל-50 ₪', $r->data['fields']['shacharit_amount'], 'existing message text');
+            $this->assertSame('סכום לא תקין – נא לבחור סכום בין 1 ל-25 ₪', $r->data['fields']['shacharit_amount'], 'existing message text');
         }
+        $r = $this->call('ajax_lp', $this->form(['shacharit_amount' => '26']));
+        $this->assertSame(422, $r->status);
+        $this->assertSame('הסכום המקסימלי הוא 25 ₪ ליום', $r->data['fields']['shacharit_amount'], 'ATA-6: above the maximum');
         $r = $this->call('ajax_lp', $this->form(['email' => 'nope', 'phone' => '03-1234567', 'first_name' => '']));
         $this->assertSame(422, $r->status);
         $this->assertEqualsCanonicalizing(['email', 'phone', 'first_name'], array_keys($r->data['fields']));
