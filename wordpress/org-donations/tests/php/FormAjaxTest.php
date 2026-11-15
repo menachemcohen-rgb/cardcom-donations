@@ -26,8 +26,15 @@ final class FormAjaxTest extends TestCase
             'tax_id' => '', 'shacharit_amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'], $over);
     }
 
+    /** Older tests submit without opening a card page first: record the page as opened with the form's ID (see the item 7 tests). */
+    private bool $autoSeedLp = true;
+
     private function call(string $method, array $post): OrgdonTestJson
     {
+        if ($method === 'ajax_submit' && $this->autoSeedLp && !empty($post['lp_id'])) {
+            $k = Org_Form::lp_tax_key($post['lp_id']);
+            if (get_transient($k) === false) set_transient($k, Org_Validator::il_id((string) ($post['tax_id'] ?? '')) ?? '', 60);
+        }
         $_POST = $post;
         try { Org_Form::$method(); } catch (OrgdonTestJson $j) { return $j; }
         $this->fail('no JSON response');
@@ -173,5 +180,65 @@ final class FormAjaxTest extends TestCase
         $this->assertSame('Primary', $sent[1][1]['terminal']);
         $this->assertSame('/services/apexrest/donations/pledge', $sent[2][0]);
         $this->assertSame('Secondary', $sent[2][1]['terminal']);
+    }
+
+    /** Item 1: the validated ID number from the form goes to /donations/lowprofile as taxId; none → null (Cardcom shows its ID field). */
+    public function testCardSessionCarriesTheFormIdNumber(): void
+    {
+        $sent = [];
+        $reply = $GLOBALS['orgdon_test_http_reply'];
+        $GLOBALS['orgdon_test_http_reply'] = function ($url, $args) use (&$sent, $reply) {
+            $sent[] = json_decode($args['body'], true);
+            return $reply($url, $args);
+        };
+        $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '18']))->ok);
+        $this->assertSame('000000018', $sent[0]['taxId'], 'validated and left-padded before it is sent');
+        $this->assertTrue($this->call('ajax_lp', $this->form())->ok);
+        $this->assertArrayHasKey('taxId', $sent[1]);
+        $this->assertNull($sent[1]['taxId'], 'no ID: nothing to pre-fill');
+        $bad = $this->call('ajax_lp', $this->form(['tax_id' => '123456789']));
+        $this->assertSame(422, $bad->status, 'an invalid ID never reaches Salesforce');
+        $this->assertCount(2, $sent);
+    }
+
+    /** Item 7: the ID sent with each card page is kept per LowProfileId and must match the ID in the submitted form. */
+    public function testSubmitWithTheSameIdAsTheCardPageIsAccepted(): void
+    {
+        $this->autoSeedLp = false;
+        $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '123456782']))->ok);
+        $this->assertSame('123456782', get_transient(Org_Form::lp_tax_key(self::LP)));
+        $this->assertTrue($this->call('ajax_submit', $this->form(['tax_id' => '123456782', 'lp_id' => self::LP]))->ok);
+        $this->assertSame(1, $this->sfCalls('/donations/pledge'));
+    }
+
+    public function testSubmitWithoutIdAfterACardPageWithoutIdIsAccepted(): void
+    {
+        $this->autoSeedLp = false;
+        $this->assertTrue($this->call('ajax_lp', $this->form())->ok);
+        $this->assertSame('', get_transient(Org_Form::lp_tax_key(self::LP)));
+        $this->assertTrue($this->call('ajax_submit', $this->form(['lp_id' => self::LP]))->ok);
+    }
+
+    public function testSubmitWithAnotherIdAsksToConfirmTheCardAgain(): void
+    {
+        $this->autoSeedLp = false;
+        $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '123456782']))->ok);
+        foreach ([['tax_id' => '18'], ['tax_id' => '']] as $over) {
+            $r = $this->call('ajax_submit', $this->form($over + ['lp_id' => self::LP]));
+            $this->assertFalse($r->ok);
+            $this->assertSame('נא לאשר שוב את פרטי הכרטיס', $r->data['message']);
+            $this->assertTrue($r->data['renewCard'], 'the form opens a new card page');
+        }
+        $this->assertSame(0, $this->sfCalls('/donations/pledge'), 'Salesforce never called');
+        $this->assertTrue(Org_Rate_Limiter::allowed('submit', 1), 'not rate-counted');
+        $this->assertSame([], $GLOBALS['orgdon_test_options'], 'lock released');
+    }
+
+    public function testSubmitForACardPageUnknownHereAsksToConfirmTheCardAgain(): void
+    {
+        $this->autoSeedLp = false;
+        $r = $this->call('ajax_submit', $this->form(['lp_id' => self::LP]));
+        $this->assertTrue($r->data['renewCard']);
+        $this->assertSame(0, $this->sfCalls('/donations/pledge'));
     }
 }

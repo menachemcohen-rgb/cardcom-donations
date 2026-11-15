@@ -127,6 +127,23 @@ private class DonorPortalResourceTest {
     Assert.areEqual('lp-card-0000000001', r.get('lowProfileId'));
     Assert.isTrue(((String) m.lastBody('LowProfile/Create').get('ReturnValue')).startsWith('CARD-'));
     Assert.areEqual('Pending', [SELECT Status__c FROM Card_Change_Request__c].Status__c);
+    Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'), 'contact without an ID: Cardcom asks for it');
+    Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
+  }
+
+  @IsTest
+  static void cardReplacementPrefillsTheContactIdNumber() {
+    setup();
+    update new Contact(Id = [SELECT Donor_Contact__c FROM Opportunity WHERE Id = :p.Id].Donor_Contact__c, Donor_Tax_Id__c = '123456782');
+    CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-card-0000000001'));
+    Test.startTest();
+    call('card', new Map<String, Object>{ 'token' => link('card'), 'returnUrlBase' => TestDataFactory.RETURN_URL });
+    Test.stopTest();
+    Assert.areEqual(200, RestContext.response.statusCode);
+    Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    Assert.areEqual('123456782', ui.get('CardOwnerIdentityNumberValue'));
+    Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'));
   }
 
   @IsTest

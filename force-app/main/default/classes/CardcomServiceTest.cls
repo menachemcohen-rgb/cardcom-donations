@@ -215,4 +215,34 @@ private class CardcomServiceTest {
     Assert.isTrue(CardcomService.isLpKnown(CardcomMock.lpPending('lp-0000000001')));
     Assert.isFalse(CardcomService.isLpKnown(CardcomMock.lpFailed('lp-0000000001')));
   }
+
+  @IsTest
+  static void createTokenLowProfileWithTaxIdPrefillsAndHidesTheIdField() {
+    TestDataFactory.settings();
+    CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
+    Test.startTest();
+    CardcomService.createTokenLowProfile(CardcomService.PRIMARY, 'SIGNUP-abc', TestDataFactory.RETURN_URL, 'x', '18');
+    Test.stopTest();
+    Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    Assert.areEqual('000000018', ui.get('CardOwnerIdentityNumberValue'), 'left-padded to 9 digits');
+    Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'));
+  }
+
+  @IsTest
+  static void createTokenLowProfileWithoutTaxIdKeepsTheIdFieldVisible() {
+    TestDataFactory.settings();
+    CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
+    Test.startTest();
+    CardcomService.createTokenLowProfile('SIGNUP-abc', TestDataFactory.RETURN_URL, 'x');
+    Map<String, Object> plain = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    CardcomService.createTokenLowProfile(CardcomService.PRIMARY, 'SIGNUP-abc', TestDataFactory.RETURN_URL, 'x', '  ');
+    Map<String, Object> blank = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    CardcomService.createTokenLowProfile(CardcomService.PRIMARY, 'SIGNUP-abc', TestDataFactory.RETURN_URL, 'x', '123456789');
+    Map<String, Object> invalid = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    Test.stopTest();
+    for (Map<String, Object> ui : new List<Map<String, Object>>{ plain, blank, invalid }) {
+      Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'), 'the donor types the ID on the Cardcom page');
+      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
+    }
+  }
 }

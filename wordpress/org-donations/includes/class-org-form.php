@@ -14,9 +14,11 @@ final class Org_Form {
 
     const LOCK_TTL = 120;       // seconds a submission lock may be held before it is considered stale
     const DONE_TTL = DAY_IN_SECONDS;
+    const LP_TAX_TTL = DAY_IN_SECONDS; // the ID number pre-filled on each card page, kept until the form is sent (item 7)
 
     const MSG_THANKS = 'תודה! הוראת התרומה התקבלה ונמצאת באימות. החיוב הראשון יתבצע במועד החיוב הקרוב.';
     const MSG_TOO_MANY = 'בוצעו ניסיונות רבים. נסו שוב בעוד מספר דקות.';
+    const MSG_RECONFIRM_CARD = 'נא לאשר שוב את פרטי הכרטיס';
 
     public static function register(): void {
         add_shortcode('org_donation_form', [self::class, 'render']);
@@ -78,11 +80,16 @@ final class Org_Form {
         return self::diners_enabled() && !empty($in['diners']) ? 'Secondary' : 'Primary';
     }
 
-    private static function create_lp(string $terminal): array {
+    /**
+     * @param ?string $taxId the validated ID number from the form (9 digits) or null. Salesforce pre-fills it on the Cardcom page
+     *                       and hides the field there; without it the donor types the ID on the Cardcom page.
+     */
+    private static function create_lp(string $terminal, ?string $taxId): array {
         $r = Org_SF_Client::post('/donations/lowprofile', [
             'purpose' => 'signup',
             'returnUrlBase' => home_url('/cardcom-return/'),
             'terminal' => $terminal,
+            'taxId' => $taxId,
         ]);
         if ($r['code'] !== 200 || empty($r['body']['url'])) throw new RuntimeException('LP');
         return $r['body'];
@@ -120,8 +127,10 @@ final class Org_Form {
         if ($v['errors']) wp_send_json_error(['fields' => $v['errors'], 'message' => 'נא לתקן את השדות המסומנים.'], 422);
         if (!Org_Rate_Limiter::allowed('lp', self::lp_max())) wp_send_json_error(['message' => self::MSG_TOO_MANY], 429);
         Org_Rate_Limiter::count('lp', self::window());
-        try { $lp = self::create_lp(self::terminal($in)); }
+        $taxId = $v['data']['taxId'];
+        try { $lp = self::create_lp(self::terminal($in), $taxId); }
         catch (Throwable $t) { wp_send_json_error(['message' => 'לא ניתן לטעון כעת את טופס התשלום.'], 502); }
+        set_transient(self::lp_tax_key($lp['lowProfileId']), $taxId ?? '', self::LP_TAX_TTL);
         wp_send_json_success(['lpId' => $lp['lowProfileId'], 'url' => $lp['url'], 'expiresAt' => $lp['expiresAt'] ?? null]);
     }
 
@@ -135,6 +144,9 @@ final class Org_Form {
         }
         return $out;
     }
+
+    /** Transient holding the ID number sent to Cardcom for a LowProfileId ('' = none). */
+    public static function lp_tax_key(string $lp): string { return 'orgdon_lptax_' . md5(strtolower($lp)); }
 
     private static function done_key(string $lp): string { return 'orgdon_done_' . md5(strtolower($lp)); }
     private static function lock_key(string $lp): string { return 'orgdon_lock_' . md5(strtolower($lp)); }
@@ -170,6 +182,12 @@ final class Org_Form {
         if (!Org_Rate_Limiter::allowed('submit', self::submit_max())) return [false, ['message' => 'בוצעו ניסיונות רבים. נסו שוב מאוחר יותר.'], 429];
         $v = Org_Validator::signup($in, self::min_amount(), self::max_amount());
         if ($v['errors']) return [false, ['fields' => $v['errors'], 'message' => 'נא להשלים את פרטי הטופס וללחוץ "סיום".'], 422];
+        // The card page was opened with an ID number pre-filled (and hidden). If the form now has another one, or this card page is
+        // unknown here, the card must be confirmed again on a new card page carrying the current ID.
+        $sentTax = get_transient(self::lp_tax_key($v['data']['lowProfileId']));
+        if ($sentTax === false || (string) $sentTax !== (string) ($v['data']['taxId'] ?? '')) {
+            return [false, ['message' => self::MSG_RECONFIRM_CARD, 'renewCard' => true, 'fields' => ['card' => self::MSG_RECONFIRM_CARD]], 409];
+        }
         Org_Rate_Limiter::count('submit', self::window());     // only real (valid) submissions are counted
         $payload = $v['data'] + ['clientIp' => Org_Rate_Limiter::ip(), 'terminal' => self::terminal($in)];
         try { $r = Org_SF_Client::post('/donations/pledge', $payload); }
