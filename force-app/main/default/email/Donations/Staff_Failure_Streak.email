@@ -1,0 +1,9 @@
+<div dir="rtl" style="font-family:Arial,sans-serif">
+<p>שלום,</p>
+<p>בהוראת התרומה של {{Donor}} נכשלו {{Count}} חיובים ברצף. החיובים ממשיכים לפי הלוח – לא בוצעה עצירה.</p>
+<p>אם צריך, ניתן לעצור את החיובים בכפתור "הפסקת חיובים" ברשומת ההוראה.</p>
+<p>פרטי התורם: {{Donor}} · {{DonorEmail}} · {{DonorPhone}}</p>
+<p>ההוראה: {{PledgeNumber}} · {{Frequency}} · {{Amounts}} · כרטיס המסתיים ב-{{Last4}}, תוקף {{Expiry}}</p>
+{{Table}}
+<p><a href="{{RecordUrl}}">לצפייה ברשומה</a></p>
+</div>

@@ -7,6 +7,9 @@
  *   Mincha charge — once when it becomes Active, and again whenever its above-threshold amounts change.
  * - Daily: the 09:00 schedulable (B9) running the daily alerts.
  * Email failures are caught and logged: an alert never rolls back charging.
+ * Text: one Classic Email Template per alert (Staff_*, folder "Donations"), editable by admins (EmailTemplates; placeholders in
+ * docs/email-templates-he.md). Tables and lists are built here and passed as {{Table}} / {{Errors}}; the defaults below are used
+ * only when a template is missing or blank.
  */
 public without sharing class StaffAlertService {
   @TestVisible
@@ -48,10 +51,8 @@ public without sharing class StaffAlertService {
             ' ' +
             (p.Donor_Last_Name__c == null ? '' : p.Donor_Last_Name__c))
             .trim();
-      Messaging.SingleEmailMessage m = message(
-        'כישלונות חוזרים בהוראת תרומה – ' + donor + ' (' + p.Pledge_Number__c + ')',
-        failureStreakBody(p, donor)
-      );
+      EmailTemplates.Rendered r = failureStreakRendered(p, donor);
+      Messaging.SingleEmailMessage m = message(r.subject, r.html);
       if (m != null)
         mails.add(m);
     }
@@ -94,6 +95,13 @@ public without sharing class StaffAlertService {
     return o.StageName == MicroPledges.STAGE_ACTIVE && now != highSlots(o);
   }
 
+  static final String HIGH_AMOUNT_SUBJECT = 'הוראת תרומה בסכום גבוה – {{Donor}} ({{PledgeNumber}})';
+  static final String HIGH_AMOUNT_BODY =
+    '<p>בהוראת התרומה של {{Donor}} הסכום לחיוב גבוה מ-{{Threshold}} ₪: {{HighAmounts}}.</p>' +
+    '<p>פרטי התורם: {{Donor}} · {{DonorEmail}} · {{DonorPhone}}</p>' +
+    '<p>ההוראה: {{PledgeNumber}} · {{Frequency}} · {{Amounts}}</p>' +
+    '<p><a href="{{RecordUrl}}">לצפייה ברשומה</a></p>';
+
   public static void highAmount(Set<Id> pledgeIds) {
     String pledgeType = MicroPledges.TYPE;
     List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
@@ -126,43 +134,45 @@ public without sharing class StaffAlertService {
       String phone = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.MobilePhone)
         ? p.Donor_Contact__r.MobilePhone
         : p.Donor_Phone__c;
-      Messaging.SingleEmailMessage m = message(
-        'הוראת תרומה בסכום גבוה – ' + donor + ' (' + p.Pledge_Number__c + ')',
-        wrap(
-          '<p>בהוראת התרומה של ' +
-            EmailUtil.esc(donor) +
-            ' הסכום לחיוב גבוה מ-' +
-            EmailUtil.esc(highAmountThreshold().setScale(2)) +
-            ' ₪: ' +
-            EmailUtil.esc(highSlots(p)) +
-            '.</p>' +
-            '<p>פרטי התורם: ' +
-            EmailUtil.esc(donor) +
-            ' · ' +
-            EmailUtil.esc(email) +
-            ' · ' +
-            EmailUtil.esc(phone) +
-            '</p>' +
-            '<p>ההוראה: ' +
-            EmailUtil.esc(p.Pledge_Number__c) +
-            ' · ' +
-            EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
-            ' · ' +
-            EmailUtil.esc(MicroPledges.amountsHe(p)) +
-            '</p>' +
-            '<p><a href="' +
-            EmailUtil.recordUrl(p.Id) +
-            '">לצפייה ברשומה</a></p>'
-        )
+      EmailTemplates.Rendered r = EmailTemplates.render(
+        'Staff_High_Amount',
+        HIGH_AMOUNT_SUBJECT,
+        wrap(HIGH_AMOUNT_BODY),
+        new Map<String, String>{
+          'Donor' => EmailUtil.esc(donor),
+          'Threshold' => EmailUtil.esc(highAmountThreshold().setScale(2)),
+          'HighAmounts' => EmailUtil.esc(highSlots(p)),
+          'DonorEmail' => EmailUtil.esc(email),
+          'DonorPhone' => EmailUtil.esc(phone),
+          'PledgeNumber' => EmailUtil.esc(p.Pledge_Number__c),
+          'Frequency' => EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)),
+          'Amounts' => EmailUtil.esc(MicroPledges.amountsHe(p)),
+          'RecordUrl' => EmailUtil.recordUrl(p.Id)
+        },
+        new Map<String, String>{ 'Donor' => donor, 'PledgeNumber' => p.Pledge_Number__c }
       );
+      Messaging.SingleEmailMessage m = message(r.subject, r.html);
       if (m != null)
         mails.add(m);
     }
     sendAll(mails);
   }
 
+  static final String FAILURE_STREAK_SUBJECT = 'כישלונות חוזרים בהוראת תרומה – {{Donor}} ({{PledgeNumber}})';
+  static final String FAILURE_STREAK_BODY =
+    '<p>בהוראת התרומה של {{Donor}} נכשלו {{Count}} חיובים ברצף. החיובים ממשיכים לפי הלוח – לא בוצעה עצירה.</p>' +
+    '<p>אם צריך, ניתן לעצור את החיובים בכפתור "הפסקת חיובים" ברשומת ההוראה.</p>' +
+    '<p>פרטי התורם: {{Donor}} · {{DonorEmail}} · {{DonorPhone}}</p>' +
+    '<p>ההוראה: {{PledgeNumber}} · {{Frequency}} · {{Amounts}} · כרטיס המסתיים ב-{{Last4}}, תוקף {{Expiry}}</p>' +
+    '{{Table}}' +
+    '<p><a href="{{RecordUrl}}">לצפייה ברשומה</a></p>';
+
   @TestVisible
   static String failureStreakBody(Opportunity p, String donor) {
+    return failureStreakRendered(p, donor).html;
+  }
+
+  static EmailTemplates.Rendered failureStreakRendered(Opportunity p, String donor) {
     String rows = '';
     for (Charge__c c : p.Charges__r) {
       rows +=
@@ -181,38 +191,26 @@ public without sharing class StaffAlertService {
     String exp = String.isBlank(p.CardExpirationMMYY__c) || p.CardExpirationMMYY__c.length() != 4
       ? ''
       : p.CardExpirationMMYY__c.left(2) + '/' + p.CardExpirationMMYY__c.right(2);
-    return '<div dir="rtl" style="font-family:Arial,sans-serif">' +
-      '<p>שלום,</p>' +
-      '<p>בהוראת התרומה של ' +
-      EmailUtil.esc(donor) +
-      ' נכשלו ' +
-      EmailUtil.esc(p.Consecutive_Failures__c == null ? null : p.Consecutive_Failures__c.intValue()) +
-      ' חיובים ברצף. החיובים ממשיכים לפי הלוח – לא בוצעה עצירה.</p>' +
-      '<p>אם צריך, ניתן לעצור את החיובים בכפתור "הפסקת חיובים" ברשומת ההוראה.</p>' +
-      '<p>פרטי התורם: ' +
-      EmailUtil.esc(donor) +
-      ' · ' +
-      EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.Email) +
-      ' · ' +
-      EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.MobilePhone) +
-      '</p>' +
-      '<p>ההוראה: ' +
-      EmailUtil.esc(p.Pledge_Number__c) +
-      ' · ' +
-      EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
-      ' · ' +
-      EmailUtil.esc(MicroPledges.amountsHe(p)) +
-      ' · כרטיס המסתיים ב-' +
-      EmailUtil.esc(p.Last4__c) +
-      ', תוקף ' +
-      EmailUtil.esc(exp) +
-      '</p>' +
-      '<table border="1" cellpadding="4" style="border-collapse:collapse"><tr><th>תאריך</th><th>תפילה</th><th>ניסיון</th><th>קוד</th><th>תיאור</th></tr>' +
-      rows +
-      '</table>' +
-      '<p><a href="' +
-      EmailUtil.recordUrl(p.Id) +
-      '">לצפייה ברשומה</a></p></div>';
+    Map<String, String> v = new Map<String, String>{
+      'Donor' => EmailUtil.esc(donor),
+      'Count' => EmailUtil.esc(p.Consecutive_Failures__c == null ? null : p.Consecutive_Failures__c.intValue()),
+      'DonorEmail' => EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.Email),
+      'DonorPhone' => EmailUtil.esc(p.Donor_Contact__r == null ? null : p.Donor_Contact__r.MobilePhone),
+      'PledgeNumber' => EmailUtil.esc(p.Pledge_Number__c),
+      'Frequency' => EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)),
+      'Amounts' => EmailUtil.esc(MicroPledges.amountsHe(p)),
+      'Last4' => EmailUtil.esc(p.Last4__c),
+      'Expiry' => EmailUtil.esc(exp),
+      'Table' => table(new List<String>{ 'תאריך', 'תפילה', 'ניסיון', 'קוד', 'תיאור' }, rows),
+      'RecordUrl' => EmailUtil.recordUrl(p.Id)
+    };
+    return EmailTemplates.render(
+      'Staff_Failure_Streak',
+      FAILURE_STREAK_SUBJECT,
+      wrap(FAILURE_STREAK_BODY),
+      v,
+      new Map<String, String>{ 'Donor' => donor, 'PledgeNumber' => p.Pledge_Number__c }
+    );
   }
 
   // ---------------------------------------------------------------- once-a-day alerts
@@ -220,13 +218,13 @@ public without sharing class StaffAlertService {
   public static Boolean configErrorOncePerDay() {
     if (sentToday('Config_Error_Sent_On__c'))
       return false;
-    send(
+    sendTemplate(
+      'Staff_Config_Error',
       'תקלת הגדרות Cardcom',
-      wrap(
-        '<p>חיובי התרומות נכשלו בגלל תקלת הגדרות מול Cardcom (למשל שם משתמש או סיסמת API שגויים, או טרמינל לא תקין).</p>' +
-          '<p>לא נוצרו ניסיונות חוזרים והכישלונות לא נספרים ברצף. אחרי התיקון יש להריץ מחדש את חיובי היום ' +
-          '(ChargeAdmin.requeueFailedConfig).</p>'
-      )
+      '<p>חיובי התרומות נכשלו בגלל תקלת הגדרות מול Cardcom (למשל שם משתמש או סיסמת API שגויים, או טרמינל לא תקין).</p>' +
+        '<p>לא נוצרו ניסיונות חוזרים והכישלונות לא נספרים ברצף. אחרי התיקון יש להריץ מחדש את חיובי היום ' +
+        '(ChargeAdmin.requeueFailedConfig).</p>',
+      new Map<String, String>()
     );
     markSent('Config_Error_Sent_On__c');
     return true;
@@ -266,12 +264,14 @@ public without sharing class StaffAlertService {
         EmailUtil.esc(r.Error_Message__c) +
         '</td></tr>';
     }
-    send(
-      'קבלות חודשיות שנכשלו (' + rs.size() + ')',
-      wrap(
-        '<p>הקבלות הבאות לא הופקו או שתוצאתן לא ידועה. יש לבדוק ולהפעיל "ניסיון חוזר".</p>' +
-        table(new List<String>{ 'קבלה', 'תורם', 'חודש', 'סטטוס', 'סכום', 'שגיאה' }, rows)
-      )
+    sendTemplate(
+      'Staff_Receipt_Failures',
+      'קבלות חודשיות שנכשלו ({{Count}})',
+      '<p>הקבלות הבאות לא הופקו או שתוצאתן לא ידועה. יש לבדוק ולהפעיל "ניסיון חוזר".</p>{{Table}}',
+      new Map<String, String>{
+        'Count' => String.valueOf(rs.size()),
+        'Table' => table(new List<String>{ 'קבלה', 'תורם', 'חודש', 'סטטוס', 'סכום', 'שגיאה' }, rows)
+      }
     );
     markSent('Receipt_Failures_Sent_On__c');
     return true;
@@ -309,12 +309,14 @@ public without sharing class StaffAlertService {
         EmailUtil.esc(r.SF_Amount__c) +
         '</td></tr>';
     }
-    send(
-      'פערי התאמה פתוחים (' + rs.size() + ')',
-      wrap(
-        '<p>ההתאמה הלילית מול Cardcom מצאה פערים שעדיין פתוחים.</p>' +
-        table(new List<String>{ 'פער', 'סוג', 'תאריך', 'עסקה', 'סכום Cardcom', 'סכום Salesforce' }, rows)
-      )
+    sendTemplate(
+      'Staff_Reconciliation_Open',
+      'פערי התאמה פתוחים ({{Count}})',
+      '<p>ההתאמה הלילית מול Cardcom מצאה פערים שעדיין פתוחים.</p>{{Table}}',
+      new Map<String, String>{
+        'Count' => String.valueOf(rs.size()),
+        'Table' => table(new List<String>{ 'פער', 'סוג', 'תאריך', 'עסקה', 'סכום Cardcom', 'סכום Salesforce' }, rows)
+      }
     );
     markSent('Reconciliation_Open_Sent_On__c');
     return true;
@@ -327,19 +329,19 @@ public without sharing class StaffAlertService {
   public static Boolean reconciliationUnavailable(Date day, Integer charges, Integer checkedNow) {
     if (sentToday('Reconciliation_Unavailable_Sent_On__c'))
       return false;
-    send(
+    sendTemplate(
+      'Staff_Reconciliation_Unavailable',
       'התאמה לילית: רשימת העסקאות מ-Cardcom לא זמינה',
-      wrap(
-        '<p>רשימת העסקאות שהתקבלה מ-Cardcom ליום ' +
-          EmailUtil.esc(day == null ? null : day.format()) +
-          ' לא כוללת אף אחד מ-' +
-          EmailUtil.esc(charges) +
-          ' החיובים המוצלחים של אותו יום, ולכן לא בוצעה השוואה מולה.</p>' +
-          '<p>במקום זאת כל חיוב נבדק בנפרד מול Cardcom (' +
-          EmailUtil.esc(checkedNow) +
-          ' נבדקו בריצה הראשונה, השאר בהמשך). פער ייפתח רק לחיוב ש-Cardcom לא מצאה.</p>' +
-          '<p>כדאי לבדוק את הרשאות ה-API ואת מספר הטרמינל (LimitForTerminal) מול Cardcom.</p>'
-      )
+      '<p>רשימת העסקאות שהתקבלה מ-Cardcom ליום {{Day}} לא כוללת אף אחד מ-{{Charges}} החיובים המוצלחים של אותו יום, ' +
+        'ולכן לא בוצעה השוואה מולה.</p>' +
+        '<p>במקום זאת כל חיוב נבדק בנפרד מול Cardcom ({{Checked}} נבדקו בריצה הראשונה, השאר בהמשך). ' +
+        'פער ייפתח רק לחיוב ש-Cardcom לא מצאה.</p>' +
+        '<p>כדאי לבדוק את הרשאות ה-API ואת מספר הטרמינל (LimitForTerminal) מול Cardcom.</p>',
+      new Map<String, String>{
+        'Day' => EmailUtil.esc(day == null ? null : day.format()),
+        'Charges' => EmailUtil.esc(charges),
+        'Checked' => EmailUtil.esc(checkedNow)
+      }
     );
     markSent('Reconciliation_Unavailable_Sent_On__c');
     return true;
@@ -384,12 +386,14 @@ public without sharing class StaffAlertService {
         EmailUtil.esc(p.CreatedDate.format('dd/MM/yyyy HH:mm')) +
         '</td></tr>';
     }
-    send(
-      'הוראות ממתינות או שנכשלו באימות (' + ps.size() + ')',
-      wrap(
-        '<p>הוראות שלא הושלם בהן אימות הכרטיס: ממתינות יותר מ-24 שעות, או שנכשלו באימות ביממה האחרונה.</p>' +
-        table(new List<String>{ 'הוראה', 'סטטוס', 'שם', 'אימייל', 'נוצרה' }, rows)
-      )
+    sendTemplate(
+      'Staff_Pending_Verification',
+      'הוראות ממתינות או שנכשלו באימות ({{Count}})',
+      '<p>הוראות שלא הושלם בהן אימות הכרטיס: ממתינות יותר מ-24 שעות, או שנכשלו באימות ביממה האחרונה.</p>{{Table}}',
+      new Map<String, String>{
+        'Count' => String.valueOf(ps.size()),
+        'Table' => table(new List<String>{ 'הוראה', 'סטטוס', 'שם', 'אימייל', 'נוצרה' }, rows)
+      }
     );
     markSent('Daily_Summary_Sent_On__c');
     return true;
@@ -399,29 +403,23 @@ public without sharing class StaffAlertService {
   public static void scheduleChanged(Charge_Settings__c s) {
     if (sentToday('Schedule_Changed_Sent_On__c'))
       return;
-    send(
+    sendTemplate(
+      'Staff_Schedule_Changed',
       'זמני חיוב עודכנו',
-      wrap(
-        '<p>זמני החיוב עודכנו והוחלו:</p>' +
-          '<p>בוקר ' +
-          EmailUtil.esc(s.AM_Time__c) +
-          ' · ערב ' +
-          EmailUtil.esc(s.PM_Time__c) +
-          ' · שישי/ערב חג ' +
-          EmailUtil.esc(s.Eve_AM_Time__c) +
-          ' ו-' +
-          EmailUtil.esc(s.Eve_PM_Time__c) +
-          ' · ריצות ביום ' +
-          EmailUtil.esc(s.Runs_Per_Day__c == null ? null : s.Runs_Per_Day__c.intValue()) +
-          ' · קבלות ' +
-          EmailUtil.esc(s.Receipt_Time__c) +
-          ' · התאמה ' +
-          EmailUtil.esc(s.Reconcile_Time__c) +
-          '</p>' +
-          '<p>עודכן ע"י ' +
-          EmailUtil.esc(UserInfo.getName()) +
-          '.</p>'
-      )
+      '<p>זמני החיוב עודכנו והוחלו:</p>' +
+        '<p>בוקר {{AmTime}} · ערב {{PmTime}} · שישי/ערב חג {{EveAmTime}} ו-{{EvePmTime}} · ריצות ביום {{RunsPerDay}} · ' +
+        'קבלות {{ReceiptTime}} · התאמה {{ReconcileTime}}</p>' +
+        '<p>עודכן ע"י {{ChangedBy}}.</p>',
+      new Map<String, String>{
+        'AmTime' => EmailUtil.esc(s.AM_Time__c),
+        'PmTime' => EmailUtil.esc(s.PM_Time__c),
+        'EveAmTime' => EmailUtil.esc(s.Eve_AM_Time__c),
+        'EvePmTime' => EmailUtil.esc(s.Eve_PM_Time__c),
+        'RunsPerDay' => EmailUtil.esc(s.Runs_Per_Day__c == null ? null : s.Runs_Per_Day__c.intValue()),
+        'ReceiptTime' => EmailUtil.esc(s.Receipt_Time__c),
+        'ReconcileTime' => EmailUtil.esc(s.Reconcile_Time__c),
+        'ChangedBy' => EmailUtil.esc(UserInfo.getName())
+      }
     );
     markSent('Schedule_Changed_Sent_On__c');
   }
@@ -432,23 +430,23 @@ public without sharing class StaffAlertService {
     String items = '';
     for (String x : errs)
       items += '<li>' + EmailUtil.esc(x) + '</li>';
-    send(
+    sendTemplate(
+      'Staff_Schedule_Failed',
       'זמני החיוב לא עודכנו',
-      wrap('<p>הבקשה (' + EmailUtil.esc(command) + ') לא בוצעה. ריצות החיוב הקיימות לא השתנו.</p><ul>' + items + '</ul>')
+      '<p>הבקשה ({{Command}}) לא בוצעה. ריצות החיוב הקיימות לא השתנו.</p><ul>{{Errors}}</ul>',
+      new Map<String, String>{ 'Command' => EmailUtil.esc(command), 'Errors' => items }
     );
   }
 
   public static Boolean emailLimit(Integer left) {
     if (sentToday('Email_Limit_Sent_On__c'))
       return false;
-    send(
+    sendTemplate(
+      'Staff_Email_Limit',
       'מכסת המיילים היומית כמעט נגמרה',
-      wrap(
-        '<p>נותרו ' +
-          EmailUtil.esc(left) +
-          ' מיילים יומיים בארגון. מיילי התודה לתורמים לא נשלחים עד מחר ' +
-          '(החיובים עצמם ממשיכים כרגיל). כדאי לבדוק את נפח המיילים (Q9).</p>'
-      )
+      '<p>נותרו {{Left}} מיילים יומיים בארגון. מיילי התודה לתורמים לא נשלחים עד מחר ' +
+      '(החיובים עצמם ממשיכים כרגיל). כדאי לבדוק את נפח המיילים (Q9).</p>',
+      new Map<String, String>{ 'Left' => EmailUtil.esc(left) }
     );
     markSent('Email_Limit_Sent_On__c');
     return true;
@@ -492,21 +490,21 @@ public without sharing class StaffAlertService {
     String rows = '';
     for (String code : byCode.keySet())
       rows += '<tr><td>' + EmailUtil.esc(code) + '</td><td>' + byCode.get(code) + '</td></tr>';
-    send(
-      'תקלת סליקה: ' + failed + ' מתוך ' + total + ' חיובים נכשלו',
-      wrap(
-        '<p>בשלוש השעות האחרונות נשלחו ל-Cardcom ' +
-          total +
-          ' חיובים, ו-' +
-          failed +
-          ' מהם נכשלו. כשרוב החיובים נכשלים יחד, הסיבה בדרך כלל אינה בכרטיסים של התורמים אלא בטרמינל או בהגדרות.</p>' +
-          table(new List<String>{ 'קוד שגיאה', 'מספר חיובים' }, rows) +
-          '<p>מה לבדוק: הודעות במסוף Cardcom, פרטי הגישה ל-API (External Credential Cardcom_EC), ומצב הטרמינל. ' +
-          'אם צריך לעצור את כל החיובים: Charge Settings → Charging Enabled.</p>' +
-          '<p><a href="' +
-          URL.getOrgDomainUrl().toExternalForm() +
-          '/lightning/o/Report/home">דוח "חיובים שלא עברו"</a></p>'
-      )
+    sendTemplate(
+      'Staff_Run_Failures',
+      'תקלת סליקה: {{Failed}} מתוך {{Total}} חיובים נכשלו',
+      '<p>בשלוש השעות האחרונות נשלחו ל-Cardcom {{Total}} חיובים, ו-{{Failed}} מהם נכשלו. כשרוב החיובים נכשלים יחד, ' +
+        'הסיבה בדרך כלל אינה בכרטיסים של התורמים אלא בטרמינל או בהגדרות.</p>' +
+        '{{Table}}' +
+        '<p>מה לבדוק: הודעות במסוף Cardcom, פרטי הגישה ל-API (External Credential Cardcom_EC), ומצב הטרמינל. ' +
+        'אם צריך לעצור את כל החיובים: Charge Settings → Charging Enabled.</p>' +
+        '<p><a href="{{ReportsUrl}}">דוח "חיובים שלא עברו"</a></p>',
+      new Map<String, String>{
+        'Failed' => String.valueOf(failed),
+        'Total' => String.valueOf(total),
+        'Table' => table(new List<String>{ 'קוד שגיאה', 'מספר חיובים' }, rows),
+        'ReportsUrl' => URL.getOrgDomainUrl().toExternalForm() + '/lightning/o/Report/home'
+      }
     );
     if (st == null || st.Id == null)
       st = new Alert_State__c(SetupOwnerId = UserInfo.getOrganizationId());
@@ -567,14 +565,17 @@ public without sharing class StaffAlertService {
     }
     if (n == 0)
       return;
-    send(
-      'הוראות עם חיובים שלא עברו – ' + n,
-      wrap(
-        '<p>להוראות הבאות יש חיוב שלא עבר. התורמים מקבלים תזכורת במייל בכל יום ראשון עם קישור להחלפת כרטיס.</p>' +
-          table(new List<String>{ 'הוראה', 'תורם', 'טלפון', 'מייל', 'מאז', 'כישלונות רצופים', 'שגיאה אחרונה', 'תזכורות' }, rows) +
-          '<p>מה אפשר לעשות: להתקשר לתורם ולבקש להחליף כרטיס דרך הקישור במייל; אם התורם מבקש להפסיק – "הפסקת חיובים" בהוראה; ' +
-          'כדי להפסיק רק את התזכורות – לסמן "עצירת תזכורות כישלון" בהוראה.</p>'
-      )
+    sendTemplate(
+      'Staff_Weekly_Failed_Digest',
+      'הוראות עם חיובים שלא עברו – {{Count}}',
+      '<p>להוראות הבאות יש חיוב שלא עבר. התורמים מקבלים תזכורת במייל בכל יום ראשון עם קישור להחלפת כרטיס.</p>' +
+        '{{Table}}' +
+        '<p>מה אפשר לעשות: להתקשר לתורם ולבקש להחליף כרטיס דרך הקישור במייל; אם התורם מבקש להפסיק – "הפסקת חיובים" בהוראה; ' +
+        'כדי להפסיק רק את התזכורות – לסמן "עצירת תזכורות כישלון" בהוראה.</p>',
+      new Map<String, String>{
+        'Count' => String.valueOf(n),
+        'Table' => table(new List<String>{ 'הוראה', 'תורם', 'טלפון', 'מייל', 'מאז', 'כישלונות רצופים', 'שגיאה אחרונה', 'תזכורות' }, rows)
+      }
     );
   }
 
@@ -624,6 +625,12 @@ public without sharing class StaffAlertService {
     for (String x : headers)
       h += '<th>' + EmailUtil.esc(x) + '</th>';
     return '<table border="1" cellpadding="4" style="border-collapse:collapse"><tr>' + h + '</tr>' + rows + '</table>';
+  }
+
+  /** Renders the staff template devName (default subject/body below the "שלום," wrapper) and sends it. */
+  static void sendTemplate(String devName, String defaultSubject, String defaultBody, Map<String, String> values) {
+    EmailTemplates.Rendered r = EmailTemplates.render(devName, defaultSubject, wrap(defaultBody), values, null);
+    send(r.subject, r.html);
   }
 
   static void send(String subject, String html) {

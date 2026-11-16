@@ -9,6 +9,9 @@
  * Every email carries the two permanent links and the phone for stopping the pledge (donors can't stop it on the web).
  * Recipient: the donor Contact's email, else the email typed in the form. Sender: Cardcom_Setting__mdt.Org_Wide_Email_Address__c.
  * One Messaging.sendEmail call per batch of messages; a send never throws back into the charge or activation transaction.
+ * Text: Classic Email Templates Donor_Welcome, Donor_Monthly_Summary, Donor_Payment_Failed, Donor_Payment_Failed_Reminder in the
+ * folder "Donations", editable by admins (EmailTemplates; placeholders in docs/email-templates-he.md). The defaults below are used
+ * only when a template is missing or blank.
  */
 public without sharing class DonorEmailService {
   @TestVisible
@@ -35,7 +38,7 @@ public without sharing class DonorEmailService {
     List<Messaging.SingleEmailMessage> msgs = new List<Messaging.SingleEmailMessage>();
     List<Opportunity> withMsg = new List<Opportunity>();
     for (Opportunity p : todo) {
-      Messaging.SingleEmailMessage m = message(p, welcomeSubject(), welcomeBody(p));
+      Messaging.SingleEmailMessage m = message(p, 'Donor_Welcome', WELCOME_SUBJECT, frame(WELCOME_BODY), null);
       if (m != null) {
         msgs.add(m);
         withMsg.add(p);
@@ -49,21 +52,14 @@ public without sharing class DonorEmailService {
     Database.update(upd, false);
   }
 
-  static String welcomeSubject() {
-    return 'הוראת התרומה היומית שלך ל' + org() + ' נקלטה';
-  }
-
-  static String welcomeBody(Opportunity p) {
-    return '<p>תודה! הוראת התרומה היומית שלך נקלטה ותחל לפעול במועד החיוב הקרוב.</p>' +
-      '<p><b>פרטי ההוראה:</b> ' +
-      EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
-      ' · ' +
-      EmailUtil.esc(MicroPledges.amountsHe(p)) +
-      cardPhrase(p) +
-      '</p>' +
-      '<p>בשבת ובחג אין חיובים: הם מחויבים מראש בערב שבת או ערב חג, יחד עם תפילת המנחה.</p>' +
-      '<p>פעם בחודש נשלח אליך סיכום של התרומות. קבלה לפי סעיף 46 תישלח אליך במייל נפרד.</p>';
-  }
+  @TestVisible
+  static final String WELCOME_SUBJECT = 'הוראת התרומה היומית שלך ל{{OrgName}} נקלטה';
+  @TestVisible
+  static final String WELCOME_BODY =
+    '<p>תודה! הוראת התרומה היומית שלך נקלטה ותחל לפעול במועד החיוב הקרוב.</p>' +
+    '<p><b>פרטי ההוראה:</b> {{Frequency}} · {{Amounts}}{{CardPhrase}}</p>' +
+    '<p>בשבת ובחג אין חיובים: הם מחויבים מראש בערב שבת או ערב חג, יחד עם תפילת המנחה.</p>' +
+    '<p>פעם בחודש נשלח אליך סיכום של התרומות. קבלה לפי סעיף 46 תישלח אליך במייל נפרד.</p>';
 
   // ------------------------------------------------------------------ monthly summary
   /** One summary per pledge for the month starting `period`, from its Success charges sent in that month. @return emails sent. */
@@ -89,21 +85,12 @@ public without sharing class DonorEmailService {
     for (Opportunity p : load(ids)) {
       if (!total.containsKey(p.Id) || (p.Last_Summary_Month__c != null && p.Last_Summary_Month__c >= period))
         continue;
-      String body =
-        '<p>בחודש ' +
-        EmailUtil.esc(month) +
-        ' נתרמו בהוראה שלך <b>' +
-        money(total.get(p.Id)) +
-        ' ₪</b> ב-' +
-        count.get(p.Id) +
-        ' חיובים. תודה על השותפות!</p>' +
-        '<p><b>ההוראה כרגע:</b> ' +
-        EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
-        ' · ' +
-        EmailUtil.esc(MicroPledges.amountsHe(p)) +
-        '</p>' +
-        '<p>קבלה לפי סעיף 46 על תרומות החודש תישלח אליך במייל נפרד.</p>';
-      Messaging.SingleEmailMessage m = message(p, 'סיכום התרומות שלך ל' + org() + ' – ' + month, body);
+      Map<String, String> extra = new Map<String, String>{
+        'Month' => EmailUtil.esc(month),
+        'MonthTotal' => money(total.get(p.Id)),
+        'ChargeCount' => String.valueOf(count.get(p.Id))
+      };
+      Messaging.SingleEmailMessage m = message(p, 'Donor_Monthly_Summary', MONTHLY_SUBJECT, frame(MONTHLY_BODY), extra);
       if (m != null) {
         msgs.add(m);
         withMsg.add(p);
@@ -118,6 +105,14 @@ public without sharing class DonorEmailService {
     return upd.size();
   }
 
+  @TestVisible
+  static final String MONTHLY_SUBJECT = 'סיכום התרומות שלך ל{{OrgName}} – {{Month}}';
+  @TestVisible
+  static final String MONTHLY_BODY =
+    '<p>בחודש {{Month}} נתרמו בהוראה שלך <b>{{MonthTotal}} ₪</b> ב-{{ChargeCount}} חיובים. תודה על השותפות!</p>' +
+    '<p><b>ההוראה כרגע:</b> {{Frequency}} · {{Amounts}}</p>' +
+    '<p>קבלה לפי סעיף 46 על תרומות החודש תישלח אליך במייל נפרד.</p>';
+
   // ------------------------------------------------------------------ failed charge
   /**
    * "We couldn't charge your card" — at once (reminder = false) or as the weekly reminder (reminder = true). Only Active pledges
@@ -129,16 +124,9 @@ public without sharing class DonorEmailService {
     for (Opportunity p : load(pledgeIds)) {
       if (p.StageName != MicroPledges.STAGE_ACTIVE || p.Payment_Issue_Since__c == null || p.Failure_Reminders_Stopped__c == true)
         continue;
-      String body =
-        '<p>' +
-        (reminder ? 'תזכורת: ' : '') +
-        'לא הצלחנו לחייב את ' +
-        (String.isBlank(p.Last4__c) ? 'הכרטיס השמור' : 'הכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c)) +
-        ' עבור הוראת התרומה היומית שלך.</p>' +
-        '<p>כדי שהתרומה תמשיך, אפשר לעדכן את פרטי הכרטיס בכפתור "החלפת כרטיס אשראי" כאן למטה. ' +
-        'ננסה לחייב שוב במועדי החיוב הקבועים.</p>';
-      String subject = (reminder ? 'תזכורת: ' : '') + 'לא הצלחנו לחייב את הכרטיס – הוראת התרומה ל' + org();
-      Messaging.SingleEmailMessage m = message(p, subject, body);
+      Messaging.SingleEmailMessage m = reminder
+        ? message(p, 'Donor_Payment_Failed_Reminder', FAILED_REMINDER_SUBJECT, frame(FAILED_REMINDER_BODY), null)
+        : message(p, 'Donor_Payment_Failed', FAILED_SUBJECT, frame(FAILED_BODY), null);
       if (m != null) {
         msgs.add(m);
         withMsg.add(p);
@@ -150,6 +138,35 @@ public without sharing class DonorEmailService {
       if (ok.contains(i))
         upd.add(new Opportunity(Id = withMsg[i].Id, Last_Failure_Email_At__c = Datetime.now()));
     Database.update(upd, false);
+  }
+
+  @TestVisible
+  static final String FAILED_SUBJECT = 'לא הצלחנו לחייב את הכרטיס – הוראת התרומה ל{{OrgName}}';
+  @TestVisible
+  static final String FAILED_BODY =
+    '<p>לא הצלחנו לחייב את {{Card}} עבור הוראת התרומה היומית שלך.</p>' +
+    '<p>כדי שהתרומה תמשיך, אפשר לעדכן את פרטי הכרטיס בכפתור "החלפת כרטיס אשראי" כאן למטה. ' +
+    'ננסה לחייב שוב במועדי החיוב הקבועים.</p>';
+  @TestVisible
+  static final String FAILED_REMINDER_SUBJECT = 'תזכורת: לא הצלחנו לחייב את הכרטיס – הוראת התרומה ל{{OrgName}}';
+  @TestVisible
+  static final String FAILED_REMINDER_BODY =
+    '<p>תזכורת: לא הצלחנו לחייב את {{Card}} עבור הוראת התרומה היומית שלך.</p>' +
+    '<p>כדי שהתרומה תמשיך, אפשר לעדכן את פרטי הכרטיס בכפתור "החלפת כרטיס אשראי" כאן למטה. ' +
+    'ננסה לחייב שוב במועדי החיוב הקבועים.</p>';
+
+  /** Greeting, the two permanent links, the phone to stop and the signature around a donor email body (the default templates). */
+  @TestVisible
+  static String frame(String body) {
+    return '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">' +
+      '<p>{{FirstName}} שלום,</p>' +
+      body +
+      '<p><strong>רוצה לעדכן את ההוראה?</strong></p>' +
+      '<p><a href="{{CardLink}}" style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">החלפת כרטיס אשראי</a>' +
+      ' &nbsp; <a href="{{AmountLink}}" style="background:#0f766e;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">שינוי סכום ההוראה</a></p>' +
+      '<p style="font-size:13px;color:#555">הקישורים אישיים וקבועים, ואין צורך בסיסמה – שמרו את המייל ואל תעבירו אותו לאחרים.</p>' +
+      '<p>להפסקת ההוראה או לשאלות: {{ContactPhone}}{{ContactEmailPart}}</p>' +
+      '<p>בתודה,<br>{{Signature}}</p></div>';
   }
 
   // ------------------------------------------------------------------ shared
@@ -176,17 +193,23 @@ public without sharing class DonorEmailService {
     return signer + ', ' + o;
   }
 
-  static String cardPhrase(Opportunity p) {
-    return String.isBlank(p.Last4__c) ? '' : ' · כרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c);
-  }
-
   static String money(Decimal d) {
     return d == null ? '0.00' : d.setScale(2).toPlainString();
   }
 
-  /** The email: greeting, body, the two permanent links, phone to stop, signature. Null when there is no address or no link secret. */
+  /**
+   * The email from template devName (EmailTemplates; defaults when missing). Common placeholders: FirstName, OrgName, CardLink,
+   * AmountLink, ContactPhone, ContactEmailPart, Signature, Frequency, Amounts, CardPhrase, Card; `extra` adds per-email ones (HTML-
+   * escaped). Null when there is no address or no link secret.
+   */
   @TestVisible
-  static Messaging.SingleEmailMessage message(Opportunity p, String subject, String body) {
+  static Messaging.SingleEmailMessage message(
+    Opportunity p,
+    String devName,
+    String defaultSubject,
+    String defaultHtml,
+    Map<String, String> extra
+  ) {
     String email = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.Email) ? p.Donor_Contact__r.Email : p.Donor_Email__c;
     if (String.isBlank(email))
       return null;
@@ -205,34 +228,37 @@ public without sharing class DonorEmailService {
     String firstName = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.FirstName)
       ? p.Donor_Contact__r.FirstName
       : p.Donor_First_Name__c;
-    String html =
-      '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">' +
-      '<p>' +
-      EmailUtil.esc(firstName) +
-      ' שלום,</p>' +
-      body +
-      '<p><strong>רוצה לעדכן את ההוראה?</strong></p>' +
-      '<p><a href="' +
-      EmailUtil.esc(cardLink) +
-      '" style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">החלפת כרטיס אשראי</a>' +
-      ' &nbsp; <a href="' +
-      EmailUtil.esc(amountLink) +
-      '" style="background:#0f766e;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">שינוי סכום ההוראה</a></p>' +
-      '<p style="font-size:13px;color:#555">הקישורים אישיים וקבועים, ואין צורך בסיסמה – שמרו את המייל ואל תעבירו אותו לאחרים.</p>' +
-      '<p>להפסקת ההוראה או לשאלות: ' +
-      EmailUtil.esc(System.Label.Donation_Contact_Phone) +
-      (String.isBlank(System.Label.Donation_Contact_Email) ? '' : ' · ' + EmailUtil.esc(System.Label.Donation_Contact_Email)) +
-      '</p>' +
-      '<p>בתודה,<br>' +
-      EmailUtil.esc(signature()) +
-      '</p></div>';
+    Map<String, String> v = new Map<String, String>{
+      'FirstName' => EmailUtil.esc(firstName),
+      'OrgName' => EmailUtil.esc(org()),
+      'CardLink' => EmailUtil.esc(cardLink),
+      'AmountLink' => EmailUtil.esc(amountLink),
+      'ContactPhone' => EmailUtil.esc(System.Label.Donation_Contact_Phone),
+      'ContactEmailPart' => String.isBlank(System.Label.Donation_Contact_Email)
+        ? ''
+        : ' · ' + EmailUtil.esc(System.Label.Donation_Contact_Email),
+      'Signature' => EmailUtil.esc(signature()),
+      'Frequency' => EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)),
+      'Amounts' => EmailUtil.esc(MicroPledges.amountsHe(p)),
+      'CardPhrase' => String.isBlank(p.Last4__c) ? '' : ' · כרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c),
+      'Card' => String.isBlank(p.Last4__c) ? 'הכרטיס השמור' : 'הכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c)
+    };
+    if (extra != null)
+      v.putAll(extra);
+    Map<String, String> plain = new Map<String, String>{
+      'OrgName' => org(),
+      'FirstName' => firstName == null ? '' : firstName,
+      'Frequency' => MicroPledges.frequencyHe(p.Frequency__c),
+      'Amounts' => MicroPledges.amountsHe(p)
+    };
+    EmailTemplates.Rendered r = EmailTemplates.render(devName, defaultSubject, defaultHtml, v, plain);
     Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
     Id owea = EmailUtil.oweaId(s.Org_Wide_Email_Address__c);
     if (owea != null)
       m.setOrgWideEmailAddressId(owea);
     m.setToAddresses(new List<String>{ email });
-    m.setSubject(subject);
-    m.setHtmlBody(html);
+    m.setSubject(r.subject);
+    m.setHtmlBody(r.html);
     m.setSaveAsActivity(false);
     m.setCharset('UTF-8');
     return m;
