@@ -18,7 +18,7 @@ define('ORG_SF_KEY_PATH',  '/path/outside/webroot/server.key');
 define('ORG_DONATION_ORIGIN',    'https://www.<site>');                    // exact canonical origin, no trailing slash
 // Optional (safe defaults when missing)
 define('ORG_CARDCOM_ORIGIN',     'https://secure.cardcom.solutions');     // default: this value
-define('ORG_DONATION_TERMS_URL', 'https://www.<site>/terms-recurring/');  // Q8; missing → home_url('/terms/')
+define('ORG_DONATION_TERMS_URL', 'https://www.<site>/terms-recurring/');  // Q8; missing → home_url('/terms/'). The form requires the Israeli ID (1.5.2), so Cardcom's ID field is always hidden
 define('ORG_DONATION_CONTACT_PHONE', '03-0000000');                       // shown on the donor page (B13 T-Y01)
 define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
 define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c

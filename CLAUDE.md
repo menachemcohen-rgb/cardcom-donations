@@ -1355,7 +1355,7 @@ Base: `https://ORG.my.salesforce.com/services/apexrest`. כל הקריאות JSO
 
 | Method | Path | Class | Request | Response 200 | שגיאות |
 |---|---|---|---|---|---|
-| POST | `/donations/lowprofile` | `DonationLowProfileResource` | `{ "purpose":"signup", "returnUrlBase":"https://www.ORG.org.il/cardcom-return/", "terminal":"Primary", "taxId":"123456782" }` (taxId required, N118) | `{ "lowProfileId":"uuid", "url":"https://secure.cardcom.solutions/...", "expiresAt":"2026-11-02T15:30:00Z" }` | `BAD_RETURN_URL`, `CARDCOM_ERROR`, `VALIDATION` (`fields:["taxId"]`), `TERMINAL_NOT_CONFIGURED` |
+| POST | `/donations/lowprofile` | `DonationLowProfileResource` | `{ "purpose":"signup", "returnUrlBase":"https://www.ORG.org.il/cardcom-return/", "terminal":"Primary", "taxId":"123456782"\|null }` | `{ "lowProfileId":"uuid", "url":"https://secure.cardcom.solutions/...", "expiresAt":"2026-11-02T15:30:00Z" }` | `BAD_RETURN_URL`, `CARDCOM_ERROR`, `VALIDATION` (`fields:["taxId"]`), `TERMINAL_NOT_CONFIGURED` |
 | POST | `/donations/pledge` | `DonationPledgeResource` | `{ "lowProfileId":"..", "firstName":"..", "lastName":"..", "email":"..", "phone":"0521234567", "taxId":"123456782"\|null, "amount":3.00, "frequency":"TwiceDaily", "termsAccepted":true, "clientIp":"1.2.3.4" }` | `{ "pledgeId":"a0X..", "status":"Pending_Verification"\|"Active" }` | `VALIDATION` (+`fields`:[..]), `LP_ALREADY_USED`, `LP_UNKNOWN` |
 | POST | `/donor/context` | `DonorPortalResource` | `{ "token":"..", "clientIp":".." }` | `{ "action":"card"\|"amount", "firstName":"..", "amount":3, "frequency":"TwiceDaily", "last4":"1234", "expMMYY":"0928", "status":"Active", "minAmount":1, "maxAmount":50, "presets":[1,3,5,10] }` | 403 `LINK_INVALID` (גנרי לכל סיבה) |
 | POST | `/donor/amount` | `DonorPortalResource` | `{ "token":"..", "amount":5, "clientIp":".." }` | `{ "ok":true, "amount":5 }` | 400 `AMOUNT_RANGE`; 403 |
@@ -3412,6 +3412,7 @@ final class Org_Form {
 </div>
 ```
 > ⚠ `sandbox` על ה-iframe: Cardcom עשויה לדרוש `allow-popups` ל-3DS. לבדוק בטרמינל בדיקות; אם 3DS נשבר — להסיר את `sandbox` לגמרי.
+> **(N118, תוסף 1.5.2)** ת"ז חובה בטופס (`required`; JS ו-`Org_Validator` מחזירים "נא להזין תעודת זהות"), ולכן כל דף Cardcom נפתח עם ת"ז תקינה: לפי הלוגיקה הקיימת (N115/1.5.1) היא נשלחת ממולאת ושדה הת"ז בדף של Cardcom מוסתר. ב-Salesforce אין שינוי — `/donations/lowprofile` עדיין מקבל ת"ז ריקה ואז השדה ב-Cardcom גלוי. תיבת ההסכמה: "קראתי ואני מסכים/ה לתנאי ההוראה" עם קישור ל-`ORG_DONATION_TERMS_URL` (ברירת מחדל `home_url('/terms/')`); מתחת לדף התשלום: "לא יתבצע חיוב עכשיו. החיוב יתבצע לפי הסכום והתדירות שבחרת."
 
 ### B7.10 `assets/donation-form.js`
 ```js

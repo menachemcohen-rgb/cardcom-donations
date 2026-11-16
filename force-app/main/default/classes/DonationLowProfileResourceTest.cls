@@ -6,7 +6,7 @@ private class DonationLowProfileResourceTest {
     CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     TestDataFactory.rest(
       '/services/apexrest/donations/lowprofile',
-      new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'taxId' => '123456782' }
+      new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL }
     );
     Test.startTest();
     DonationLowProfileResource.create();
@@ -37,7 +37,7 @@ private class DonationLowProfileResourceTest {
     CardcomMock.install().enqueue('LowProfile/Create', 200, new Map<String, Object>{ 'ResponseCode' => 5, 'Description' => 'x' });
     TestDataFactory.rest(
       '/services/apexrest/donations/lowprofile',
-      new Map<String, Object>{ 'returnUrlBase' => TestDataFactory.RETURN_URL, 'taxId' => '123456782' }
+      new Map<String, Object>{ 'returnUrlBase' => TestDataFactory.RETURN_URL }
     );
     DonationLowProfileResource.create();
     Assert.areEqual(400, RestContext.response.statusCode);
@@ -51,12 +51,7 @@ private class DonationLowProfileResourceTest {
     CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     TestDataFactory.rest(
       '/services/apexrest/donations/lowprofile',
-      new Map<String, Object>{
-        'purpose' => 'signup',
-        'returnUrlBase' => TestDataFactory.RETURN_URL,
-        'terminal' => 'Secondary',
-        'taxId' => '123456782'
-      }
+      new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
     );
     Test.startTest();
     DonationLowProfileResource.create();
@@ -72,7 +67,7 @@ private class DonationLowProfileResourceTest {
     TestDataFactory.settings();
     TestDataFactory.rest(
       '/services/apexrest/donations/lowprofile',
-      new Map<String, Object>{ 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary', 'taxId' => '123456782' }
+      new Map<String, Object>{ 'returnUrlBase' => TestDataFactory.RETURN_URL, 'terminal' => 'Secondary' }
     );
     DonationLowProfileResource.create();
     Assert.areEqual(400, RestContext.response.statusCode);
@@ -97,10 +92,29 @@ private class DonationLowProfileResourceTest {
   }
 
   @IsTest
-  static void missingOrInvalidTaxIdIsRejectedBeforeCardcom() {
+  static void withoutTaxIdTheCardcomIdFieldStaysVisible() {
+    TestDataFactory.settings();
+    CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
+    Test.startTest();
+    for (Object none : new List<Object>{ null, '' }) {
+      TestDataFactory.rest(
+        '/services/apexrest/donations/lowprofile',
+        new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'taxId' => none }
+      );
+      DonationLowProfileResource.create();
+      Assert.areEqual(200, RestContext.response.statusCode);
+      Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+      Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'));
+      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
+    }
+    Test.stopTest();
+  }
+
+  @IsTest
+  static void invalidTaxIdIsRejectedBeforeCardcom() {
     TestDataFactory.settings();
     CardcomMock m = CardcomMock.install();
-    for (String bad : new List<String>{ null, '', '123456789', '12345678901', 'abc' }) {
+    for (String bad : new List<String>{ '123456789', '12345678901', 'abc' }) {
       TestDataFactory.rest(
         '/services/apexrest/donations/lowprofile',
         new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'taxId' => bad }

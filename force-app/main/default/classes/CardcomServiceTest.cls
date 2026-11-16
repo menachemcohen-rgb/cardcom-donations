@@ -229,7 +229,7 @@ private class CardcomServiceTest {
   }
 
   @IsTest
-  static void createTokenLowProfileAlwaysHidesTheIdFieldAndPrefillsOnlyAValidId() {
+  static void createTokenLowProfileWithoutTaxIdKeepsTheIdFieldVisible() {
     TestDataFactory.settings();
     CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     Test.startTest();
@@ -241,8 +241,8 @@ private class CardcomServiceTest {
     Map<String, Object> invalid = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
     Test.stopTest();
     for (Map<String, Object> ui : new List<Map<String, Object>>{ plain, blank, invalid }) {
-      Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'), 'the ID is taken in our form (N118)');
-      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'), 'nothing to pre-fill');
+      Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'), 'the donor types the ID on the Cardcom page');
+      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
     }
   }
 }

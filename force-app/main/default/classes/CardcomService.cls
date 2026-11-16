@@ -111,9 +111,9 @@ public without sharing class CardcomService {
     return createTokenLowProfile(terminal, returnValue, returnUrlBase, productName, null);
   }
   /**
-   * taxId: the donor's Israeli ID number, given in our form (required there, N118). The ID field on the Cardcom page is always
-   * hidden (IsHideCardOwnerIdentityNumber=true); a valid ID is sent pre-filled as the card owner's ID
-   * (UIDefinition.CardOwnerIdentityNumberValue). Blank or invalid → nothing is pre-filled.
+   * taxId: the donor's Israeli ID number. When it is a valid ID, Cardcom gets it pre-filled as the card owner's ID
+   * (UIDefinition.CardOwnerIdentityNumberValue) and its ID field is hidden (IsHideCardOwnerIdentityNumber=true), so the donor
+   * doesn't type it twice. Blank or invalid → the ID field stays visible on the Cardcom page, as before.
    */
   public static Map<String, Object> createTokenLowProfile(
     String terminal,
@@ -138,7 +138,7 @@ public without sharing class CardcomService {
       'IsHideCardOwnerName' => false,
       'IsHideCardOwnerEmail' => true,
       'IsHideCardOwnerPhone' => true,
-      'IsHideCardOwnerIdentityNumber' => true,
+      'IsHideCardOwnerIdentityNumber' => ownerId != null,
       'IsHideCVV' => false
     };
     if (ownerId != null)
