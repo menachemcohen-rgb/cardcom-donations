@@ -23,7 +23,7 @@ final class FormAjaxTest extends TestCase
     private function form(array $over = []): array
     {
         return array_merge(['first_name' => 'ישראל', 'last_name' => 'ישראלי', 'email' => 'a@example.com', 'phone' => '0521234567',
-            'tax_id' => '', 'shacharit_amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'], $over);
+            'tax_id' => '123456782', 'shacharit_amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'], $over);
     }
 
     /** Older tests submit without opening a card page first: record the page as opened with the form's ID (see the item 7 tests). */
@@ -182,7 +182,7 @@ final class FormAjaxTest extends TestCase
         $this->assertSame('Secondary', $sent[2][1]['terminal']);
     }
 
-    /** Item 1: the validated ID number from the form goes to /donations/lowprofile as taxId; none → null (Cardcom shows its ID field). */
+    /** The validated ID number from the form goes to /donations/lowprofile as taxId; it is required, so none or invalid never reaches Salesforce. */
     public function testCardSessionCarriesTheFormIdNumber(): void
     {
         $sent = [];
@@ -193,12 +193,12 @@ final class FormAjaxTest extends TestCase
         };
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '18']))->ok);
         $this->assertSame('000000018', $sent[0]['taxId'], 'validated and left-padded before it is sent');
-        $this->assertTrue($this->call('ajax_lp', $this->form())->ok);
-        $this->assertArrayHasKey('taxId', $sent[1]);
-        $this->assertNull($sent[1]['taxId'], 'no ID: nothing to pre-fill');
-        $bad = $this->call('ajax_lp', $this->form(['tax_id' => '123456789']));
-        $this->assertSame(422, $bad->status, 'an invalid ID never reaches Salesforce');
-        $this->assertCount(2, $sent);
+        foreach (['', '123456789'] as $bad) {
+            $r = $this->call('ajax_lp', $this->form(['tax_id' => $bad]));
+            $this->assertSame(422, $r->status, "ID '$bad' never reaches Salesforce");
+            $this->assertArrayHasKey('tax_id', $r->data['fields']);
+        }
+        $this->assertCount(1, $sent);
     }
 
     /** Item 7: the ID sent with each card page is kept per LowProfileId and must match the ID in the submitted form. */
@@ -211,19 +211,11 @@ final class FormAjaxTest extends TestCase
         $this->assertSame(1, $this->sfCalls('/donations/pledge'));
     }
 
-    public function testSubmitWithoutIdAfterACardPageWithoutIdIsAccepted(): void
-    {
-        $this->autoSeedLp = false;
-        $this->assertTrue($this->call('ajax_lp', $this->form())->ok);
-        $this->assertSame('', get_transient(Org_Form::lp_tax_key(self::LP)));
-        $this->assertTrue($this->call('ajax_submit', $this->form(['lp_id' => self::LP]))->ok);
-    }
-
     public function testSubmitWithAnotherIdAsksToConfirmTheCardAgain(): void
     {
         $this->autoSeedLp = false;
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '123456782']))->ok);
-        foreach ([['tax_id' => '18'], ['tax_id' => '']] as $over) {
+        foreach ([['tax_id' => '18'], ['tax_id' => '000000018']] as $over) {
             $r = $this->call('ajax_submit', $this->form($over + ['lp_id' => self::LP]));
             $this->assertFalse($r->ok);
             $this->assertSame('נא לאשר שוב את פרטי הכרטיס', $r->data['message']);
@@ -240,5 +232,12 @@ final class FormAjaxTest extends TestCase
         $r = $this->call('ajax_submit', $this->form(['lp_id' => self::LP]));
         $this->assertTrue($r->data['renewCard']);
         $this->assertSame(0, $this->sfCalls('/donations/pledge'));
+    }
+
+    /** Without ORG_DONATION_TERMS_URL the "תנאי ההוראה" link goes to the site's /terms/ page. */
+    public function testTermsUrlDefaultsToTheTermsPage(): void
+    {
+        if (defined('ORG_DONATION_TERMS_URL')) $this->markTestSkipped('ORG_DONATION_TERMS_URL is defined in this run');
+        $this->assertSame('https://www.example.org.il/terms/', Org_Form::terms_url());
     }
 }
