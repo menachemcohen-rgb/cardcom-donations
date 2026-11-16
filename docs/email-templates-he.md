@@ -9,7 +9,7 @@
 3. **Edit Template**: אפשר לשנות את השורה **Subject** (נושא) ואת **HTML Body** (גוף המייל). לשמור.
 4. השינוי חל מהמייל הבא שנשלח.
 
-הרשאה: מי שיש לו את Permission Set **Donations_Admin** (או מנהל מערכת) יכול לערוך. ההרשאה נקראת "Manage Public Classic Email Templates".
+הרשאה: מי שיש לו את Permission Set **Donations_Admin** (או מנהל מערכת) יכול לערוך. ההרשאה נקראת "Manage Public Classic Email Templates", ו-Salesforce דורש איתה גם View Setup and Configuration ו-View Roles (צפייה בלבד).
 
 ### כללים
 

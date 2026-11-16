@@ -14,11 +14,13 @@ public without sharing class EmailTemplates {
   @TestVisible
   static Map<String, EmailTemplate> byName;
 
+  /** One query per template per transaction (Apex can filter on EmailTemplate.DeveloperName but not select it). */
   static EmailTemplate find(String devName) {
-    if (byName == null) {
+    if (byName == null)
       byName = new Map<String, EmailTemplate>();
-      for (EmailTemplate t : [SELECT DeveloperName, Subject, HtmlValue FROM EmailTemplate WHERE Folder.DeveloperName = 'Donations'])
-        byName.put(t.DeveloperName, t);
+    if (!byName.containsKey(devName)) {
+      List<EmailTemplate> t = [SELECT Subject, HtmlValue FROM EmailTemplate WHERE DeveloperName = :devName LIMIT 1];
+      byName.put(devName, t.isEmpty() ? null : t[0]);
     }
     return byName.get(devName);
   }

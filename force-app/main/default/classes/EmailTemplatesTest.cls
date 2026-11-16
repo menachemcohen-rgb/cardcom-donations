@@ -21,11 +21,12 @@ private class EmailTemplatesTest {
 
   @IsTest
   static void everyEmailHasATemplateInTheDonationsFolder() {
-    Set<String> found = new Set<String>();
-    for (EmailTemplate t : [SELECT DeveloperName FROM EmailTemplate WHERE Folder.DeveloperName = 'Donations'])
-      found.add(t.DeveloperName);
     for (String n : TEMPLATES)
-      Assert.isTrue(found.contains(n), 'missing Classic Email Template ' + n + ' (folder Donations)');
+      Assert.areEqual(
+        1,
+        [SELECT COUNT() FROM EmailTemplate WHERE DeveloperName = :n AND Folder.DeveloperName = 'Donations'],
+        'missing Classic Email Template ' + n + ' (folder Donations)'
+      );
   }
 
   @IsTest
