@@ -44,4 +44,11 @@ final class AmountConfigTest extends TestCase {
         define('ORG_DONATION_FRAME_HEIGHT_MOBILE', '12px; color:red');
         $this->assertSame('--orgdon-frame-h:950px', Org_Form::frame_style(), 'bad value ignored');
     }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function test_terms_url_from_wp_config(): void {
+        define('ORG_DONATION_TERMS_URL', 'https://www.example.org.il/terms-recurring/');
+        $this->assertSame('https://www.example.org.il/terms-recurring/', Org_Form::terms_url());
+    }
 }

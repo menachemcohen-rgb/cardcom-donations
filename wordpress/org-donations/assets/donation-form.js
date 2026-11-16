@@ -134,7 +134,7 @@
   estimate();
 
   /**
-   * The ID number changed after the card page was opened: once the new value is valid (or cleared) and stays put for ~1 s,
+   * The ID number changed after the card page was opened: once the new value is a valid ID and stays put for ~1 s,
    * open a new card page carrying it — the same path as the renewal before the page expires.
    */
   function onTaxIdInput() {
@@ -144,7 +144,7 @@
       if (opening) { onTaxIdInput(); return; }          // a page is being created: check again after it
       if (!lpId || cardSaved) return;
       const v = $('tax_id').value.trim();
-      if (v && !validId(v)) return;                      // still typing / invalid: the old page stays until the ID is valid
+      if (!v || !validId(v)) return;                     // empty / still typing / invalid: the old page stays until the ID is valid
       if (normTaxId(v) === lpTaxId) return;              // back to the ID already on the page
       if (!validate()) { showCard(false); msg.textContent = 'נא לתקן את השדות המסומנים.'; return; }
       lpExpires = 0;
@@ -161,7 +161,8 @@
     req('email', 'נא להזין כתובת אימייל תקינה', (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v));
     req('phone', 'נא להזין מספר נייד ישראלי תקין', (v) => normPhone(v) !== null);
     const id = $('tax_id').value.trim();
-    if (id && !validId(id)) { setErr('tax_id', 'מספר תעודת הזהות אינו תקין'); ok = false; }
+    if (!id) { setErr('tax_id', 'נא להזין תעודת זהות'); ok = false; }
+    else if (!validId(id)) { setErr('tax_id', 'מספר תעודת הזהות אינו תקין'); ok = false; }
     const inc = prayers(freq()); const a = amounts();
     if (!freq()) { setErr('frequency', 'נא לבחור תדירות'); ok = false; }
     ['shacharit', 'mincha'].forEach((p) => {

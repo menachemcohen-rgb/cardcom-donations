@@ -7,7 +7,7 @@ final class ValidatorTest extends TestCase
     {
         return $over + [
             'first_name' => 'ישראל', 'last_name' => 'ישראלי', 'email' => 'donor@example.com', 'phone' => '052-123-4567',
-            'tax_id' => '', 'shacharit_amount' => '3', 'mincha_amount' => '5', 'frequency' => 'TwiceDaily', 'terms' => '1',
+            'tax_id' => '123456782', 'shacharit_amount' => '3', 'mincha_amount' => '5', 'frequency' => 'TwiceDaily', 'terms' => '1',
             'lp_id' => '0f3c2b1a-1234-4abc-9def-0123456789ab',
         ];
     }
@@ -104,12 +104,13 @@ final class ValidatorTest extends TestCase
     public function testEveryRequiredFieldHasAHebrewError(): void
     {
         $e = Org_Validator::signup([], 1, 50)['errors'];
-        foreach (['first_name', 'last_name', 'email', 'phone', 'frequency', 'terms', 'card'] as $k) {
+        foreach (['first_name', 'last_name', 'email', 'phone', 'tax_id', 'frequency', 'terms', 'card'] as $k) {
             $this->assertArrayHasKey($k, $e, $k);
             $this->assertMatchesRegularExpression('/[\x{0590}-\x{05FF}]/u', $e[$k], "$k message is Hebrew");
         }
-        $this->assertArrayNotHasKey('tax_id', $e, 'the Israeli ID is optional');
-        $this->assertArrayHasKey('tax_id', Org_Validator::signup($this->input(['tax_id' => '123456789']), 1, 50)['errors']);
+        $this->assertSame('נא להזין תעודת זהות', $e['tax_id'], 'the Israeli ID is required');
+        $this->assertSame('נא להזין תעודת זהות', Org_Validator::signup($this->input(['tax_id' => '  ']), 1, 50)['errors']['tax_id']);
+        $this->assertSame('מספר תעודת הזהות אינו תקין', Org_Validator::signup($this->input(['tax_id' => '123456789']), 1, 50)['errors']['tax_id']);
         $this->assertArrayHasKey('first_name', Org_Validator::signup($this->input(['first_name' => str_repeat('א', 41)]), 1, 50)['errors']);
         $this->assertArrayHasKey('card', Org_Validator::signup($this->input(['lp_id' => 'not-an-id']), 1, 50)['errors']);
         $this->assertArrayHasKey('frequency', Org_Validator::signup($this->input(['frequency' => 'Hourly']), 1, 50)['errors']);
@@ -129,7 +130,7 @@ final class ValidatorTest extends TestCase
 
     public function testCardIsNotRequiredBeforeTheCardSession(): void
     {
-        $in = ['first_name' => 'א', 'last_name' => 'ב', 'email' => 'a@example.com', 'phone' => '0521234567',
+        $in = ['first_name' => 'א', 'last_name' => 'ב', 'email' => 'a@example.com', 'phone' => '0521234567', 'tax_id' => '123456782',
                'shacharit_amount' => '3', 'frequency' => 'OnceDaily', 'terms' => '1'];
         $this->assertSame([], Org_Validator::signup($in, 1, 50, false)['errors']);
         $this->assertArrayHasKey('card', Org_Validator::signup($in, 1, 50)['errors']);

@@ -95,6 +95,12 @@ final class Org_Form {
         return $r['body'];
     }
 
+    /** Link of "תנאי ההוראה": ORG_DONATION_TERMS_URL, else the site's /terms/ page. */
+    public static function terms_url(): string {
+        $u = orgdon_const('ORG_DONATION_TERMS_URL');
+        return $u !== '' ? $u : home_url('/terms/');
+    }
+
     /** Renders the form only. The Cardcom card session is created later, by ajax_lp, once the form is valid (no token for an invalid form). */
     public static function render(): string {
         if (!orgdon_configured()) return '<p class="orgdon-error">הטופס אינו זמין כרגע.</p>';
@@ -111,7 +117,7 @@ final class Org_Form {
         ]);
         ob_start();
         $frame_style = self::frame_style();
-        $presets = self::presets(); $terms_url = orgdon_const('ORG_DONATION_TERMS_URL'); $diners = self::diners_enabled();
+        $presets = self::presets(); $terms_url = self::terms_url(); $diners = self::diners_enabled();
         include ORGDON_DIR . 'templates/form.php';
         return ob_get_clean();
     }

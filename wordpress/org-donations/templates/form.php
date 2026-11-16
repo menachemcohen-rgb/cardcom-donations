@@ -25,8 +25,8 @@
       <span class="orgdon-err" data-for="phone" role="alert"></span>
     </div>
     <div class="orgdon-row">
-      <label for="od-id">תעודת זהות (רשות)</label>
-      <input id="od-id" name="tax_id" dir="ltr" inputmode="numeric" maxlength="9">
+      <label for="od-id">תעודת זהות *</label>
+      <input id="od-id" name="tax_id" dir="ltr" inputmode="numeric" maxlength="9" autocomplete="off" required>
       <span class="orgdon-err" data-for="tax_id" role="alert"></span>
     </div>
 
@@ -64,13 +64,13 @@ foreach ($pickers as $prayer => $pk): ?>
 
     <div class="orgdon-row orgdon-terms">
       <label><input type="checkbox" name="terms" value="1" required>
-        <span>אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת.<?php if ($terms_url !== ''): ?> <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php endif; ?></span></label>
+        <span>קראתי ואני מסכים/ה ל<?php if ($terms_url !== ''): ?><a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php else: ?>תנאי ההוראה<?php endif; ?></span></label>
       <span class="orgdon-err" data-for="terms" role="alert"></span>
     </div>
 
     <div class="orgdon-card">
       <h3>פרטי כרטיס אשראי (מסגרת מאובטחת של Cardcom)</h3>
-      <p class="orgdon-card-note">שמירת כרטיס בלבד – לא יתבצע חיוב עכשיו. הסכום ₪1.00 שמופיע במסגרת הוא בדיקת תקינות של הכרטיס, והחיוב יתבצע לפי הסכום והתדירות שבחרת.</p>
+      <p class="orgdon-card-note">לא יתבצע חיוב עכשיו. החיוב יתבצע לפי הסכום והתדירות שבחרת.</p>
       <p class="orgdon-card-hint" data-role="card-hint">יש למלא את פרטי הטופס ולאשר את התנאים, ואז ללחוץ על "המשך להזנת פרטי כרטיס".</p>
 <?php if (!empty($diners)): ?>
       <div class="orgdon-row orgdon-diners">

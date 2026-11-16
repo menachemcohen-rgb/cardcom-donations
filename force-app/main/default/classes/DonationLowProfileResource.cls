@@ -5,8 +5,8 @@ global without sharing class DonationLowProfileResource {
   /**
    * Contract: B4. Body {purpose:'signup', returnUrlBase, terminal?, taxId?}. Response {lowProfileId, url, expiresAt, terminal}.
    * D39: terminal 'Secondary' opens the card page of the Diners terminal; anything else → the primary terminal.
-   * taxId: the ID number from the WordPress form. A valid Israeli ID is pre-filled (and hidden) on the Cardcom page; an invalid one
-   * → 400 VALIDATION {fields:['taxId']} with no call to Cardcom; blank → the Cardcom page asks for the ID itself.
+   * taxId: the ID number from the WordPress form, required (N118). It is pre-filled on the Cardcom page, whose ID field is hidden;
+   * blank or invalid → 400 VALIDATION {fields:['taxId']} with no call to Cardcom.
    */
   @HttpPost
   global static void create() {
@@ -19,7 +19,7 @@ global without sharing class DonationLowProfileResource {
       assertAllowedReturnUrl(returnUrlBase);
       String terminal = CardcomService.terminalKey((String) b.get('terminal'));
       String taxId = b.get('taxId') == null ? null : String.valueOf(b.get('taxId')).trim();
-      if (String.isNotBlank(taxId) && !ContactMatcher.validIsraeliId(taxId))
+      if (!ContactMatcher.validIsraeliId(taxId))
         throw new BadTaxIdException('taxId');
       String rv = 'SIGNUP-' + UUID.randomUUID().toString();
       Map<String, Object> r = CardcomService.createTokenLowProfile(terminal, rv, returnUrlBase, 'הוראת תרומה יומית', taxId); // B5.1
