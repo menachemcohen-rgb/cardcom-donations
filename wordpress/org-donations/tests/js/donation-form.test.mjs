@@ -169,3 +169,9 @@ test('server says the ID no longer matches the card page: a new card page and "�
   assert.equal(dom.nodes['orgdon-iframe'].src, 'https://cardcom/2');
   assert.equal(dom.nodes['orgdon-msg'].textContent, 'נא לאשר שוב את פרטי הכרטיס');
 });
+
+test('the monthly estimate is not shown on the form', () => {
+  const tpl = readFileSync(new URL('../../templates/form.php', import.meta.url), 'utf8');
+  assert.ok(!tpl.includes('orgdon-estimate'), 'no estimate element in the template');
+  assert.match(src, /if \(!el\) return;/, 'estimate() is a no-op without the element');
+});

@@ -11,7 +11,7 @@
   "Integration_User_Id__c": "<18-char Id of the production integration user>",
   "Default_Account_Id__c": null,
   "Min_Amount__c": 1,
-  "Max_Amount__c": 50,
+  "Max_Amount__c": 40,
   "Amount_Presets__c": "1,3,5,10",
   "Send_Donor_Charge_Email__c": false,
   "Is_Recurring_Terminal__c": false,

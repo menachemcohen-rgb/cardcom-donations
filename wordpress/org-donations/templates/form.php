@@ -62,8 +62,6 @@ foreach ($pickers as $prayer => $pk): ?>
     </div>
 <?php endif; endforeach; ?>
 
-    <p class="orgdon-estimate" aria-live="polite"></p>
-
     <div class="orgdon-row orgdon-terms">
       <label><input type="checkbox" name="terms" value="1" required>
         <span>אני מאשר/ת חיובים חוזרים בכרטיס האשראי לפי הסכום והתדירות שבחרתי, וידוע לי שאוכל לבטל בכל עת.<?php if ($terms_url !== ''): ?> <a href="<?= esc_url($terms_url) ?>" target="_blank" rel="noopener">תנאי ההוראה</a><?php endif; ?></span></label>
