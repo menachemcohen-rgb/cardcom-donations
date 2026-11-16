@@ -113,4 +113,66 @@ private class StaffAlertServiceTest {
     Test.stopTest();
     Assert.isNotNull(id);
   }
+
+  // ---- high amount per charge (> Charge_Settings__c.High_Amount_Alert__c, default 25) ----
+  // The threshold is lowered to 10 here: VR_Amount_Range reads the org's own Cardcom_Setting record (its Max_Amount__c may be 25).
+  static void highAmountAlerts() {
+    staffEmails();
+    ChargeSettings.overrideValue.High_Amount_Alert__c = 10;
+  }
+
+  @IsTest
+  static void newPledgeAboveTheThresholdAlertsWhenItBecomesActive() {
+    highAmountAlerts();
+    Contact c = TestDataFactory.contact('Dan', 'Levi', 'dan@example.com', '0522222222');
+    Opportunity low = TestDataFactory.withToken(TestDataFactory.submittedPledge('lp-high-0000000001', c.Email, c.MobilePhone));
+    Opportunity high = TestDataFactory.withToken(TestDataFactory.submittedPledge('lp-high-0000000002', c.Email, c.MobilePhone));
+    low.Charge_Amount__c = 10; // exactly the threshold: no alert
+    high.Frequency__c = 'TwiceDaily';
+    high.Charge_Amount__c = 5;
+    high.Mincha_Amount__c = 12;
+    insert new List<Opportunity>{ low, high };
+    Assert.areEqual(0, StaffAlertService.sentCount, 'pending pledges are not alerted');
+    for (Opportunity o : new List<Opportunity>{ low, high }) {
+      o.StageName = MicroPledges.STAGE_ACTIVE;
+      o.Donor_Contact__c = c.Id;
+      o.Activated_At__c = Datetime.now();
+    }
+    update new List<Opportunity>{ low, high };
+    Assert.areEqual(1, StaffAlertService.sentCount, 'only the pledge above the threshold per charge');
+    Assert.areEqual('מנחה 12.00 ₪', StaffAlertService.highSlots(high));
+    Assert.areEqual('', StaffAlertService.highSlots(low));
+  }
+
+  @IsTest
+  static void amountChangesOnAnActivePledgeAlertOnlyWhenTheHighAmountChanges() {
+    highAmountAlerts();
+    Opportunity p = TestDataFactory.activePledges(1, 'TwiceDaily')[0]; // 3 ₪
+    Assert.areEqual(0, StaffAlertService.sentCount);
+    update new Opportunity(Id = p.Id, Charge_Amount__c = 15);
+    Assert.areEqual(1, StaffAlertService.sentCount, 'Shacharit raised above the threshold');
+    update new Opportunity(Id = p.Id, Charge_Amount__c = 15, Last4__c = '1234');
+    Assert.areEqual(1, StaffAlertService.sentCount, 'same amounts: no second email');
+    update new Opportunity(Id = p.Id, Mincha_Amount__c = 11);
+    Assert.areEqual(2, StaffAlertService.sentCount, 'Mincha also above the threshold');
+    update new Opportunity(Id = p.Id, Charge_Amount__c = 8, Mincha_Amount__c = 8);
+    Assert.areEqual(2, StaffAlertService.sentCount, 'lowered: no email');
+  }
+
+  @IsTest
+  static void resumeOtherSlotsAndThreshold() {
+    highAmountAlerts();
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    update new Opportunity(Id = p.Id, Mincha_Amount__c = 20);
+    Assert.areEqual(0, StaffAlertService.sentCount, 'Shacharit-only pledge: the Mincha amount is never charged');
+    update new Opportunity(Id = p.Id, Charge_Amount__c = 20);
+    Assert.areEqual(1, StaffAlertService.sentCount);
+    Opportunity stopped = new Opportunity(StageName = MicroPledges.STAGE_STOPPED, Frequency__c = 'OnceDaily', Charge_Amount__c = 20);
+    Opportunity resumed = new Opportunity(StageName = MicroPledges.STAGE_ACTIVE, Frequency__c = 'OnceDaily', Charge_Amount__c = 20);
+    Assert.isFalse(StaffAlertService.isNewHighAmount(resumed, stopped), 'a resume with the same amounts is not alerted again');
+    Assert.isFalse(StaffAlertService.isNewHighAmount(stopped, resumed), 'a stopped pledge is not alerted');
+    ChargeSettings.overrideValue.High_Amount_Alert__c = null;
+    Assert.areEqual(25, StaffAlertService.highAmountThreshold().intValue(), 'blank threshold = 25');
+    Assert.areEqual(25, ChargeSettings.defaults().High_Amount_Alert__c.intValue(), 'default 25');
+  }
 }

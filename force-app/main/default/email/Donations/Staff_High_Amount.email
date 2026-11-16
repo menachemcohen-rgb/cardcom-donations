@@ -1,0 +1,7 @@
+<div dir="rtl" style="font-family:Arial,sans-serif">
+<p>שלום,</p>
+<p>בהוראת התרומה של {{Donor}} הסכום לחיוב גבוה מ-{{Threshold}} ₪: {{HighAmounts}}.</p>
+<p>פרטי התורם: {{Donor}} · {{DonorEmail}} · {{DonorPhone}}</p>
+<p>ההוראה: {{PledgeNumber}} · {{Frequency}} · {{Amounts}}</p>
+<p><a href="{{RecordUrl}}">לצפייה ברשומה</a></p>
+</div>

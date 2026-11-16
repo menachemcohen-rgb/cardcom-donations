@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>High_Amount_Alert__c</fullName>
+    <defaultValue>25</defaultValue>
+    <description>Staff are emailed when an active pledge charges more than this per Shacharit or Mincha charge (blank = 25)</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Staff get an email for every pledge whose amount per charge (Shacharit or Mincha) is above this value.</inlineHelpText>
+    <label>High Amount Alert</label>
+    <precision>8</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Number</type>
+</CustomField>

@@ -23,7 +23,7 @@ define('ORG_DONATION_CONTACT_PHONE', '03-0000000');                       // sho
 define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
 define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c
 define('ORG_DONATION_MIN_AMOUNT', 1);                // optional, default 1;  keep = Min_Amount__c
-define('ORG_DONATION_MAX_AMOUNT', 25);               // optional, default 25 (ATA-6); keep = Max_Amount__c. An old 50 here overrides the default!
+define('ORG_DONATION_MAX_AMOUNT', 40);               // optional, default 40; keep = Max_Amount__c. An old 50 here overrides the default!
 define('ORG_DONATION_FRAME_HEIGHT', 880);            // optional (ATA-6): Cardcom frame height in px on desktop (default 880)
 define('ORG_DONATION_FRAME_HEIGHT_MOBILE', 1150);    // optional: on phones (default 1150); the frame never scrolls there
 define('ORG_DONATION_PARENT_ORIGIN', 'https://www.<site>'); // optional: origin of a page that embeds the form in an iframe (Elementor); default '*'

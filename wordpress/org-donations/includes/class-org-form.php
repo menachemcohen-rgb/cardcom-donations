@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 final class Org_Form {
     // Amount defaults; override in wp-config.php with ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS ("1,2,3,5,10").
     // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the Shacharit/Mincha amounts.
-    const MIN = 1; const MAX = 25;    // ATA-6: at most 25 ₪ per charge (= Cardcom_Setting__mdt.Default.Max_Amount__c)
+    const MIN = 1; const MAX = 40;    // at most 40 ₪ per charge (was 25, ATA-6) (= Cardcom_Setting__mdt.Default.Max_Amount__c)
     const PRESETS = [1, 2, 3, 5, 10];
 
     // Rate-limit defaults; override in wp-config.php with ORG_DONATION_RL_WINDOW / _SUBMIT_MAX / _LP_MAX.

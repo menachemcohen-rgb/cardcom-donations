@@ -54,6 +54,7 @@
   function estimate() {
     const a = amounts(); const f = freq();
     const el = form.querySelector('.orgdon-estimate');
+    if (!el) return;                                   // the monthly estimate is not shown (client, 16.11.2026)
     const sh = parseFloat(a.shacharit) || 0, mi = parseFloat(a.mincha) || 0;
     if (!f || (!sh && !mi)) { el.textContent = ''; return; }
     el.textContent = `הערכה: כ-${perMonth(sh, mi, f)} ₪ בחודש (${perWeek(f)} חיובים בשבוע).`;
