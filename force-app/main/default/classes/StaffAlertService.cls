@@ -3,6 +3,8 @@
  * - failureStreak: once per streak per pledge (Failure_Alert_Sent_At__c, PledgeRollupService).
  * - configErrorOncePerDay, receiptFailures, reconciliationOpen, pendingVerificationStale, scheduleChanged: at most once a day each,
  *   tracked in Alert_State__c (E11, N30).
+ * - highAmount: an Active pledge charging more than Charge_Settings__c.High_Amount_Alert__c (default 25 ₪) per Shacharit or
+ *   Mincha charge — once when it becomes Active, and again whenever its above-threshold amounts change.
  * - Daily: the 09:00 schedulable (B9) running the daily alerts.
  * Email failures are caught and logged: an alert never rolls back charging.
  */
@@ -54,6 +56,109 @@ public without sharing class StaffAlertService {
         mails.add(m);
     }
     sendAll(mails); // one sendEmail call for all pledges: at most 10 calls per transaction
+  }
+
+  // ---------------------------------------------------------------- high amount per charge
+  /** Amount per charge above which staff are emailed (Charge_Settings__c.High_Amount_Alert__c, blank = 25). */
+  public static Decimal highAmountThreshold() {
+    Decimal t = ChargeSettings.get().High_Amount_Alert__c;
+    return t == null ? 25 : t;
+  }
+
+  /** "שחרית 30.00 ₪ · מנחה 40.00 ₪" for the slots the pledge charges above the threshold; '' when none. */
+  @TestVisible
+  static String highSlots(Opportunity p) {
+    List<String> out = new List<String>();
+    Decimal t = highAmountThreshold();
+    for (String slot : new List<String>{ MicroPledges.SLOT_SHACHARIT, MicroPledges.SLOT_MINCHA }) {
+      Decimal a = MicroPledges.hasSlot(p.Frequency__c, slot) ? MicroPledges.amountFor(p, slot) : null;
+      if (a != null && a > t)
+        out.add(MicroPledges.slotHe(slot) + ' ' + a.setScale(2) + ' ₪');
+    }
+    return String.join(out, ' · ');
+  }
+
+  /**
+   * A pledge that is Active now with an amount above the threshold, and either just became Active from verification (a new
+   * pledge) or was already Active and its above-threshold amounts changed (donor page, staff edit, new card with a new amount).
+   * A resume (Stopped → Active) with the same amounts is not alerted again.
+   */
+  public static Boolean isNewHighAmount(Opportunity n, Opportunity o) {
+    if (n.StageName != MicroPledges.STAGE_ACTIVE)
+      return false;
+    String now = highSlots(n);
+    if (String.isBlank(now))
+      return false;
+    if (o.StageName == MicroPledges.STAGE_PENDING)
+      return true;
+    return o.StageName == MicroPledges.STAGE_ACTIVE && now != highSlots(o);
+  }
+
+  public static void highAmount(Set<Id> pledgeIds) {
+    String pledgeType = MicroPledges.TYPE;
+    List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
+    for (Opportunity p : [
+      SELECT
+        Id,
+        Pledge_Number__c,
+        Charge_Amount__c,
+        Mincha_Amount__c,
+        Frequency__c,
+        Donor_First_Name__c,
+        Donor_Last_Name__c,
+        Donor_Email__c,
+        Donor_Phone__c,
+        Donor_Contact__r.Name,
+        Donor_Contact__r.Email,
+        Donor_Contact__r.MobilePhone
+      FROM Opportunity
+      WHERE Id IN :pledgeIds AND Type = :pledgeType
+    ]) {
+      String donor = p.Donor_Contact__r != null
+        ? p.Donor_Contact__r.Name
+        : ((p.Donor_First_Name__c == null ? '' : p.Donor_First_Name__c) +
+            ' ' +
+            (p.Donor_Last_Name__c == null ? '' : p.Donor_Last_Name__c))
+            .trim();
+      String email = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.Email)
+        ? p.Donor_Contact__r.Email
+        : p.Donor_Email__c;
+      String phone = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.MobilePhone)
+        ? p.Donor_Contact__r.MobilePhone
+        : p.Donor_Phone__c;
+      Messaging.SingleEmailMessage m = message(
+        'הוראת תרומה בסכום גבוה – ' + donor + ' (' + p.Pledge_Number__c + ')',
+        wrap(
+          '<p>בהוראת התרומה של ' +
+            EmailUtil.esc(donor) +
+            ' הסכום לחיוב גבוה מ-' +
+            EmailUtil.esc(highAmountThreshold().setScale(2)) +
+            ' ₪: ' +
+            EmailUtil.esc(highSlots(p)) +
+            '.</p>' +
+            '<p>פרטי התורם: ' +
+            EmailUtil.esc(donor) +
+            ' · ' +
+            EmailUtil.esc(email) +
+            ' · ' +
+            EmailUtil.esc(phone) +
+            '</p>' +
+            '<p>ההוראה: ' +
+            EmailUtil.esc(p.Pledge_Number__c) +
+            ' · ' +
+            EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)) +
+            ' · ' +
+            EmailUtil.esc(MicroPledges.amountsHe(p)) +
+            '</p>' +
+            '<p><a href="' +
+            EmailUtil.recordUrl(p.Id) +
+            '">לצפייה ברשומה</a></p>'
+        )
+      );
+      if (m != null)
+        mails.add(m);
+    }
+    sendAll(mails);
   }
 
   @TestVisible
@@ -436,7 +541,9 @@ public without sharing class StaffAlertService {
     ]) {
       n++;
       String name = p.Donor_Contact__r != null ? p.Donor_Contact__r.Name : (p.Donor_First_Name__c + ' ' + p.Donor_Last_Name__c);
-      String phone = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.MobilePhone) ? p.Donor_Contact__r.MobilePhone : p.Donor_Phone__c;
+      String phone = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.MobilePhone)
+        ? p.Donor_Contact__r.MobilePhone
+        : p.Donor_Phone__c;
       rows +=
         '<tr><td><a href="' +
         EmailUtil.recordUrl(p.Id) +

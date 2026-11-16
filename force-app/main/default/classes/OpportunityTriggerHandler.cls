@@ -5,6 +5,8 @@
  *   in Pledge_Change_Log__c and field history keep them), and Skipped/STOPPED charges for today or later give up their
  *   Attempt_Key__c, so the next planned run can create that slot again (N87). Nothing is re-sent: missed runs are not made up.
  * - Change log for the manual stage transitions (Stop, Resume, Cancel) and for donor-link revocation (Link_Version__c raised).
+ * - Staff email for a high amount per charge (StaffAlertService.highAmount): a new pledge becoming Active with an amount above
+ *   Charge_Settings__c.High_Amount_Alert__c in Shacharit or Mincha, or an Active pledge whose above-threshold amounts change.
  */
 public without sharing class OpportunityTriggerHandler {
   /** Set by the donor page (DonorPortalResource.stop) so the change log says Donor_Portal instead of System. */
@@ -25,11 +27,14 @@ public without sharing class OpportunityTriggerHandler {
     Set<Id> halted = new Set<Id>();
     Set<Id> resumed = new Set<Id>();
     List<Pledge_Change_Log__c> logs = new List<Pledge_Change_Log__c>();
+    Set<Id> highAmount = new Set<Id>();
     String source = sourceOverride != null ? sourceOverride : (isIntegrationUser() ? 'System' : 'Staff');
     for (Opportunity n : news) {
       if (n.Type != pledgeType)
         continue;
       Opportunity o = olds.get(n.Id);
+      if (StaffAlertService.isNewHighAmount(n, o))
+        highAmount.add(n.Id);
       if (n.StageName != o.StageName) {
         if (n.StageName == MicroPledges.STAGE_STOPPED || n.StageName == MicroPledges.STAGE_CANCELLED)
           halted.add(n.Id);
@@ -49,6 +54,8 @@ public without sharing class OpportunityTriggerHandler {
       releaseStoppedKeys(resumed);
     if (!logs.isEmpty())
       insert logs;
+    if (!highAmount.isEmpty())
+      StaffAlertService.highAmount(highAmount);
   }
 
   /** B6.8: Pending attempts of a stopped/cancelled pledge are never sent. Charges already being sent are re-checked by ChargeQueueable. */
