@@ -182,7 +182,12 @@ global without sharing class DonorPortalResource {
     if (today >= 5)
       throw err(429, 'TOO_MANY');
     String key = 'CARD-' + UUID.randomUUID().toString();
-    Map<String, Object> lp = CardcomService.createTokenLowProfile(terminal, key, returnUrlBase, 'עדכון כרטיס להוראת תרומה'); // callout first
+    // The donor's ID from the pledge's contact is pre-filled (and hidden) on the Cardcom page; none or invalid → Cardcom asks for it.
+    String pledgeType = MicroPledges.TYPE;
+    String taxId = [SELECT Donor_Contact__r.Donor_Tax_Id__c FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType]
+      .Donor_Contact__r
+      ?.Donor_Tax_Id__c;
+    Map<String, Object> lp = CardcomService.createTokenLowProfile(terminal, key, returnUrlBase, 'עדכון כרטיס להוראת תרומה', taxId); // callout first
     insert new Card_Change_Request__c(
       Pledge__c = p.Id,
       Cardcom_Terminal__c = terminal,

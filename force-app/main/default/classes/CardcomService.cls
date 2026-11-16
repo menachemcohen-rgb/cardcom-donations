@@ -108,6 +108,21 @@ public without sharing class CardcomService {
     return createTokenLowProfile(PRIMARY, returnValue, returnUrlBase, productName);
   }
   public static Map<String, Object> createTokenLowProfile(String terminal, String returnValue, String returnUrlBase, String productName) {
+    return createTokenLowProfile(terminal, returnValue, returnUrlBase, productName, null);
+  }
+  /**
+   * taxId: the donor's Israeli ID number. When it is a valid ID, Cardcom gets it pre-filled as the card owner's ID
+   * (UIDefinition.CardOwnerIdentityNumberValue) and its ID field is hidden (IsHideCardOwnerIdentityNumber=true), so the donor
+   * doesn't type it twice. Blank or invalid → the ID field stays visible on the Cardcom page, as before.
+   */
+  public static Map<String, Object> createTokenLowProfile(
+    String terminal,
+    String returnValue,
+    String returnUrlBase,
+    String productName,
+    String taxId
+  ) {
+    String ownerId = ContactMatcher.validIsraeliId(taxId) ? taxId.trim().leftPad(9, '0') : null;
     Map<String, Object> b = withTerminal(terminal);
     b.put('Operation', 'CreateTokenOnly');
     b.put('ReturnValue', returnValue);
@@ -119,16 +134,16 @@ public without sharing class CardcomService {
     b.put('ProductName', productName.left(50));
     b.put('Language', 'he');
     b.put('ISOCoinId', 1);
-    b.put(
-      'UIDefinition',
-      new Map<String, Object>{
-        'IsHideCardOwnerName' => false,
-        'IsHideCardOwnerEmail' => true,
-        'IsHideCardOwnerPhone' => true,
-        'IsHideCardOwnerIdentityNumber' => false,
-        'IsHideCVV' => false
-      }
-    );
+    Map<String, Object> ui = new Map<String, Object>{
+      'IsHideCardOwnerName' => false,
+      'IsHideCardOwnerEmail' => true,
+      'IsHideCardOwnerPhone' => true,
+      'IsHideCardOwnerIdentityNumber' => ownerId != null,
+      'IsHideCVV' => false
+    };
+    if (ownerId != null)
+      ui.put('CardOwnerIdentityNumberValue', ownerId);
+    b.put('UIDefinition', ui);
     Integer jv = settings().Lp_JValidate_Type__c == null ? 2 : settings().Lp_JValidate_Type__c.intValue();
     b.put('AdvancedDefinition', new Map<String, Object>{ 'JValidateType' => jv, 'ThreeDSecureState' => 'Auto' });
     Map<String, Object> r = post(terminal, 'LowProfile/Create', b);

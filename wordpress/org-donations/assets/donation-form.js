@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   // Pure helpers, exposed for the JS tests (tests/js) — hoisted function declarations below.
-  window.OrgDonUtil = { validId: validId, perMonth: perMonth, perWeek: perWeek, prayers: prayers, normPhone: normPhone, validAmount: validAmount, amountError: amountError };
+  window.OrgDonUtil = { validId: validId, normTaxId: normTaxId, perMonth: perMonth, perWeek: perWeek, prayers: prayers, normPhone: normPhone, validAmount: validAmount, amountError: amountError };
   const cfg = window.ORGDON || {};
   const form = document.getElementById('orgdon-form');
   if (!form) return;
@@ -12,6 +12,10 @@
   const hint = form.querySelector('[data-role="card-hint"]');
   // lpId: the Cardcom card session, created only once the form is valid (server checks it again before creating it).
   let lpId = null, lpExpires = 0, cardSaved = false, submitting = false, opening = false, timer, pendingTries = 0;
+  // lpTaxId: the ID number (normalized, '' = none) pre-filled on the open card page. Cardcom hides its ID field when we send one,
+  // so a different ID in the form needs a new card page (taxTimer: ~1 s debounce while the donor types).
+  let lpTaxId = null, taxTimer;
+  const MSG_UPDATING_CARD = 'מעדכנים את דף התשלום…';
 
   // Phones (portrait or landscape): the Cardcom frame is tall (CSS) and doesn't scroll itself, so only the page scrolls.
   // Set before the frame gets its src: browsers apply `scrolling` when the document loads.
@@ -109,7 +113,7 @@
     if (e.target.name === 'diners') {
       // Each terminal has its own card page: drop the open session, the donor opens the right one with "המשך".
       if (lpId && !cardSaved) {
-        clearTimeout(timer); lpId = null; lpExpires = 0;
+        clearTimeout(timer); clearTimeout(taxTimer); lpId = null; lpExpires = 0; lpTaxId = null;
         if (iframe) iframe.src = 'about:blank';
         showCard(false); msg.textContent = '';
       }
@@ -127,6 +131,26 @@
   });
   syncPickers();
   estimate();
+
+  /**
+   * The ID number changed after the card page was opened: once the new value is valid (or cleared) and stays put for ~1 s,
+   * open a new card page carrying it — the same path as the renewal before the page expires.
+   */
+  function onTaxIdInput() {
+    clearTimeout(taxTimer);
+    if (!lpId || cardSaved) return;
+    taxTimer = setTimeout(() => {
+      if (opening) { onTaxIdInput(); return; }          // a page is being created: check again after it
+      if (!lpId || cardSaved) return;
+      const v = $('tax_id').value.trim();
+      if (v && !validId(v)) return;                      // still typing / invalid: the old page stays until the ID is valid
+      if (normTaxId(v) === lpTaxId) return;              // back to the ID already on the page
+      if (!validate()) { showCard(false); msg.textContent = 'נא לתקן את השדות המסומנים.'; return; }
+      lpExpires = 0;
+      openCard({ quiet: true, note: MSG_UPDATING_CARD });
+    }, 1000);
+  }
+  if ($('tax_id')) $('tax_id').addEventListener('input', onTaxIdInput);
 
   function validate() {
     clearErrs(); let ok = true;
@@ -149,6 +173,11 @@
     v = v.replace(/\D/g, ''); if (v.length > 9) return false; v = v.padStart(9, '0');
     let s = 0; for (let i = 0; i < 9; i++) { let n = +v[i] * ((i % 2) + 1); s += n > 9 ? n - 9 : n; }
     return s % 10 === 0;
+  }
+  /** Same normalization as the server (Org_Validator::il_id): digits only, left-padded to 9; '' when blank. */
+  function normTaxId(v) {
+    v = String(v == null ? '' : v).replace(/\D/g, '');
+    return v === '' ? '' : v.padStart(9, '0');
   }
 
   function fields() {
@@ -175,26 +204,34 @@
     if (d.fields) Object.entries(d.fields).forEach(([k, t]) => setErr(k.replace(/([A-Z])/g, '_$1').toLowerCase(), t));
   }
 
-  /** Opens the card step: validates here, then the server validates again before it creates the Cardcom session. */
-  async function openCard() {
+  /**
+   * Opens the card step: validates here, then the server validates again before it creates the Cardcom session.
+   * opts.quiet: renewal in place (no scroll); opts.note: message shown while the new page is created.
+   */
+  async function openCard(opts) {
+    opts = opts || {};
     if (opening || cardSaved || !iframe) return;
     msg.textContent = '';
     if (!validate()) { msg.textContent = 'נא לתקן את השדות המסומנים.'; return; }
-    if (lpId && Date.now() < lpExpires - 30000) { showCard(true); scrollToCard(); return; }   // session still fresh: just show it again
+    const data = fields(); const taxId = normTaxId(data.tax_id);
+    // session still fresh and carrying the current ID: just show it again
+    if (lpId && Date.now() < lpExpires - 30000 && taxId === lpTaxId) { showCard(true); scrollToCard(); return; }
     opening = true; if (continueBtn) continueBtn.disabled = true;
-    const j = await post('org_donation_lp', fields());
+    if (opts.note) msg.textContent = opts.note;
+    const j = await post('org_donation_lp', data);
     opening = false; if (continueBtn) continueBtn.disabled = false;
+    if (opts.note && msg.textContent === opts.note) msg.textContent = '';
     if (!j.success) {
       const d = j.data || {};
       showServerErrors(d);
       msg.textContent = d.message || 'לא ניתן לטעון כעת את טופס התשלום.';
       return;
     }
-    lpId = j.data.lpId; iframe.src = j.data.url;
+    lpId = j.data.lpId; lpTaxId = taxId; iframe.src = j.data.url;
     lpExpires = j.data.expiresAt ? new Date(j.data.expiresAt).getTime() : Date.now() + 20 * 60000;
-    showCard(true); scrollToCard(); schedule();
+    showCard(true); if (!opts.quiet) scrollToCard(); schedule();
   }
-  if (continueBtn) continueBtn.addEventListener('click', openCard);
+  if (continueBtn) continueBtn.addEventListener('click', () => openCard());
 
   /** The LowProfile page expires: renew it shortly before (only for a still-valid form). */
   function schedule() {
@@ -224,6 +261,16 @@
       return;
     }
     const d = j.data || {};
+    if (d.renewCard) {
+      // The ID number in the form isn't the one pre-filled on the saved card page: confirm the card again on a new page.
+      cardSaved = false; lpId = null; lpExpires = 0; lpTaxId = null;
+      if (dinersBox()) dinersBox().disabled = false;
+      finishBtn.hidden = true;
+      await openCard();
+      showServerErrors(d);
+      msg.textContent = d.message;
+      return;
+    }
     if (d.pending && pendingTries < 5) {                 // the same submission is still being saved: ask again shortly
       pendingTries++; msg.textContent = d.message || 'שומרים...';
       setTimeout(submit, 2000);

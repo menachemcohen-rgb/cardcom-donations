@@ -977,9 +977,9 @@ public without sharing class EmailUtil {
 - **Site Guest**: גישה רק ל-`CardcomWebhookResource` ו-Create ללוג. אין Read ל-Pledges.
 - **WP**: nonce, rate limit, `nocache_headers` לעמוד הטופס (Url חד-פעמי לא יישמר ב-cache של CDN/תוסף cache — להחריג את העמוד!), CSP ל-`frame-src https://secure.cardcom.solutions`, HTTPS בלבד.
 - **Replay**: `LowProfileId` לא ניתן לשייך פעמיים לתורמים שונים.
-- **ת"ז**: אופציונלי, מוצפן; לא נשלח ל-Cardcom בחיובים, רק בקבלה החודשית.
+- **ת"ז**: אופציונלי, מוצפן; לא נשלח ל-Cardcom בחיובים. נשלח ב-`LowProfile/Create` למילוי מראש של ת"ז בעל הכרטיס (השדה מוסתר בדף Cardcom; N115) ובקבלה החודשית.
 - **קישורי תורם**: HMAC-SHA256 (סוד רק ב-Salesforce Protected Metadata), ייעודיים לפעולה, **ללא תוקף; ביטול דרך `Link_Version__c` (חלק ב' B6.9)** — [מבוטל: פגי תוקף 14 יום, חד-פעמיים] (`Donor_Link_Use__c`); שגיאה גנרית 403; rate limit ב-WP; `Referrer-Policy: no-referrer`, noindex, ללא cache; העמוד מציג מינימום PII. החלפת כרטיס רק דרך iframe של Cardcom ואימות GetLpResult; הטוקן הישן נשמר בהיסטוריה מוצפנת.
-- **ת"ז לקבלה**: נשלחת ל-Cardcom רק ב-CreateDocument (TaxId בקבלה).
+- **ת"ז לקבלה**: נשלחת ל-Cardcom ב-CreateDocument (TaxId בקבלה), ובנוסף ב-LowProfile/Create למילוי מראש (N115).
 - שמירת `Raw_Body__c` — ללא נתוני כרטיס (Cardcom לא שולחת PAN); מחיקה אוטומטית אחרי 90 יום.
 
 ---
@@ -1355,7 +1355,7 @@ Base: `https://ORG.my.salesforce.com/services/apexrest`. כל הקריאות JSO
 
 | Method | Path | Class | Request | Response 200 | שגיאות |
 |---|---|---|---|---|---|
-| POST | `/donations/lowprofile` | `DonationLowProfileResource` | `{ "purpose":"signup", "returnUrlBase":"https://www.ORG.org.il/cardcom-return/" }` | `{ "lowProfileId":"uuid", "url":"https://secure.cardcom.solutions/...", "expiresAt":"2026-11-02T15:30:00Z" }` | `BAD_RETURN_URL`, `CARDCOM_ERROR` |
+| POST | `/donations/lowprofile` | `DonationLowProfileResource` | `{ "purpose":"signup", "returnUrlBase":"https://www.ORG.org.il/cardcom-return/", "terminal":"Primary", "taxId":"123456782"\|null }` | `{ "lowProfileId":"uuid", "url":"https://secure.cardcom.solutions/...", "expiresAt":"2026-11-02T15:30:00Z" }` | `BAD_RETURN_URL`, `CARDCOM_ERROR`, `VALIDATION` (`fields:["taxId"]`), `TERMINAL_NOT_CONFIGURED` |
 | POST | `/donations/pledge` | `DonationPledgeResource` | `{ "lowProfileId":"..", "firstName":"..", "lastName":"..", "email":"..", "phone":"0521234567", "taxId":"123456782"\|null, "amount":3.00, "frequency":"TwiceDaily", "termsAccepted":true, "clientIp":"1.2.3.4" }` | `{ "pledgeId":"a0X..", "status":"Pending_Verification"\|"Active" }` | `VALIDATION` (+`fields`:[..]), `LP_ALREADY_USED`, `LP_UNKNOWN` |
 | POST | `/donor/context` | `DonorPortalResource` | `{ "token":"..", "clientIp":".." }` | `{ "action":"card"\|"amount", "firstName":"..", "amount":3, "frequency":"TwiceDaily", "last4":"1234", "expMMYY":"0928", "status":"Active", "minAmount":1, "maxAmount":50, "presets":[1,3,5,10] }` | 403 `LINK_INVALID` (גנרי לכל סיבה) |
 | POST | `/donor/amount` | `DonorPortalResource` | `{ "token":"..", "amount":5, "clientIp":".." }` | `{ "ok":true, "amount":5 }` | 400 `AMOUNT_RANGE`; 403 |
