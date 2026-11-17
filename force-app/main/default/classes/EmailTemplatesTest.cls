@@ -72,4 +72,14 @@ private class EmailTemplatesTest {
     Assert.isTrue(m.getHtmlBody().startsWith('<p>טקסט חדש: שחרית 3.00 ₪'), m.getHtmlBody());
     Assert.isTrue(m.getHtmlBody().contains('a=card&amp;t='), 'the permanent card link is filled');
   }
+
+  @IsTest
+  static void adminNoteAndSalesforceMergeFieldsNeverReachTheEmail() {
+    String text =
+      '<!-- FIELDS — הערה למנהלים: {{FirstName}} {{LastName}} ({!Contact.Name}) -->\n' +
+      '<p>{{FirstName}} {!Contact.LastName} {!Opportunity.Name}שלום</p>';
+    String out = EmailTemplates.fill(text, new Map<String, String>{ 'FirstName' => 'אבי' });
+    Assert.areEqual('<p>אבי  שלום</p>', out);
+    Assert.areEqual('<!-- other comment -->x', EmailTemplates.fill('<!-- other comment -->x', null), 'other comments stay');
+  }
 }

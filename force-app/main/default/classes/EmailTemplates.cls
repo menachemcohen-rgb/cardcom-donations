@@ -3,6 +3,8 @@
  * Setup → Classic Email Templates without a deploy. Templates use {{Name}} placeholders that Apex fills; no Salesforce merge fields.
  * Values for the HTML body are HTML-escaped by the caller (or are HTML built in code, such as {{Table}}); subject values are plain.
  * A template that is missing or blank falls back to the default text kept in code, so an email is never lost to a bad edit.
+ * Each template starts with a "<!-- FIELDS ... -->" note listing the placeholders it can use (for admins; removed before sending).
+ * Salesforce merge fields ({!Contact.LastName}) offered by the template editor are not filled and are removed too.
  * The list of templates and placeholders: docs/email-templates-he.md.
  */
 public without sharing class EmailTemplates {
@@ -45,12 +47,15 @@ public without sharing class EmailTemplates {
     return r;
   }
 
-  /** {{Key}} → value; unknown placeholders are removed so a typo never shows braces to a donor. */
+  /**
+   * {{Key}} → value. Removed so a donor never sees them: the admin FIELDS note, Salesforce merge fields ({!...}) and unknown
+   * placeholders.
+   */
   @TestVisible
   static String fill(String text, Map<String, String> values) {
     if (text == null)
       return '';
-    String out = text;
+    String out = text.replaceAll('(?s)<!--\\s*FIELDS.*?-->\\s*', '').replaceAll('\\{![^}]*\\}', '');
     if (values != null)
       for (String k : values.keySet())
         out = out.replace('{{' + k + '}}', values.get(k) == null ? '' : values.get(k));

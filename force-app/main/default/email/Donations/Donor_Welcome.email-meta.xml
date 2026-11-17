@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <available>true</available>
-    <description>Donor email when a pledge becomes Active (DonorEmailService). Placeholders {{...}} are filled by Apex: docs/email-templates-he.md.</description>
+    <description>Fields that work here: {{FirstName}} {{LastName}} {{FullName}} {{DonorEmail}} {{DonorPhone}} {{PledgeNumber}} {{OrgName}} {{Frequency}} {{Amounts}} {{ShacharitAmount}} {{MinchaAmount}} {{StartDate}} {{TotalCollected}} {{SuccessfulCharges}} {{LastChargeDate}} {{Last4}} {{CardExpiry}} {{Card}} {{CardPhrase}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmailPart}} {{Signature}} {{PaymentIssueSince}} {{Today}}. Do not use Available Merge Fields ({!...}) - they are not filled and are removed. Guide: docs/email-templates-he.md</description>
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Welcome</name>
     <style>none</style>

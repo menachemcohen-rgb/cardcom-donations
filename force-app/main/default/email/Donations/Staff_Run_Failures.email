@@ -1,3 +1,4 @@
+<!-- FIELDS — הערה למנהלים, לא נשלחת במייל. שדות שעובדים בתבנית הזו: {{Failed}} {{Total}} {{Table}} {{ReportsUrl}} — אין להשתמש בתפריט Available Merge Fields של Salesforce ({!Contact...}): שדות כאלה לא ימולאו ויימחקו מהמייל. הרשימה המלאה: docs/email-templates-he.md -->
 <div dir="rtl" style="font-family:Arial,sans-serif">
 <p>שלום,</p>
 <p>בשלוש השעות האחרונות נשלחו ל-Cardcom {{Total}} חיובים, ו-{{Failed}} מהם נכשלו. כשרוב החיובים נכשלים יחד, הסיבה בדרך כלל אינה בכרטיסים של התורמים אלא בטרמינל או בהגדרות.</p>
