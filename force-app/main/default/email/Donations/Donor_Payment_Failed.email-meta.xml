@@ -5,7 +5,7 @@
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Payment Failed</name>
     <style>none</style>
-    <subject>לא הצלחנו לחייב את הכרטיס – הוראת התרומה ל{{OrgName}}</subject>
+    <subject>לא הצלחנו לחייב את הכרטיס – הוראת התרומה לאת&quot;ה העולמי</subject>
     <type>custom</type>
     <uiType>Aloha</uiType>
 </EmailTemplate>

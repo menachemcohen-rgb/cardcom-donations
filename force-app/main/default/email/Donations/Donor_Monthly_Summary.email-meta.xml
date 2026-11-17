@@ -5,7 +5,7 @@
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Monthly Summary</name>
     <style>none</style>
-    <subject>סיכום התרומות שלך ל{{OrgName}} – {{Month}}</subject>
+    <subject>סיכום התרומות שלך לאת&quot;ה העולמי – {{Month}}</subject>
     <type>custom</type>
     <uiType>Aloha</uiType>
 </EmailTemplate>

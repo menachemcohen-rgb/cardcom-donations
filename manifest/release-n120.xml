@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Release N120: more donor fields in the email templates, a FIELDS note in every template, {!...} merge fields removed.
+  The 5 donor templates carry the wording edited in production on 17.11.2026, so the deploy keeps it.
+  Production:  sf project deploy validate --target-org prod -x manifest/release-n120.xml --test-level RunSpecifiedTests --tests EmailTemplatesTest DonorEmailServiceTest DonorChargeEmailServiceTest StaffAlertServiceTest PledgeRollupServiceTest
+               then sf project deploy quick --job-id <id> --target-org prod
+  Stop the Donations jobs first (DonationSetup.request('UNSCHEDULE_ALL');) and schedule them again after (SCHEDULE_ALL).
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>DonorChargeEmailService</members>
+        <members>DonorChargeEmailServiceTest</members>
+        <members>DonorEmailService</members>
+        <members>DonorEmailServiceTest</members>
+        <members>EmailTemplates</members>
+        <members>EmailTemplatesTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Donations</members>
+        <members>Donations/Donor_Charge_Thanks</members>
+        <members>Donations/Donor_Monthly_Summary</members>
+        <members>Donations/Donor_Payment_Failed</members>
+        <members>Donations/Donor_Payment_Failed_Reminder</members>
+        <members>Donations/Donor_Welcome</members>
+        <members>Donations/Staff_Config_Error</members>
+        <members>Donations/Staff_Email_Limit</members>
+        <members>Donations/Staff_Failure_Streak</members>
+        <members>Donations/Staff_High_Amount</members>
+        <members>Donations/Staff_Pending_Verification</members>
+        <members>Donations/Staff_Receipt_Failures</members>
+        <members>Donations/Staff_Reconciliation_Open</members>
+        <members>Donations/Staff_Reconciliation_Unavailable</members>
+        <members>Donations/Staff_Run_Failures</members>
+        <members>Donations/Staff_Schedule_Changed</members>
+        <members>Donations/Staff_Schedule_Failed</members>
+        <members>Donations/Staff_Weekly_Failed_Digest</members>
+        <name>EmailTemplate</name>
+    </types>
+    <version>62.0</version>
+</Package>

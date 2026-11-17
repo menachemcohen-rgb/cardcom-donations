@@ -5,7 +5,7 @@
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Charge Thanks</name>
     <style>none</style>
-    <subject>תודה על תרומתך ל{{OrgName}} – {{Amount}} ₪</subject>
+    <subject>תודה על תרומתך לאת&quot;ה העולמי – {{Amount}} ₪</subject>
     <type>custom</type>
     <uiType>Aloha</uiType>
 </EmailTemplate>

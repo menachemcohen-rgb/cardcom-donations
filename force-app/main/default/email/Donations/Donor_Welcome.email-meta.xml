@@ -5,7 +5,7 @@
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Welcome</name>
     <style>none</style>
-    <subject>הוראת התרומה היומית שלך ל{{OrgName}} נקלטה</subject>
+    <subject>הוראת התרומה היומית שלך לאת&quot;ה העולמי נקלטה</subject>
     <type>custom</type>
     <uiType>Aloha</uiType>
 </EmailTemplate>

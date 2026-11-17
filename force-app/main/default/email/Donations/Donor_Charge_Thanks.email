@@ -1,6 +1,7 @@
 <!-- FIELDS — הערה למנהלים, לא נשלחת במייל. שדות שעובדים בתבנית הזו: {{FirstName}} {{LastName}} {{FullName}} {{DonorEmail}} {{DonorPhone}} {{PledgeNumber}} {{OrgName}} {{Frequency}} {{Amounts}} {{ShacharitAmount}} {{MinchaAmount}} {{StartDate}} {{TotalCollected}} {{SuccessfulCharges}} {{LastChargeDate}} {{Last4}} {{CardExpiry}} {{PaymentIssueSince}} {{Today}} {{ChargeLines}} {{Amount}} {{CardPhrase}} {{ImpactSentence}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmail}} {{SignerName}} — אין להשתמש בתפריט Available Merge Fields של Salesforce ({!Contact...}): שדות כאלה לא ימולאו ויימחקו מהמייל. הרשימה המלאה: docs/email-templates-he.md -->
 <div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-  <p>{{FirstName}} שלום,</p>
+  <p>לכבוד {{FirstName}}, שלום וברכה!</p>
+  <p>ראשית, אנו מודים לך בשם אלפי תלמידי התמימים על שותפותך הקבועה והנכבדה בפעילות איגוד תלמידי הישיבות המרכזי 770.</p>
   <p>תודה! {{ChargeLines}} {{CardPhrase}} ל{{OrgName}}.</p>
   <p>{{ImpactSentence}}</p>
   <p><strong>רוצה לעדכן את ההוראה?</strong></p>
@@ -9,5 +10,5 @@
   <p style="font-size:13px;color:#555">הקישורים אישיים ואין צורך בסיסמה – נא לא להעביר מייל זה לאחרים.</p>
   <p>קבלה מרוכזת על כל תרומות החודש תישלח אליך בתחילת החודש הבא.</p>
   <p>לביטול ההוראה או לשאלות: {{ContactPhone}} · {{ContactEmail}}</p>
-  <p>בתודה,<br>{{SignerName}}, {{OrgName}}</p>
+  <p>ישר כח!<br>{{SignerName}}, {{OrgName}}</p>
 </div>
