@@ -104,12 +104,13 @@ final class ValidatorTest extends TestCase
     public function testEveryRequiredFieldHasAHebrewError(): void
     {
         $e = Org_Validator::signup([], 1, 50)['errors'];
-        foreach (['first_name', 'last_name', 'email', 'phone', 'tax_id', 'frequency', 'terms', 'card'] as $k) {
+        foreach (['first_name', 'last_name', 'email', 'phone', 'frequency', 'terms', 'card'] as $k) {
             $this->assertArrayHasKey($k, $e, $k);
             $this->assertMatchesRegularExpression('/[\x{0590}-\x{05FF}]/u', $e[$k], "$k message is Hebrew");
         }
-        $this->assertSame('נא להזין תעודת זהות', $e['tax_id'], 'the Israeli ID is required');
-        $this->assertSame('נא להזין תעודת זהות', Org_Validator::signup($this->input(['tax_id' => '  ']), 1, 50)['errors']['tax_id']);
+        $this->assertArrayNotHasKey('tax_id', $e, 'the Israeli ID is optional');
+        $this->assertArrayNotHasKey('tax_id', Org_Validator::signup($this->input(['tax_id' => '  ']), 1, 50)['errors']);
+        $this->assertNull(Org_Validator::signup($this->input(['tax_id' => '']), 1, 50)['data']['taxId']);
         $this->assertSame('מספר תעודת הזהות אינו תקין', Org_Validator::signup($this->input(['tax_id' => '123456789']), 1, 50)['errors']['tax_id']);
         $this->assertArrayHasKey('first_name', Org_Validator::signup($this->input(['first_name' => str_repeat('א', 41)]), 1, 50)['errors']);
         $this->assertArrayHasKey('card', Org_Validator::signup($this->input(['lp_id' => 'not-an-id']), 1, 50)['errors']);

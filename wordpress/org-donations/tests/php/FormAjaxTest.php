@@ -182,7 +182,7 @@ final class FormAjaxTest extends TestCase
         $this->assertSame('Secondary', $sent[2][1]['terminal']);
     }
 
-    /** The validated ID number from the form goes to /donations/lowprofile as taxId; it is required, so none or invalid never reaches Salesforce. */
+    /** The validated ID number from the form goes to /donations/lowprofile as taxId; none → null (Cardcom shows its ID field). */
     public function testCardSessionCarriesTheFormIdNumber(): void
     {
         $sent = [];
@@ -193,12 +193,13 @@ final class FormAjaxTest extends TestCase
         };
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '18']))->ok);
         $this->assertSame('000000018', $sent[0]['taxId'], 'validated and left-padded before it is sent');
-        foreach (['', '123456789'] as $bad) {
-            $r = $this->call('ajax_lp', $this->form(['tax_id' => $bad]));
-            $this->assertSame(422, $r->status, "ID '$bad' never reaches Salesforce");
-            $this->assertArrayHasKey('tax_id', $r->data['fields']);
-        }
-        $this->assertCount(1, $sent);
+        $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '']))->ok);
+        $this->assertArrayHasKey('taxId', $sent[1]);
+        $this->assertNull($sent[1]['taxId'], 'no ID: nothing to pre-fill');
+        $bad = $this->call('ajax_lp', $this->form(['tax_id' => '123456789']));
+        $this->assertSame(422, $bad->status, 'an invalid ID never reaches Salesforce');
+        $this->assertArrayHasKey('tax_id', $bad->data['fields']);
+        $this->assertCount(2, $sent);
     }
 
     /** Item 7: the ID sent with each card page is kept per LowProfileId and must match the ID in the submitted form. */
@@ -211,11 +212,19 @@ final class FormAjaxTest extends TestCase
         $this->assertSame(1, $this->sfCalls('/donations/pledge'));
     }
 
+    public function testSubmitWithoutIdAfterACardPageWithoutIdIsAccepted(): void
+    {
+        $this->autoSeedLp = false;
+        $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '']))->ok);
+        $this->assertSame('', get_transient(Org_Form::lp_tax_key(self::LP)));
+        $this->assertTrue($this->call('ajax_submit', $this->form(['tax_id' => '', 'lp_id' => self::LP]))->ok);
+    }
+
     public function testSubmitWithAnotherIdAsksToConfirmTheCardAgain(): void
     {
         $this->autoSeedLp = false;
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '123456782']))->ok);
-        foreach ([['tax_id' => '18'], ['tax_id' => '000000018']] as $over) {
+        foreach ([['tax_id' => '18'], ['tax_id' => '']] as $over) {
             $r = $this->call('ajax_submit', $this->form($over + ['lp_id' => self::LP]));
             $this->assertFalse($r->ok);
             $this->assertSame('נא לאשר שוב את פרטי הכרטיס', $r->data['message']);

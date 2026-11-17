@@ -25,8 +25,8 @@
       <span class="orgdon-err" data-for="phone" role="alert"></span>
     </div>
     <div class="orgdon-row">
-      <label for="od-id">תעודת זהות *</label>
-      <input id="od-id" name="tax_id" dir="ltr" inputmode="numeric" maxlength="9" autocomplete="off" required>
+      <label for="od-id">תעודת זהות</label>
+      <input id="od-id" name="tax_id" dir="ltr" inputmode="numeric" maxlength="9" autocomplete="off">
       <span class="orgdon-err" data-for="tax_id" role="alert"></span>
     </div>
 
