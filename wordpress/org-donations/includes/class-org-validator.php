@@ -72,8 +72,7 @@ final class Org_Validator {
         if ($d['lastName'] === ''  || mb_strlen($d['lastName']) > 80)  $e['last_name']  = 'נא להזין שם משפחה';
         if (!is_email($d['email']) || strlen($d['email']) > 80)       $e['email']      = 'נא להזין כתובת אימייל תקינה';
         if (!$d['phone'])                                              $e['phone']      = 'נא להזין מספר נייד ישראלי תקין';
-        if ($tax === '')                                               $e['tax_id']     = 'נא להזין תעודת זהות';
-        elseif (!$d['taxId'])                                          $e['tax_id']     = 'מספר תעודת הזהות אינו תקין';
+        if ($tax !== '' && !$d['taxId'])                               $e['tax_id']     = 'מספר תעודת הזהות אינו תקין';
         if (!$d['frequency'])                                          $e['frequency']  = 'נא לבחור תדירות';
         if (!$d['termsAccepted'])                                      $e['terms']      = 'יש לאשר את תנאי ההוראה';
         if ($requireCard && !$d['lowProfileId'])                       $e['card']       = 'נא להזין את פרטי הכרטיס ולשמור';

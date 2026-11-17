@@ -153,17 +153,18 @@ test('ID changed to an invalid value, or back to the same ID: no new card page',
   dom.typeTax('0123456782');                           // same ID once normalized
   t.mock.timers.tick(1500); await flush();
   assert.equal(lpPosts().length, 1);
-  dom.typeTax('');                                     // cleared: the ID is required, so the open page stays until a valid one
-  t.mock.timers.tick(1500); await flush();
-  assert.equal(lpPosts().length, 1);
-  assert.equal(dom.nodes['orgdon-iframe'].hidden, false, 'the card page is not hidden while the donor retypes');
+  dom.typeTax('');                                     // cleared: Cardcom must show its own ID field again
+  t.mock.timers.tick(1000); await flush();
+  assert.equal(lpPosts().length, 2);
+  assert.equal(lpPosts()[1].tax_id, '');
 });
 
-test('the Israeli ID is required on the form', () => {
-  assert.match(src, /if \(!id\) \{ setErr\('tax_id', 'נא להזין תעודת זהות'\)/);
+test('the Israeli ID is optional on the form', () => {
+  assert.doesNotMatch(src, /נא להזין תעודת זהות/);
+  assert.match(src, /if \(id && !validId\(id\)\) \{ setErr\('tax_id', 'מספר תעודת הזהות אינו תקין'\)/);
   const tpl = readFileSync(new URL('../../templates/form.php', import.meta.url), 'utf8');
-  assert.match(tpl, /<label for="od-id">תעודת זהות \*<\/label>/);
-  assert.match(tpl, /name="tax_id"[^>]*required/);
+  assert.match(tpl, /<label for="od-id">תעודת זהות<\/label>/);
+  assert.doesNotMatch(tpl, /name="tax_id"[^>]*required/);
   assert.match(tpl, /קראתי ואני מסכים\/ה ל/);
   assert.match(tpl, /לא יתבצע חיוב עכשיו\. החיוב יתבצע לפי הסכום והתדירות שבחרת\./);
 });
