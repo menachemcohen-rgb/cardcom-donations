@@ -87,4 +87,4 @@
 | **Staff_Schedule_Failed** | עדכון זמני החיוב לא בוצע | `{{Command}}`, `{{Errors}}` |
 | **Staff_Email_Limit** | מכסת המיילים היומית כמעט נגמרה | `{{Left}}` |
 
-התבנית **Donor_Charge_Thanks** (מייל תודה אחרי כל חיוב) קיימת אבל המייל כבוי (D37).
+התבנית **Donor_Charge_Thanks** (מייל תודה אחרי כל חיוב) קיימת אבל המייל כבוי (D37). אם יופעל, אפשר להשתמש בה בכל השדות שלמעלה חוץ מ-`{{Card}}`, `{{ContactEmailPart}}` ו-`{{Signature}}`, ובנוסף: `{{ChargeLines}}`, `{{Amount}}`, `{{ImpactSentence}}`, `{{ContactEmail}}`, `{{SignerName}}`. כאן `{{CardPhrase}}` הוא "מהכרטיס המסתיים ב-1234".

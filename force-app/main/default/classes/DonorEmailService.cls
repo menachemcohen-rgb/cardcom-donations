@@ -203,8 +203,7 @@ public without sharing class DonorEmailService {
    * Plain-text values every donor template can use (the HTML body gets them escaped). Name, email and phone come from the donor
    * Contact, else from what the donor typed in the form. Docs: docs/email-templates-he.md. The Israeli ID is never offered.
    */
-  @TestVisible
-  static Map<String, String> common(Opportunity p, String email) {
+  public static Map<String, String> common(Opportunity p, String email) {
     Contact c = p.Donor_Contact__r;
     String first = c != null && String.isNotBlank(c.FirstName) ? c.FirstName : p.Donor_First_Name__c;
     String last = c != null && String.isNotBlank(c.LastName) ? c.LastName : p.Donor_Last_Name__c;

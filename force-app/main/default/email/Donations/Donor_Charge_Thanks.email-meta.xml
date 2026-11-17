@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <available>true</available>
-    <description>Fields that work here: {{FirstName}} {{OrgName}} {{ChargeLines}} {{CardPhrase}} {{ImpactSentence}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmail}} {{SignerName}}. Do not use Available Merge Fields ({!...}) - they are not filled and are removed. Guide: docs/email-templates-he.md</description>
+    <description>Fields that work here: {{FirstName}} {{LastName}} {{FullName}} {{DonorEmail}} {{DonorPhone}} {{PledgeNumber}} {{OrgName}} {{Frequency}} {{Amounts}} {{ShacharitAmount}} {{MinchaAmount}} {{StartDate}} {{TotalCollected}} {{SuccessfulCharges}} {{LastChargeDate}} {{Last4}} {{CardExpiry}} {{PaymentIssueSince}} {{Today}} {{ChargeLines}} {{Amount}} {{CardPhrase}} {{ImpactSentence}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmail}} {{SignerName}}. Do not use Available Merge Fields ({!...}) - they are not filled and are removed. Guide: docs/email-templates-he.md</description>
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Charge Thanks</name>
     <style>none</style>
