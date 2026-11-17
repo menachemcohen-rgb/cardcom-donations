@@ -51,8 +51,7 @@ public without sharing class EmailTemplates {
    * {{Key}} → value. Removed so a donor never sees them: the admin FIELDS note, Salesforce merge fields ({!...}) and unknown
    * placeholders.
    */
-  @TestVisible
-  static String fill(String text, Map<String, String> values) {
+  public static String fill(String text, Map<String, String> values) {
     if (text == null)
       return '';
     String out = text.replaceAll('(?s)<!--\\s*FIELDS.*?-->\\s*', '').replaceAll('\\{![^}]*\\}', '');
