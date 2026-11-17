@@ -239,8 +239,9 @@ sf apex run --target-org <alias> --file scripts/apex/schedule-donations.apex
 - **Nightly reconciliation** (B6.12, 02:30 by default, `Charge_Settings__c.Reconcile_Time__c`): compares yesterday's Success charges with
   Cardcom `ListTransactions` by TranzactionId. Open issues are in the report "פערי התאמה פתוחים" (folder Donations) and the list view of the
   same name on Reconciliation Issues; staff set `Status__c` to Resolved or Ignored (a re-run never reopens them). Staff get one email a day
-  while issues are open. To re-run a day: `ReconciliationJob.enqueue(Date.newInstance(2026, 11, 5));`. If the terminal
-  also carries non-donation sales, set `Cardcom_Setting__mdt.Default.Recon_Report_Unknown__c = false` to stop "Missing_In_Salesforce" issues.
+  while issues are open. To re-run a day: `ReconciliationJob.enqueue(Date.newInstance(2026, 11, 5));`. The terminals also carry
+  the organization's other standing orders, so `Cardcom_Setting__mdt.Default.Recon_Report_Unknown__c` is false (N119): Cardcom deals
+  with no charge in Salesforce are not reported ("Missing_In_Salesforce"). Our own unknown-outcome charges are still looked up by key.
   If Cardcom's list holds none of the day's TranzactionIds (empty, or another terminal's deals — seen in the sandbox, N86), nothing is
   compared against it: each Success charge is looked up by its key instead (`GetTransactionByExternalUniqTran`, chained 40 per job),
   issues open only for charges Cardcom doesn't find, and staff get the email "התאמה לילית: רשימת העסקאות מ-Cardcom לא זמינה" once a day.
