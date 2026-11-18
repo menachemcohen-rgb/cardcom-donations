@@ -193,6 +193,7 @@ final class FormAjaxTest extends TestCase
         };
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '18']))->ok);
         $this->assertSame('000000018', $sent[0]['taxId'], 'validated and left-padded before it is sent');
+        $this->assertSame('ישראל ישראלי', $sent[0]['cardOwnerName'], 'N121: the card owner name comes from the form');
         $this->assertTrue($this->call('ajax_lp', $this->form(['tax_id' => '']))->ok);
         $this->assertArrayHasKey('taxId', $sent[1]);
         $this->assertNull($sent[1]['taxId'], 'no ID: nothing to pre-fill');

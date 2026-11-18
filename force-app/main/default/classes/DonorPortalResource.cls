@@ -182,12 +182,34 @@ global without sharing class DonorPortalResource {
     if (today >= 5)
       throw err(429, 'TOO_MANY');
     String key = 'CARD-' + UUID.randomUUID().toString();
-    // The donor's ID from the pledge's contact is pre-filled (and hidden) on the Cardcom page; none or invalid → Cardcom asks for it.
+    // N121: the donor's ID and name are pre-filled on the Cardcom page, whose ID and name fields are hidden. Contact first, else the form.
     String pledgeType = MicroPledges.TYPE;
-    String taxId = [SELECT Donor_Contact__r.Donor_Tax_Id__c FROM Opportunity WHERE Id = :p.Id AND Type = :pledgeType]
-      .Donor_Contact__r
-      ?.Donor_Tax_Id__c;
-    Map<String, Object> lp = CardcomService.createTokenLowProfile(terminal, key, returnUrlBase, 'עדכון כרטיס להוראת תרומה', taxId); // callout first
+    Opportunity d = [
+      SELECT
+        Donor_First_Name__c,
+        Donor_Last_Name__c,
+        Donor_Contact__r.FirstName,
+        Donor_Contact__r.LastName,
+        Donor_Contact__r.Donor_Tax_Id__c
+      FROM Opportunity
+      WHERE Id = :p.Id AND Type = :pledgeType
+    ];
+    Contact c = d.Donor_Contact__r;
+    String taxId = c?.Donor_Tax_Id__c;
+    String ownerName = c != null && String.isNotBlank(c.LastName)
+      ? ((c.FirstName == null ? '' : c.FirstName) + ' ' + c.LastName).trim()
+      : ((d.Donor_First_Name__c == null ? '' : d.Donor_First_Name__c) +
+          ' ' +
+          (d.Donor_Last_Name__c == null ? '' : d.Donor_Last_Name__c))
+          .trim();
+    Map<String, Object> lp = CardcomService.createTokenLowProfile(
+      terminal,
+      key,
+      returnUrlBase,
+      'עדכון כרטיס להוראת תרומה',
+      taxId,
+      ownerName
+    ); // callout first
     insert new Card_Change_Request__c(
       Pledge__c = p.Id,
       Cardcom_Terminal__c = terminal,

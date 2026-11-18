@@ -80,7 +80,12 @@ private class DonationLowProfileResourceTest {
     CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     TestDataFactory.rest(
       '/services/apexrest/donations/lowprofile',
-      new Map<String, Object>{ 'purpose' => 'signup', 'returnUrlBase' => TestDataFactory.RETURN_URL, 'taxId' => '123456782' }
+      new Map<String, Object>{
+        'purpose' => 'signup',
+        'returnUrlBase' => TestDataFactory.RETURN_URL,
+        'taxId' => '123456782',
+        'cardOwnerName' => 'ישראל ישראלי'
+      }
     );
     Test.startTest();
     DonationLowProfileResource.create();
@@ -89,10 +94,12 @@ private class DonationLowProfileResourceTest {
     Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
     Assert.areEqual('123456782', ui.get('CardOwnerIdentityNumberValue'));
     Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'));
+    Assert.areEqual('ישראל ישראלי', ui.get('CardOwnerNameValue'), 'N121: the card owner name comes from the form');
+    Assert.areEqual(true, ui.get('IsHideCardOwnerName'));
   }
 
   @IsTest
-  static void withoutTaxIdTheCardcomIdFieldStaysVisible() {
+  static void withoutTaxIdTheCardcomIdFieldIsStillHidden() {
     TestDataFactory.settings();
     CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     Test.startTest();
@@ -104,7 +111,7 @@ private class DonationLowProfileResourceTest {
       DonationLowProfileResource.create();
       Assert.areEqual(200, RestContext.response.statusCode);
       Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
-      Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'));
+      Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'), 'N121: hidden with or without an ID');
       Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
     }
     Test.stopTest();
