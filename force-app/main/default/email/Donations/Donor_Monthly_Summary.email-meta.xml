@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <available>true</available>
-    <description>Donor monthly summary, sent with the receipts run (DonorEmailService). Placeholders {{...}} are filled by Apex: docs/email-templates-he.md.</description>
+    <description>Fields that work here: {{FirstName}} {{LastName}} {{FullName}} {{DonorEmail}} {{DonorPhone}} {{PledgeNumber}} {{OrgName}} {{Frequency}} {{Amounts}} {{ShacharitAmount}} {{MinchaAmount}} {{StartDate}} {{TotalCollected}} {{SuccessfulCharges}} {{LastChargeDate}} {{Last4}} {{CardExpiry}} {{Card}} {{CardPhrase}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmailPart}} {{Signature}} {{PaymentIssueSince}} {{Today}} {{Month}} {{MonthTotal}} {{ChargeCount}}. Do not use Available Merge Fields ({!...}) - they are not filled and are removed. Guide: docs/email-templates-he.md</description>
     <encodingKey>UTF-8</encodingKey>
     <name>Donor Monthly Summary</name>
     <style>none</style>
-    <subject>סיכום התרומות שלך ל{{OrgName}} – {{Month}}</subject>
+    <subject>סיכום התרומות שלך לאת&quot;ה העולמי – {{Month}}</subject>
     <type>custom</type>
     <uiType>Aloha</uiType>
 </EmailTemplate>

@@ -1,10 +1,13 @@
+<!-- FIELDS — הערה למנהלים, לא נשלחת במייל. שדות שעובדים בתבנית הזו: {{FirstName}} {{LastName}} {{FullName}} {{DonorEmail}} {{DonorPhone}} {{PledgeNumber}} {{OrgName}} {{Frequency}} {{Amounts}} {{ShacharitAmount}} {{MinchaAmount}} {{StartDate}} {{TotalCollected}} {{SuccessfulCharges}} {{LastChargeDate}} {{Last4}} {{CardExpiry}} {{Card}} {{CardPhrase}} {{CardLink}} {{AmountLink}} {{ContactPhone}} {{ContactEmailPart}} {{Signature}} {{PaymentIssueSince}} {{Today}} — אין להשתמש בתפריט Available Merge Fields של Salesforce ({!Contact...}): שדות כאלה לא ימולאו ויימחקו מהמייל. הרשימה המלאה: docs/email-templates-he.md -->
 <div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-<p>{{FirstName}} שלום,</p>
-<p>לא הצלחנו לחייב את {{Card}} עבור הוראת התרומה היומית שלך.</p>
-<p>כדי שהתרומה תמשיך, אפשר לעדכן את פרטי הכרטיס בכפתור "החלפת כרטיס אשראי" כאן למטה. ננסה לחייב שוב במועדי החיוב הקבועים.</p>
+<p>לכבוד {{FirstName}} {{LastName}}, שלום וברכה!</p>
+<p>ראשית, אנו מודים לך בשם אלפי תלמידי התמימים על שותפותך הקבועה והנכבדה בפעילות איגוד תלמידי הישיבות המרכזי 770.</p>
+<p>התרומה באמצעות {{Card}} נכשלה.</p>
+<p>להסדר התרומה יש לעדכן את פרטי הכרטיס בכפתור "החלפת כרטיס אשראי" כאן למטה.</p>
+<p>ננסה לחייב שוב במועדי החיוב הקבועים.</p>
 <p><strong>רוצה לעדכן את ההוראה?</strong></p>
 <p><a href="{{CardLink}}" style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">החלפת כרטיס אשראי</a> &nbsp; <a href="{{AmountLink}}" style="background:#0f766e;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">שינוי סכום ההוראה</a></p>
 <p style="font-size:13px;color:#555">הקישורים אישיים וקבועים, ואין צורך בסיסמה – שמרו את המייל ואל תעבירו אותו לאחרים.</p>
 <p>להפסקת ההוראה או לשאלות: {{ContactPhone}}{{ContactEmailPart}}</p>
-<p>בתודה,<br>{{Signature}}</p>
+<p>ישר כח!<br>{{Signature}}</p>
 </div>
