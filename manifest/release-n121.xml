@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Release N121: the Cardcom page never asks for the card owner's ID or name (ID field always hidden, name from the form).
+  Goes with WordPress plugin 1.5.4 (sends cardOwnerName). The Apex can go first: without a name Cardcom still shows its name field.
+  Tests: CardcomServiceTest DonationLowProfileResourceTest DonorPortalResourceTest
+  Stop the Donations jobs first (DonationSetup.request('UNSCHEDULE_ALL');) and schedule them again after (SCHEDULE_ALL).
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>CardcomService</members>
+        <members>CardcomServiceTest</members>
+        <members>DonationLowProfileResource</members>
+        <members>DonationLowProfileResourceTest</members>
+        <members>DonorPortalResource</members>
+        <members>DonorPortalResourceTest</members>
+        <name>ApexClass</name>
+    </types>
+    <version>62.0</version>
+</Package>
