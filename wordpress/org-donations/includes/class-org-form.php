@@ -81,15 +81,17 @@ final class Org_Form {
     }
 
     /**
-     * @param ?string $taxId the validated ID number from the form (9 digits) or null. Salesforce pre-fills it on the Cardcom page
-     *                       and hides the field there; without it the donor types the ID on the Cardcom page.
+     * N121: the Cardcom page never asks for the card owner's ID or name; both come from this form.
+     * @param ?string $taxId the validated ID number from the form (9 digits) or null; pre-filled on the Cardcom page when given.
+     * @param string $ownerName the donor's first and last name from the form, pre-filled as the card owner's name.
      */
-    private static function create_lp(string $terminal, ?string $taxId): array {
+    private static function create_lp(string $terminal, ?string $taxId, string $ownerName = ''): array {
         $r = Org_SF_Client::post('/donations/lowprofile', [
             'purpose' => 'signup',
             'returnUrlBase' => home_url('/cardcom-return/'),
             'terminal' => $terminal,
             'taxId' => $taxId,
+            'cardOwnerName' => $ownerName,
         ]);
         if ($r['code'] !== 200 || empty($r['body']['url'])) throw new RuntimeException('LP');
         return $r['body'];
@@ -134,7 +136,8 @@ final class Org_Form {
         if (!Org_Rate_Limiter::allowed('lp', self::lp_max())) wp_send_json_error(['message' => self::MSG_TOO_MANY], 429);
         Org_Rate_Limiter::count('lp', self::window());
         $taxId = $v['data']['taxId'];
-        try { $lp = self::create_lp(self::terminal($in), $taxId); }
+        $ownerName = trim($v['data']['firstName'] . ' ' . $v['data']['lastName']);
+        try { $lp = self::create_lp(self::terminal($in), $taxId, $ownerName); }
         catch (Throwable $t) { wp_send_json_error(['message' => 'לא ניתן לטעון כעת את טופס התשלום.'], 502); }
         set_transient(self::lp_tax_key($lp['lowProfileId']), $taxId ?? '', self::LP_TAX_TTL);
         wp_send_json_success(['lpId' => $lp['lowProfileId'], 'url' => $lp['url'], 'expiresAt' => $lp['expiresAt'] ?? null]);

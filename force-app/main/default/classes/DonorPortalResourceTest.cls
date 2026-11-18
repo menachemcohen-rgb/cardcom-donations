@@ -128,8 +128,10 @@ private class DonorPortalResourceTest {
     Assert.isTrue(((String) m.lastBody('LowProfile/Create').get('ReturnValue')).startsWith('CARD-'));
     Assert.areEqual('Pending', [SELECT Status__c FROM Card_Change_Request__c].Status__c);
     Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
-    Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'), 'contact without an ID: Cardcom asks for it');
-    Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
+    Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'), 'N121: the ID field is always hidden');
+    Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'), 'contact without an ID: nothing to pre-fill');
+    Assert.areEqual('Avi Cohen', ui.get('CardOwnerNameValue'), 'the contact name');
+    Assert.areEqual(true, ui.get('IsHideCardOwnerName'));
   }
 
   @IsTest

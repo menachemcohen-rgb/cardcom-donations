@@ -110,11 +110,6 @@ public without sharing class CardcomService {
   public static Map<String, Object> createTokenLowProfile(String terminal, String returnValue, String returnUrlBase, String productName) {
     return createTokenLowProfile(terminal, returnValue, returnUrlBase, productName, null);
   }
-  /**
-   * taxId: the donor's Israeli ID number. When it is a valid ID, Cardcom gets it pre-filled as the card owner's ID
-   * (UIDefinition.CardOwnerIdentityNumberValue) and its ID field is hidden (IsHideCardOwnerIdentityNumber=true), so the donor
-   * doesn't type it twice. Blank or invalid → the ID field stays visible on the Cardcom page, as before.
-   */
   public static Map<String, Object> createTokenLowProfile(
     String terminal,
     String returnValue,
@@ -122,7 +117,25 @@ public without sharing class CardcomService {
     String productName,
     String taxId
   ) {
+    return createTokenLowProfile(terminal, returnValue, returnUrlBase, productName, taxId, null);
+  }
+  /**
+   * N121: the Cardcom page never asks for the card owner's ID or name; both come from our form.
+   * taxId: the donor's Israeli ID number. A valid ID is sent pre-filled (UIDefinition.CardOwnerIdentityNumberValue); the ID field
+   * is always hidden (IsHideCardOwnerIdentityNumber=true), with or without an ID.
+   * ownerName: the donor's name from the form, sent as CardOwnerNameValue with the name field hidden; blank → Cardcom shows its
+   * name field.
+   */
+  public static Map<String, Object> createTokenLowProfile(
+    String terminal,
+    String returnValue,
+    String returnUrlBase,
+    String productName,
+    String taxId,
+    String ownerName
+  ) {
     String ownerId = ContactMatcher.validIsraeliId(taxId) ? taxId.trim().leftPad(9, '0') : null;
+    String name = String.isBlank(ownerName) ? null : ownerName.replaceAll('[\\p{Cntrl}<>]', ' ').normalizeSpace().left(50);
     Map<String, Object> b = withTerminal(terminal);
     b.put('Operation', 'CreateTokenOnly');
     b.put('ReturnValue', returnValue);
@@ -135,14 +148,16 @@ public without sharing class CardcomService {
     b.put('Language', 'he');
     b.put('ISOCoinId', 1);
     Map<String, Object> ui = new Map<String, Object>{
-      'IsHideCardOwnerName' => false,
+      'IsHideCardOwnerName' => String.isNotBlank(name),
       'IsHideCardOwnerEmail' => true,
       'IsHideCardOwnerPhone' => true,
-      'IsHideCardOwnerIdentityNumber' => ownerId != null,
+      'IsHideCardOwnerIdentityNumber' => true,
       'IsHideCVV' => false
     };
     if (ownerId != null)
       ui.put('CardOwnerIdentityNumberValue', ownerId);
+    if (String.isNotBlank(name))
+      ui.put('CardOwnerNameValue', name);
     b.put('UIDefinition', ui);
     Integer jv = settings().Lp_JValidate_Type__c == null ? 2 : settings().Lp_JValidate_Type__c.intValue();
     b.put('AdvancedDefinition', new Map<String, Object>{ 'JValidateType' => jv, 'ThreeDSecureState' => 'Auto' });

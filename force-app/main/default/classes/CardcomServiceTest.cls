@@ -229,7 +229,7 @@ private class CardcomServiceTest {
   }
 
   @IsTest
-  static void createTokenLowProfileWithoutTaxIdKeepsTheIdFieldVisible() {
+  static void createTokenLowProfileAlwaysHidesTheIdField() {
     TestDataFactory.settings();
     CardcomMock m = CardcomMock.install().always('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
     Test.startTest();
@@ -241,8 +241,29 @@ private class CardcomServiceTest {
     Map<String, Object> invalid = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
     Test.stopTest();
     for (Map<String, Object> ui : new List<Map<String, Object>>{ plain, blank, invalid }) {
-      Assert.areEqual(false, ui.get('IsHideCardOwnerIdentityNumber'), 'the donor types the ID on the Cardcom page');
-      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'));
+      Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'), 'N121: Cardcom never asks for the ID');
+      Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'), 'nothing to pre-fill');
+      Assert.areEqual(false, ui.get('IsHideCardOwnerName'), 'no name given: Cardcom asks for it');
+      Assert.isFalse(ui.containsKey('CardOwnerNameValue'));
     }
+  }
+
+  @IsTest
+  static void createTokenLowProfilePrefillsAndHidesTheOwnerName() {
+    TestDataFactory.settings();
+    CardcomMock m = CardcomMock.install().enqueue('LowProfile/Create', 200, CardcomMock.lpCreated('lp-0000000001'));
+    Test.startTest();
+    CardcomService.createTokenLowProfile(
+      CardcomService.PRIMARY,
+      'SIGNUP-abc',
+      TestDataFactory.RETURN_URL,
+      'x',
+      null,
+      '  ישראל   <b>ישראלי\n '
+    );
+    Test.stopTest();
+    Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
+    Assert.areEqual('ישראל b ישראלי', ui.get('CardOwnerNameValue'), 'tags, control characters and extra spaces removed');
+    Assert.areEqual(true, ui.get('IsHideCardOwnerName'));
   }
 }
