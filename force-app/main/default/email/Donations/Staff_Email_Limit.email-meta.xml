@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <available>true</available>
-    <description>Staff alert: the daily email limit is almost used up (once a day). Placeholders {{...}} are filled by Apex: docs/email-templates-he.md.</description>
+    <description>Fields that work here: {{Left}}. Do not use Available Merge Fields ({!...}) - they are not filled and are removed. Guide: docs/email-templates-he.md</description>
     <encodingKey>UTF-8</encodingKey>
     <name>Staff Email Limit</name>
     <style>none</style>

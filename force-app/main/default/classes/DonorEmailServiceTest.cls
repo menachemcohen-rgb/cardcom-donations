@@ -86,7 +86,11 @@ private class DonorEmailServiceTest {
   @IsTest
   static void weeklyReminderUntilStaffStopIt() {
     Opportunity p = setup('OnceDaily');
-    update new Opportunity(Id = p.Id, Payment_Issue_Since__c = Datetime.now().addDays(-10), Last_Failure_Email_At__c = Datetime.now().addDays(-7));
+    update new Opportunity(
+      Id = p.Id,
+      Payment_Issue_Since__c = Datetime.now().addDays(-10),
+      Last_Failure_Email_At__c = Datetime.now().addDays(-7)
+    );
     Opportunity stopped = TestDataFactory.activePledges(1, 'OnceDaily')[0];
     update new Opportunity(Id = stopped.Id, Payment_Issue_Since__c = Datetime.now().addDays(-10), Failure_Reminders_Stopped__c = true);
     Test.startTest();
@@ -99,7 +103,11 @@ private class DonorEmailServiceTest {
   @IsTest
   static void recentFirstEmailSkipsThisWeeksReminder() {
     Opportunity p = setup('OnceDaily');
-    update new Opportunity(Id = p.Id, Payment_Issue_Since__c = Datetime.now().addDays(-1), Last_Failure_Email_At__c = Datetime.now().addDays(-1));
+    update new Opportunity(
+      Id = p.Id,
+      Payment_Issue_Since__c = Datetime.now().addDays(-1),
+      Last_Failure_Email_At__c = Datetime.now().addDays(-1)
+    );
     Test.startTest();
     Database.executeBatch(new DonorFailureReminderJob(), 50);
     Test.stopTest();
@@ -131,5 +139,47 @@ private class DonorEmailServiceTest {
     String sig = DonorEmailService.signature();
     Assert.isTrue(sig.contains(System.Label.Donation_Org_Name));
     Assert.areEqual(sig.indexOf(System.Label.Donation_Org_Name), sig.lastIndexOf(System.Label.Donation_Org_Name));
+  }
+
+  @IsTest
+  static void templateCanUseEveryCommonDonorField() {
+    Opportunity p = setup('TwiceDaily');
+    Id cid = [SELECT Donor_Contact__c FROM Opportunity WHERE Id = :p.Id].Donor_Contact__c;
+    update new Contact(Id = cid, FirstName = 'ישראל', LastName = 'כהן & בניו');
+    update new Opportunity(Id = p.Id, Last4__c = '1234', CardExpirationMMYY__c = '0928', Start_Date__c = Date.newInstance(2026, 11, 3));
+    List<String> keys = new List<String>{
+      'FirstName',
+      'LastName',
+      'FullName',
+      'DonorEmail',
+      'DonorPhone',
+      'PledgeNumber',
+      'ShacharitAmount',
+      'MinchaAmount',
+      'StartDate',
+      'TotalCollected',
+      'SuccessfulCharges',
+      'LastChargeDate',
+      'Last4',
+      'CardExpiry',
+      'PaymentIssueSince',
+      'Today'
+    };
+    String html = '';
+    for (String k : keys)
+      html += '[' + k + '={{' + k + '}}]';
+    EmailTemplates.byName = new Map<String, EmailTemplate>{
+      'Donor_Welcome' => new EmailTemplate(Subject = '{{FullName}} {{PledgeNumber}}', HtmlValue = html)
+    };
+    DonorEmailService.sendWelcome(new Set<Id>{ p.Id });
+    Messaging.SingleEmailMessage m = DonorEmailService.lastSent[0];
+    String body = m.getHtmlBody();
+    Assert.isFalse(body.contains('{{'), body);
+    Assert.isTrue(body.contains('[LastName=כהן &amp; בניו]'), 'escaped in the body: ' + body);
+    Assert.isTrue(m.getSubject().startsWith('ישראל כהן & בניו PLG-'), 'plain in the subject: ' + m.getSubject());
+    Assert.isTrue(body.contains('[Last4=1234]') && body.contains('[CardExpiry=09/28]'), body);
+    Assert.isTrue(body.contains('[StartDate=03/11/2026]'), body);
+    Assert.isTrue(body.contains('[ShacharitAmount=') && !body.contains('[ShacharitAmount=]'), body);
+    Assert.isTrue(body.contains('[PaymentIssueSince=]'), 'empty when there is no payment issue');
   }
 }

@@ -59,9 +59,23 @@ private class DonorChargeEmailServiceTest {
         Slot__c,
         Run_Date__c,
         Pledge__r.Donor_Contact__r.FirstName,
+        Pledge__r.Donor_Contact__r.LastName,
         Pledge__r.Donor_Contact__r.Email,
+        Pledge__r.Donor_Contact__r.MobilePhone,
         Pledge__r.Donor_First_Name__c,
+        Pledge__r.Donor_Last_Name__c,
         Pledge__r.Donor_Email__c,
+        Pledge__r.Donor_Phone__c,
+        Pledge__r.Pledge_Number__c,
+        Pledge__r.Frequency__c,
+        Pledge__r.Charge_Amount__c,
+        Pledge__r.Mincha_Amount__c,
+        Pledge__r.Start_Date__c,
+        Pledge__r.Total_Collected__c,
+        Pledge__r.Successful_Charge_Count__c,
+        Pledge__r.Last_Successful_Charge_Date__c,
+        Pledge__r.CardExpirationMMYY__c,
+        Pledge__r.Payment_Issue_Since__c,
         Pledge__r.Last4__c,
         Pledge__r.Link_Version__c
       FROM Charge__c
@@ -69,6 +83,16 @@ private class DonorChargeEmailServiceTest {
     ];
     Messaging.SingleEmailMessage m = DonorChargeEmailService.build(null, null, 'avi@example.com', cs, CardcomService.settings());
     String html = m.getHtmlBody();
+    EmailTemplate tpl = new EmailTemplate(
+      Subject = '{{FullName}}',
+      HtmlValue = '<!-- FIELDS note {{LastName}} -->\n<p>{{LastName}} {{PledgeNumber}} {!Contact.LastName}</p>'
+    );
+    Messaging.SingleEmailMessage m2 = DonorChargeEmailService.build(tpl, null, 'avi@example.com', cs, CardcomService.settings());
+    Assert.isTrue(
+      m2.getHtmlBody().startsWith('<p>') && !m2.getHtmlBody().contains('{'),
+      'note and merge fields removed: ' + m2.getHtmlBody()
+    );
+    Assert.isTrue(m2.getHtmlBody().contains('PLG-'), 'common donor fields: ' + m2.getHtmlBody());
     Assert.isTrue(html.contains('היום נתרמו 6.00 ₪ (עבור 06/11 ו-07/11)'), html);
     Assert.isTrue(html.contains('מהכרטיס השמור'), 'no Last4 yet (B5.3)');
     Assert.isTrue(html.contains('?a=card&amp;t='), 'card link');

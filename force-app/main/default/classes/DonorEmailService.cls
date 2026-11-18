@@ -22,7 +22,9 @@ public without sharing class DonorEmailService {
 
   static final String FIELDS =
     'Id, StageName, Pledge_Number__c, Frequency__c, Charge_Amount__c, Mincha_Amount__c, Last4__c, Link_Version__c, ' +
-    'Donor_First_Name__c, Donor_Email__c, Donor_Contact__r.FirstName, Donor_Contact__r.Email, Welcome_Email_Sent_At__c, ' +
+    'Donor_First_Name__c, Donor_Last_Name__c, Donor_Email__c, Donor_Phone__c, Donor_Contact__r.FirstName, ' +
+    'Donor_Contact__r.LastName, Donor_Contact__r.Email, Donor_Contact__r.MobilePhone, Welcome_Email_Sent_At__c, ' +
+    'Start_Date__c, Total_Collected__c, Successful_Charge_Count__c, Last_Successful_Charge_Date__c, CardExpirationMMYY__c, ' +
     'Last_Summary_Month__c, Payment_Issue_Since__c, Last_Failure_Email_At__c, Failure_Reminders_Stopped__c';
 
   // ------------------------------------------------------------------ welcome
@@ -198,9 +200,49 @@ public without sharing class DonorEmailService {
   }
 
   /**
-   * The email from template devName (EmailTemplates; defaults when missing). Common placeholders: FirstName, OrgName, CardLink,
-   * AmountLink, ContactPhone, ContactEmailPart, Signature, Frequency, Amounts, CardPhrase, Card; `extra` adds per-email ones (HTML-
-   * escaped). Null when there is no address or no link secret.
+   * Plain-text values every donor template can use (the HTML body gets them escaped). Name, email and phone come from the donor
+   * Contact, else from what the donor typed in the form. Docs: docs/email-templates-he.md. The Israeli ID is never offered.
+   */
+  public static Map<String, String> common(Opportunity p, String email) {
+    Contact c = p.Donor_Contact__r;
+    String first = c != null && String.isNotBlank(c.FirstName) ? c.FirstName : p.Donor_First_Name__c;
+    String last = c != null && String.isNotBlank(c.LastName) ? c.LastName : p.Donor_Last_Name__c;
+    String phone = c != null && String.isNotBlank(c.MobilePhone) ? c.MobilePhone : p.Donor_Phone__c;
+    String exp = p.CardExpirationMMYY__c;
+    return new Map<String, String>{
+      'FirstName' => first == null ? '' : first,
+      'LastName' => last == null ? '' : last,
+      'FullName' => ((first == null ? '' : first) + ' ' + (last == null ? '' : last)).trim(),
+      'DonorEmail' => email == null ? '' : email,
+      'DonorPhone' => phone == null ? '' : phone,
+      'OrgName' => org(),
+      'PledgeNumber' => p.Pledge_Number__c == null ? '' : p.Pledge_Number__c,
+      'Frequency' => MicroPledges.frequencyHe(p.Frequency__c),
+      'Amounts' => MicroPledges.amountsHe(p),
+      'ShacharitAmount' => MicroPledges.hasSlot(p.Frequency__c, MicroPledges.SLOT_SHACHARIT)
+        ? money(MicroPledges.amountFor(p, MicroPledges.SLOT_SHACHARIT))
+        : '',
+      'MinchaAmount' => MicroPledges.hasSlot(p.Frequency__c, MicroPledges.SLOT_MINCHA)
+        ? money(MicroPledges.amountFor(p, MicroPledges.SLOT_MINCHA))
+        : '',
+      'StartDate' => day(p.Start_Date__c),
+      'TotalCollected' => money(p.Total_Collected__c),
+      'SuccessfulCharges' => p.Successful_Charge_Count__c == null ? '0' : String.valueOf(p.Successful_Charge_Count__c.intValue()),
+      'LastChargeDate' => day(p.Last_Successful_Charge_Date__c),
+      'Last4' => p.Last4__c == null ? '' : p.Last4__c,
+      'CardExpiry' => exp != null && exp.length() == 4 ? exp.left(2) + '/' + exp.right(2) : '',
+      'PaymentIssueSince' => p.Payment_Issue_Since__c == null ? '' : p.Payment_Issue_Since__c.format('dd/MM/yyyy', 'Asia/Jerusalem'),
+      'Today' => day(Date.today())
+    };
+  }
+
+  static String day(Date d) {
+    return d == null ? '' : Datetime.newInstance(d, Time.newInstance(12, 0, 0, 0)).format('dd/MM/yyyy');
+  }
+
+  /**
+   * The email from template devName (EmailTemplates; defaults when missing). Common placeholders: see common(); `extra` adds
+   * per-email ones (HTML-escaped). Null when there is no address or no link secret.
    */
   @TestVisible
   static Messaging.SingleEmailMessage message(
@@ -225,32 +267,25 @@ public without sharing class DonorEmailService {
       System.debug(LoggingLevel.ERROR, 'Donor email not built for ' + p.Id + ': ' + e.getMessage()); // e.g. no link secret
       return null;
     }
-    String firstName = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.FirstName)
-      ? p.Donor_Contact__r.FirstName
-      : p.Donor_First_Name__c;
-    Map<String, String> v = new Map<String, String>{
-      'FirstName' => EmailUtil.esc(firstName),
-      'OrgName' => EmailUtil.esc(org()),
-      'CardLink' => EmailUtil.esc(cardLink),
-      'AmountLink' => EmailUtil.esc(amountLink),
-      'ContactPhone' => EmailUtil.esc(System.Label.Donation_Contact_Phone),
-      'ContactEmailPart' => String.isBlank(System.Label.Donation_Contact_Email)
-        ? ''
-        : ' · ' + EmailUtil.esc(System.Label.Donation_Contact_Email),
-      'Signature' => EmailUtil.esc(signature()),
-      'Frequency' => EmailUtil.esc(MicroPledges.frequencyHe(p.Frequency__c)),
-      'Amounts' => EmailUtil.esc(MicroPledges.amountsHe(p)),
-      'CardPhrase' => String.isBlank(p.Last4__c) ? '' : ' · כרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c),
-      'Card' => String.isBlank(p.Last4__c) ? 'הכרטיס השמור' : 'הכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c)
-    };
+    Map<String, String> plain = common(p, email);
+    Map<String, String> v = new Map<String, String>();
+    for (String k : plain.keySet())
+      v.put(k, EmailUtil.esc(plain.get(k)));
+    v.putAll(
+      new Map<String, String>{
+        'CardLink' => EmailUtil.esc(cardLink),
+        'AmountLink' => EmailUtil.esc(amountLink),
+        'ContactPhone' => EmailUtil.esc(System.Label.Donation_Contact_Phone),
+        'ContactEmailPart' => String.isBlank(System.Label.Donation_Contact_Email)
+          ? ''
+          : ' · ' + EmailUtil.esc(System.Label.Donation_Contact_Email),
+        'Signature' => EmailUtil.esc(signature()),
+        'CardPhrase' => String.isBlank(p.Last4__c) ? '' : ' · כרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c),
+        'Card' => String.isBlank(p.Last4__c) ? 'הכרטיס השמור' : 'הכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c)
+      }
+    );
     if (extra != null)
       v.putAll(extra);
-    Map<String, String> plain = new Map<String, String>{
-      'OrgName' => org(),
-      'FirstName' => firstName == null ? '' : firstName,
-      'Frequency' => MicroPledges.frequencyHe(p.Frequency__c),
-      'Amounts' => MicroPledges.amountsHe(p)
-    };
     EmailTemplates.Rendered r = EmailTemplates.render(devName, defaultSubject, defaultHtml, v, plain);
     Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
     Id owea = EmailUtil.oweaId(s.Org_Wide_Email_Address__c);

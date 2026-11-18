@@ -31,9 +31,23 @@ public without sharing class DonorChargeEmailService {
         Slot__c,
         Run_Date__c,
         Pledge__r.Donor_Contact__r.FirstName,
+        Pledge__r.Donor_Contact__r.LastName,
         Pledge__r.Donor_Contact__r.Email,
+        Pledge__r.Donor_Contact__r.MobilePhone,
         Pledge__r.Donor_First_Name__c,
+        Pledge__r.Donor_Last_Name__c,
         Pledge__r.Donor_Email__c,
+        Pledge__r.Donor_Phone__c,
+        Pledge__r.Pledge_Number__c,
+        Pledge__r.Frequency__c,
+        Pledge__r.Charge_Amount__c,
+        Pledge__r.Mincha_Amount__c,
+        Pledge__r.Start_Date__c,
+        Pledge__r.Total_Collected__c,
+        Pledge__r.Successful_Charge_Count__c,
+        Pledge__r.Last_Successful_Charge_Date__c,
+        Pledge__r.CardExpirationMMYY__c,
+        Pledge__r.Payment_Issue_Since__c,
         Pledge__r.Last4__c,
         Pledge__r.Link_Version__c
       FROM Charge__c
@@ -164,28 +178,30 @@ public without sharing class DonorChargeEmailService {
       sep +
       'a=amount&t=' +
       EncodingUtil.urlEncode(DonorLinkToken.issue(pledgeId, 'amount', p.Link_Version__c), 'UTF-8');
-    String firstName = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.FirstName)
-      ? p.Donor_Contact__r.FirstName
-      : p.Donor_First_Name__c;
-
-    Map<String, String> v = new Map<String, String>{
-      'FirstName' => EmailUtil.esc(firstName),
-      'ChargeLines' => EmailUtil.esc(chargeLines(grp, total)),
-      'CardPhrase' => String.isBlank(p.Last4__c) ? 'מהכרטיס השמור' : 'מהכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c),
-      'Last4' => EmailUtil.esc(p.Last4__c),
-      'OrgName' => EmailUtil.esc(System.Label.Donation_Org_Name),
-      'ImpactSentence' => EmailUtil.esc(System.Label.Donation_Impact_Sentence),
-      'CardLink' => EmailUtil.esc(cardLink),
-      'AmountLink' => EmailUtil.esc(amountLink),
-      'ContactPhone' => EmailUtil.esc(System.Label.Donation_Contact_Phone),
-      'ContactEmail' => EmailUtil.esc(System.Label.Donation_Contact_Email),
-      'SignerName' => EmailUtil.esc(System.Label.Donation_Signer_Name),
-      'Amount' => money(total)
-    };
+    // The fields every donor template has (DonorEmailService.common), then this email's own.
+    Map<String, String> common = DonorEmailService.common(p, email);
+    Map<String, String> v = new Map<String, String>();
+    for (String k : common.keySet())
+      v.put(k, EmailUtil.esc(common.get(k)));
+    v.putAll(
+      new Map<String, String>{
+        'ChargeLines' => EmailUtil.esc(chargeLines(grp, total)),
+        'CardPhrase' => String.isBlank(p.Last4__c) ? 'מהכרטיס השמור' : 'מהכרטיס המסתיים ב-' + EmailUtil.esc(p.Last4__c),
+        'Last4' => EmailUtil.esc(p.Last4__c),
+        'OrgName' => EmailUtil.esc(System.Label.Donation_Org_Name),
+        'ImpactSentence' => EmailUtil.esc(System.Label.Donation_Impact_Sentence),
+        'CardLink' => EmailUtil.esc(cardLink),
+        'AmountLink' => EmailUtil.esc(amountLink),
+        'ContactPhone' => EmailUtil.esc(System.Label.Donation_Contact_Phone),
+        'ContactEmail' => EmailUtil.esc(System.Label.Donation_Contact_Email),
+        'SignerName' => EmailUtil.esc(System.Label.Donation_Signer_Name),
+        'Amount' => money(total)
+      }
+    );
     String subject = tpl != null && String.isNotBlank(tpl.Subject) ? tpl.Subject : 'תודה על תרומתך ל{{OrgName}} – {{Amount}} ₪';
     String html = tpl != null && String.isNotBlank(tpl.HtmlValue) ? tpl.HtmlValue : FALLBACK_HTML;
     Map<String, String> plain = v.clone();
-    plain.put('OrgName', System.Label.Donation_Org_Name); // subject is plain text
+    plain.putAll(common); // subject is plain text
     Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
     if (owea != null)
       m.setOrgWideEmailAddressId(owea);
@@ -227,11 +243,9 @@ public without sharing class DonorChargeEmailService {
     return d.setScale(2).toPlainString();
   }
 
+  /** Same filling as every other email: removes the admin FIELDS note, {!...} merge fields and unknown placeholders. */
   static String fill(String text, Map<String, String> v) {
-    String out = text;
-    for (String k : v.keySet())
-      out = out.replace('{{' + k + '}}', v.get(k) == null ? '' : v.get(k));
-    return out;
+    return EmailTemplates.fill(text, v);
   }
 
   static final String FALLBACK_HTML =
