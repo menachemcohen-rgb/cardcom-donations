@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Org Donations (Cardcom + Salesforce)
  * Description: טופס הוראת תרומה יומית ודף אישי לתורם.
- * Version: 1.5.4
+ * Version: 1.5.5
  * Requires PHP: 8.0
  * Text Domain: org-donations
  */
 if (!defined('ABSPATH')) exit;
 
-define('ORGDON_VER', '1.5.4');
+define('ORGDON_VER', '1.5.5');
 define('ORGDON_DIR', plugin_dir_path(__FILE__));
 define('ORGDON_URL', plugin_dir_url(__FILE__));
 
@@ -51,7 +51,8 @@ add_action('template_redirect', function () {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Referrer-Policy: no-referrer');
     // 'self': Cardcom redirects the iframe to our own /cardcom-return/ page — without it the browser blocks that page (N64).
-    header("Content-Security-Policy: frame-src 'self' https://secure.cardcom.solutions; frame-ancestors 'self'");
+    // frame-ancestors: our own site plus ORG_DONATION_FRAME_ANCESTORS (e.g. the CRM that embeds the form, N122).
+    header("Content-Security-Policy: frame-src 'self' https://secure.cardcom.solutions; " . Org_Return_Endpoint::frame_ancestors("'self'"));
     header('X-Robots-Tag: noindex, nofollow');
     if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true); // WP Rocket / W3TC / LiteSpeed honor this
 }, 1);

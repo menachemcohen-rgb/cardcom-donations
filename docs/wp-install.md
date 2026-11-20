@@ -28,6 +28,7 @@ define('ORG_DONATION_FRAME_HEIGHT', 880);            // optional (ATA-6): Cardco
 define('ORG_DONATION_FRAME_HEIGHT_MOBILE', 1150);    // optional: on phones (default 1150); the frame never scrolls there
 define('ORG_DONATION_PARENT_ORIGIN', 'https://www.<site>'); // optional: origin of a page that embeds the form in an iframe (Elementor); default '*'
 define('ORG_DONATION_DINERS', true);                 // optional (D39): shows "הכרטיס שלי הוא דיינרס"; needs the second terminal in Salesforce (section 6)
+define('ORG_DONATION_FRAME_ANCESTORS', 'https://crm.ato770.com https://crm-dev.ato770.com'); // optional (N122): sites that may show the form in an iframe; added to frame-ancestors of the form page and of /cardcom-return/
 define('ORG_BEHIND_CLOUDFLARE', true);                                     // only if the site is proxied by Cloudflare
 // Rate limits per visitor IP (fixed window from the first counted request). Only counted: card sessions created for a
 // valid form, and valid pledge submissions. Page loads, validation errors and retries of an accepted submission don't count.
@@ -97,3 +98,10 @@ cd wordpress/org-donations && composer install && vendor/bin/phpunit
 ```bash
 node --test wordpress/org-donations/tests/js/donation-form.test.mjs
 ```
+
+## Showing the form inside another site (N122)
+
+To embed the form page (for example in the CRM), list the embedding sites in `ORG_DONATION_FRAME_ANCESTORS` (https origins, space or comma separated).
+They are added to `frame-ancestors` of the form/donor pages and of `/cardcom-return/` (the browser checks every ancestor, so the
+return page needs them too). `frame-src` doesn't change. If the server or a security plugin sends `X-Frame-Options: SAMEORIGIN`,
+exclude the form page from it, otherwise the browser still blocks it. Test one signup from inside the embedding site.
