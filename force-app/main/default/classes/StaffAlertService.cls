@@ -590,9 +590,7 @@ public without sharing class StaffAlertService {
   }
 
   // ---------------------------------------------------------------- helpers
-  /** Part C E1: Failure_Notify_Emails__c split on , or ; — trimmed, blanks dropped. */
-  @TestVisible
-  /** N123: saving the amount buttons from the "Amount buttons" screen failed in the metadata deployment. */
+  /** N123: saving the amount buttons from the "Apply charge schedule" screen failed in the metadata deployment. */
   public static void amountPresetsFailed(String presets, String error) {
     send(
       'כפתורי הסכום לא עודכנו',
@@ -606,6 +604,8 @@ public without sharing class StaffAlertService {
     );
   }
 
+  /** Part C E1: Failure_Notify_Emails__c split on , or ; — trimmed, blanks dropped. */
+  @TestVisible
   static List<String> recipients() {
     List<String> out = new List<String>();
     String raw = CardcomService.settings().Failure_Notify_Emails__c;
