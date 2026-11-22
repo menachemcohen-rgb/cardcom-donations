@@ -54,10 +54,10 @@ public with sharing class AmountPresetsAction {
     // The deployment runs in a Queueable: in the "Apply charge schedule" flow ChargeTimesAction has already updated
     // Charge_Settings__c, and a metadata deployment (setup DML) in the same transaction fails with MIXED_DML.
     Metadata.CustomMetadata md = record(s, normalized);
-    Map<String, Object> values = new Map<String, Object>();
+    Map<String, Object> fieldValues = new Map<String, Object>();
     for (Metadata.CustomMetadataValue v : md.values)
-      values.put(v.field, v.value);
-    Deployer job = new Deployer(normalized, md.label, values);
+      fieldValues.put(v.field, v.value);
+    Deployer job = new Deployer(normalized, md.label, fieldValues);
     lastContainer = job.container();
     System.enqueueJob(job);
     r.ok = true;
