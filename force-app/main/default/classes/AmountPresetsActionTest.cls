@@ -86,6 +86,7 @@ private class AmountPresetsActionTest {
     System.runAs(user(true)) {
       AmountPresetsAction.Result r = save('10,2,1,3,5');
       Assert.isTrue(r.ok, r.message);
+      Assert.areEqual(1, Limits.getQueueableJobs(), 'the deployment runs in a Queueable (no mixed DML in the flow)');
     }
     Metadata.CustomMetadata md = (Metadata.CustomMetadata) AmountPresetsAction.lastContainer.getMetadata()[0];
     Assert.areEqual('Cardcom_Setting.Default', md.fullName);
@@ -120,5 +121,20 @@ private class AmountPresetsActionTest {
     Integer sent = Limits.getEmailInvocations();
     Test.stopTest();
     Assert.areEqual(1, sent);
+  }
+
+  @IsTest
+  static void deployerRunsAfterOtherDml() {
+    Cardcom_Setting__mdt s = TestDataFactory.settings();
+    insert new Charge_Settings__c(SetupOwnerId = UserInfo.getOrganizationId()); // what ChargeTimesAction does first
+    AmountPresetsAction.Deployer job = new AmountPresetsAction.Deployer(
+      '1,2',
+      'Default',
+      new Map<String, Object>{ 'Amount_Presets__c' => '1,2' }
+    );
+    Test.startTest();
+    System.enqueueJob(job);
+    Test.stopTest();
+    Assert.areEqual(1, job.container().getMetadata().size());
   }
 }

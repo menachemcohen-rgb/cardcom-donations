@@ -3,7 +3,7 @@
  * without Setup. One list serves the WordPress form (Shacharit and Mincha) and the donor page.
  * Rules: whole numbers, within Min_Amount__c..Max_Amount__c, no duplicates, 1–8 values.
  * The record is saved with a metadata deployment (Metadata.Operations.enqueueDeployment) that copies every field of the
- * current record and changes only Amount_Presets__c. Part of the "Apply charge schedule" screen; gated by Manage_Charge_Schedule.
+ * current record and changes only Amount_Presets__c; it is enqueued from a Queueable (no mixed DML after ChargeTimesAction). Part of the "Apply charge schedule" screen; gated by Manage_Charge_Schedule.
  */
 public with sharing class AmountPresetsAction {
   public static final Integer MAX_BUTTONS = 8;
@@ -51,11 +51,15 @@ public with sharing class AmountPresetsAction {
       r.message = 'הכפתורים לא השתנו: ' + normalized;
       return r;
     }
-    Metadata.DeployContainer c = new Metadata.DeployContainer();
-    c.addMetadata(record(s, normalized));
-    lastContainer = c;
-    if (!Test.isRunningTest())
-      Metadata.Operations.enqueueDeployment(c, new Callback(normalized)); // metadata can't be deployed from a test
+    // The deployment runs in a Queueable: in the "Apply charge schedule" flow ChargeTimesAction has already updated
+    // Charge_Settings__c, and a metadata deployment (setup DML) in the same transaction fails with MIXED_DML.
+    Metadata.CustomMetadata md = record(s, normalized);
+    Map<String, Object> values = new Map<String, Object>();
+    for (Metadata.CustomMetadataValue v : md.values)
+      values.put(v.field, v.value);
+    Deployer job = new Deployer(normalized, md.label, values);
+    lastContainer = job.container();
+    System.enqueueJob(job);
     r.ok = true;
     r.message =
       'הכפתורים נשמרים: ' +
@@ -125,6 +129,36 @@ public with sharing class AmountPresetsAction {
       md.values.add(v);
     }
     return md;
+  }
+
+  /** Builds and enqueues the metadata deployment outside the flow's transaction (primitives only, so it serializes). */
+  public class Deployer implements Queueable {
+    final String presets;
+    final String label;
+    final Map<String, Object> values;
+    public Deployer(String presets, String label, Map<String, Object> values) {
+      this.presets = presets;
+      this.label = label;
+      this.values = values;
+    }
+    public Metadata.DeployContainer container() {
+      Metadata.CustomMetadata md = new Metadata.CustomMetadata();
+      md.fullName = 'Cardcom_Setting.Default';
+      md.label = label;
+      for (String f : values.keySet()) {
+        Metadata.CustomMetadataValue v = new Metadata.CustomMetadataValue();
+        v.field = f;
+        v.value = values.get(f);
+        md.values.add(v);
+      }
+      Metadata.DeployContainer c = new Metadata.DeployContainer();
+      c.addMetadata(md);
+      return c;
+    }
+    public void execute(QueueableContext ctx) {
+      if (!Test.isRunningTest())
+        Metadata.Operations.enqueueDeployment(container(), new Callback(presets)); // metadata can't be deployed from a test
+    }
   }
 
   public class Callback implements Metadata.DeployCallback {
