@@ -3,7 +3,7 @@
  * without Setup. One list serves the WordPress form (Shacharit and Mincha) and the donor page.
  * Rules: whole numbers, within Min_Amount__c..Max_Amount__c, no duplicates, 1–8 values.
  * The record is saved with a metadata deployment (Metadata.Operations.enqueueDeployment) that copies every field of the
- * current record and changes only Amount_Presets__c. Gated by Manage_Amount_Presets (permission set Donations_Amount_Presets).
+ * current record and changes only Amount_Presets__c. Part of the "Apply charge schedule" screen; gated by Manage_Charge_Schedule.
  */
 public with sharing class AmountPresetsAction {
   public static final Integer MAX_BUTTONS = 8;
@@ -32,7 +32,7 @@ public with sharing class AmountPresetsAction {
 
   static Result saveOne(String raw) {
     Result r = new Result();
-    if (!FeatureManagement.checkPermission('Manage_Amount_Presets')) {
+    if (!FeatureManagement.checkPermission('Manage_Charge_Schedule')) {
       r.ok = false;
       r.message = 'אין הרשאה';
       return r;

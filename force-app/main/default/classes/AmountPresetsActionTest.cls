@@ -19,7 +19,7 @@ private class AmountPresetsActionTest {
       if (withPermission) {
         PermissionSet ps = new PermissionSet(Name = 'Test_Presets_' + uniq, Label = 'Test Presets ' + uniq);
         insert ps;
-        CustomPermission cp = [SELECT Id FROM CustomPermission WHERE DeveloperName = 'Manage_Amount_Presets'];
+        CustomPermission cp = [SELECT Id FROM CustomPermission WHERE DeveloperName = 'Manage_Charge_Schedule'];
         insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = cp.Id);
         insert new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
       }
