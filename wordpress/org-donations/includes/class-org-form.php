@@ -2,10 +2,10 @@
 if (!defined('ABSPATH')) exit;
 
 final class Org_Form {
-    // Amount defaults; override in wp-config.php with ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS ("1,2,3,5,10").
-    // Keep them equal to Cardcom_Setting__mdt Min/Max/Amount_Presets: Salesforce re-validates the Shacharit/Mincha amounts.
-    const MIN = 1; const MAX = 40;    // at most 40 ₪ per charge (was 25, ATA-6) (= Cardcom_Setting__mdt.Default.Max_Amount__c)
-    const PRESETS = [1, 2, 3, 5, 10];
+    // Amounts come from Salesforce (Cardcom_Setting__mdt.Default, N123) through Org_Settings. These defaults, and the
+    // wp-config.php constants ORG_DONATION_MIN_AMOUNT / _MAX_AMOUNT / ORG_DONATION_PRESETS, are only the fallback.
+    const MIN = Org_Settings::MIN; const MAX = Org_Settings::MAX;
+    const PRESETS = Org_Settings::PRESETS;
 
     // Rate-limit defaults; override in wp-config.php with ORG_DONATION_RL_WINDOW / _SUBMIT_MAX / _LP_MAX.
     const RL_WINDOW = 600;      // seconds, fixed window from the first counted request
@@ -30,18 +30,17 @@ final class Org_Form {
         add_action('wp_ajax_nopriv_org_donation_submit',  [self::class, 'ajax_submit']);
     }
 
-    public static function min_amount(): float { return self::amount_cfg('ORG_DONATION_MIN_AMOUNT', self::MIN); }
-    public static function max_amount(): float { return self::amount_cfg('ORG_DONATION_MAX_AMOUNT', self::MAX); }
+    public static function min_amount(): float { return (float) Org_Settings::get()['min']; }
+    public static function max_amount(): float { return (float) Org_Settings::get()['max']; }
 
-    /** @return float[] the amount buttons, from ORG_DONATION_PRESETS ("1,2,3,5,10") or the default; values outside min..max dropped. */
+    /** @return float[] the amount buttons (Salesforce, N123; see Org_Settings for the fallbacks); values outside min..max dropped. */
     public static function presets(): array {
-        $raw = orgdon_const('ORG_DONATION_PRESETS');
-        $list = $raw === '' ? self::PRESETS : array_map('trim', explode(',', $raw));
+        $min = self::min_amount(); $max = self::max_amount();
         $out = [];
-        foreach ($list as $v) {
-            if (is_numeric($v) && (float) $v >= self::min_amount() && (float) $v <= self::max_amount()) $out[] = $v + 0;
+        foreach (Org_Settings::get()['presets'] as $v) {
+            if (is_numeric($v) && (float) $v >= $min && (float) $v <= $max) $out[] = $v + 0;
         }
-        if (!$out) foreach (self::PRESETS as $v) if ($v >= self::min_amount() && $v <= self::max_amount()) $out[] = $v;
+        if (!$out) foreach (self::PRESETS as $v) if ($v >= $min && $v <= $max) $out[] = $v;
         return $out;
     }
 
@@ -55,11 +54,6 @@ final class Org_Form {
             if (ctype_digit($v) && (int) $v >= 400 && (int) $v <= 3000) $out[] = $var . ':' . (int) $v . 'px';
         }
         return implode(';', $out);
-    }
-
-    private static function amount_cfg(string $name, float $default): float {
-        $v = orgdon_const($name);
-        return (is_numeric($v) && (float) $v > 0) ? (float) $v : $default;
     }
 
     public static function window(): int     { return Org_Rate_Limiter::cfg('ORG_DONATION_RL_WINDOW', self::RL_WINDOW); }

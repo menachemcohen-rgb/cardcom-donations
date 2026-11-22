@@ -2,17 +2,17 @@
 /**
  * Plugin Name: Org Donations (Cardcom + Salesforce)
  * Description: טופס הוראת תרומה יומית ודף אישי לתורם.
- * Version: 1.5.5
+ * Version: 1.6.0
  * Requires PHP: 8.0
  * Text Domain: org-donations
  */
 if (!defined('ABSPATH')) exit;
 
-define('ORGDON_VER', '1.5.5');
+define('ORGDON_VER', '1.6.0');
 define('ORGDON_DIR', plugin_dir_path(__FILE__));
 define('ORGDON_URL', plugin_dir_url(__FILE__));
 
-foreach (['sf-client','validator','rate-limiter','form','portal','return-endpoint'] as $f) {
+foreach (['sf-client','settings','validator','rate-limiter','form','portal','return-endpoint','admin'] as $f) {
     require_once ORGDON_DIR . "includes/class-org-$f.php";
 }
 
@@ -37,6 +37,7 @@ add_action('admin_notices', function () {
 add_action('init', ['Org_Return_Endpoint', 'register']);
 add_action('init', ['Org_Form', 'register']);
 add_action('init', ['Org_Portal', 'register']);
+if (is_admin()) Org_Admin::register();
 register_activation_hook(__FILE__, function () { Org_Return_Endpoint::register(); flush_rewrite_rules(); });
 register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
 

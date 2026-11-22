@@ -590,6 +590,20 @@ public without sharing class StaffAlertService {
   }
 
   // ---------------------------------------------------------------- helpers
+  /** N123: saving the amount buttons from the "Apply charge schedule" screen failed in the metadata deployment. */
+  public static void amountPresetsFailed(String presets, String error) {
+    send(
+      'כפתורי הסכום לא עודכנו',
+      wrap(
+        '<p>השמירה של כפתורי הסכום (' +
+          EmailUtil.esc(presets) +
+          ') נכשלה, והטופס ממשיך להציג את הכפתורים הקודמים.</p><p>' +
+          EmailUtil.esc(error) +
+          '</p>'
+      )
+    );
+  }
+
   /** Part C E1: Failure_Notify_Emails__c split on , or ; — trimmed, blanks dropped. */
   @TestVisible
   static List<String> recipients() {

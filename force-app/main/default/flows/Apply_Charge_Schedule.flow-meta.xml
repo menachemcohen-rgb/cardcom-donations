@@ -8,7 +8,7 @@
         <actionName>ChargeTimesAction</actionName>
         <actionType>apex</actionType>
         <connector>
-            <targetReference>Result_Screen</targetReference>
+            <targetReference>Save_Presets</targetReference>
         </connector>
         <faultConnector>
             <targetReference>Error_Screen</targetReference>
@@ -47,6 +47,31 @@
             <name>message</name>
         </outputParameters>
     </actionCalls>
+    <actionCalls>
+        <name>Save_Presets</name>
+        <label>Save Amount Buttons</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>AmountPresetsAction</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Result_Screen</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>presets</name>
+            <value>
+                <elementReference>Presets_Input</elementReference>
+            </value>
+        </inputParameters>
+        <outputParameters>
+            <assignToReference>varPresetsMessage</assignToReference>
+            <name>message</name>
+        </outputParameters>
+    </actionCalls>
     <apiVersion>62.0</apiVersion>
     <decisions>
         <name>Has_Permission</name>
@@ -68,12 +93,12 @@
                 </rightValue>
             </conditions>
             <connector>
-                <targetReference>Current_Settings_Screen</targetReference>
+                <targetReference>Get_Settings</targetReference>
             </connector>
             <label>Yes</label>
         </rules>
     </decisions>
-    <description>B9.1/B9.2, D36: edits the Shacharit/Mincha charge times (regular day and eve) in Charge_Settings__c and re-schedules the Donations jobs (ChargeTimesAction). Gated by Custom Permission Manage_Charge_Schedule (also checked in Apex).</description>
+    <description>B9.1/B9.2, D36: edits the Shacharit/Mincha charge times (regular day and eve) in Charge_Settings__c and re-schedules the Donations jobs (ChargeTimesAction), and the amount buttons Cardcom_Setting__mdt.Default.Amount_Presets__c (AmountPresetsAction, N123). Gated by Custom Permission Manage_Charge_Schedule (also checked in Apex).</description>
     <environments>Default</environments>
     <formulas>
         <name>fAmTime</name>
@@ -96,6 +121,16 @@
         <expression>{!$Setup.Charge_Settings__c.Eve_PM_Time__c}</expression>
     </formulas>
     <formulas>
+        <name>fMax</name>
+        <dataType>String</dataType>
+        <expression>TEXT({!Get_Settings.Max_Amount__c})</expression>
+    </formulas>
+    <formulas>
+        <name>fMin</name>
+        <dataType>String</dataType>
+        <expression>TEXT({!Get_Settings.Min_Amount__c})</expression>
+    </formulas>
+    <formulas>
         <name>fPmTime</name>
         <dataType>String</dataType>
         <expression>{!$Setup.Charge_Settings__c.PM_Time__c}</expression>
@@ -115,10 +150,31 @@
         </value>
     </processMetadataValues>
     <processType>Flow</processType>
+    <recordLookups>
+        <name>Get_Settings</name>
+        <label>Get Settings</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Current_Settings_Screen</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>DeveloperName</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Default</stringValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Cardcom_Setting__mdt</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
     <runInMode>DefaultMode</runInMode>
     <screens>
         <name>Current_Settings_Screen</name>
-        <label>שעות החיוב</label>
+        <label>שעות החיוב וכפתורי הסכום</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <allowBack>false</allowBack>
@@ -193,8 +249,24 @@
             </validationRule>
         </fields>
         <fields>
+            <name>Presets_Text</name>
+            <fieldText>&lt;p&gt;&lt;b&gt;כפתורי הסכום בטופס התרומה ובדף התורם&lt;/b&gt;&lt;/p&gt;&lt;p&gt;אותה רשימה לשחרית ולמנחה. מספרים שלמים בין {!fMin} ל-{!fMax} ₪, מופרדים בפסיקים, בלי כפילויות, עד 8 כפתורים. הטופס באתר יתעדכן תוך 10 דקות, או מייד אחרי "רענון הגדרות מסיילספורס" בעמוד ההגדרות של התוסף.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Presets_Input</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>Get_Settings.Amount_Presets__c</elementReference>
+            </defaultValue>
+            <fieldText>כפתורי סכום (₪)</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;למשל 1,2,3,5,10&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+        </fields>
+        <fields>
             <name>Footer_Text</name>
-            <fieldText>&lt;p&gt;בלחיצה על "שמור והחל" ריצות החיוב מתוזמנות מחדש. חיובים שכבר תוכננו אינם משתנים.&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;בלחיצה על "שמור והחל" ריצות החיוב מתוזמנות מחדש וכפתורי הסכום נשמרים. חיובים שכבר תוכננו אינם משתנים.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <nextOrFinishButtonLabel>שמור והחל</nextOrFinishButtonLabel>
@@ -243,7 +315,7 @@
         <allowPause>false</allowPause>
         <fields>
             <name>Result_Text</name>
-            <fieldText>&lt;p&gt;{!varMessage}&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;&lt;b&gt;שעות החיוב:&lt;/b&gt; {!varMessage}&lt;/p&gt;&lt;p&gt;&lt;b&gt;כפתורי הסכום:&lt;/b&gt; {!varPresetsMessage}&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <showFooter>true</showFooter>
@@ -259,6 +331,13 @@
     <status>Active</status>
     <variables>
         <name>varMessage</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varPresetsMessage</name>
         <dataType>String</dataType>
         <isCollection>false</isCollection>
         <isInput>false</isInput>

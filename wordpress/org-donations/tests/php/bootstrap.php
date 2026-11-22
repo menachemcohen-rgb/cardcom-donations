@@ -1,6 +1,7 @@
 <?php
 // Minimal WordPress stand-ins so the plugin's pure classes can be tested without a WordPress install.
 define('ABSPATH', __DIR__ . '/');
+ini_set('error_log', sys_get_temp_dir() . '/orgdon-phpunit.log');   // plugin error_log() lines don't reach the test output
 $GLOBALS['orgdon_test_transients'] = [];
 
 function sanitize_text_field($s) { return trim(preg_replace('/[\r\n\t ]+/', ' ', strip_tags((string) $s))); }
@@ -33,6 +34,12 @@ function wp_remote_post($url, $args) {
     $GLOBALS['orgdon_test_http'][] = $url;
     return ($GLOBALS['orgdon_test_http_reply'])($url, $args);
 }
+function wp_remote_get($url, $args) {
+    $GLOBALS['orgdon_test_http'][] = $url;
+    return ($GLOBALS['orgdon_test_http_reply'])($url, $args);
+}
+function delete_transient($k) { unset($GLOBALS['orgdon_test_transients'][$k]); return true; }
+function update_option($k, $v, $a = null) { $GLOBALS['orgdon_test_options'][$k] = $v; return true; }
 function wp_remote_retrieve_response_code($r) { return $r['code']; }
 function wp_remote_retrieve_body($r) { return $r['body']; }
 if (!function_exists('orgdon_const')) {
@@ -40,6 +47,7 @@ if (!function_exists('orgdon_const')) {
 }
 if (!defined('ORG_SF_LOGIN_URL')) define('ORG_SF_LOGIN_URL', 'https://test.salesforce.com');
 
+require dirname(__DIR__, 2) . '/includes/class-org-settings.php';
 require dirname(__DIR__, 2) . '/includes/class-org-validator.php';
 require dirname(__DIR__, 2) . '/includes/class-org-sf-client.php';
 require dirname(__DIR__, 2) . '/includes/class-org-rate-limiter.php';

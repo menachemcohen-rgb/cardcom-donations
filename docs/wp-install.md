@@ -21,9 +21,9 @@ define('ORG_CARDCOM_ORIGIN',     'https://secure.cardcom.solutions');     // def
 define('ORG_DONATION_TERMS_URL', 'https://www.<site>/terms-recurring/');  // Q8; missing → home_url('/terms/'). The Israeli ID is optional (1.5.3): when given, Cardcom's ID field is pre-filled and hidden
 define('ORG_DONATION_CONTACT_PHONE', '03-0000000');                       // shown on the donor page (B13 T-Y01)
 define('ORG_DONATION_CONTACT_EMAIL', 'donations@<site>');
-define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // amount buttons on the form (default 1,2,3,5,10); keep = Cardcom_Setting__mdt.Amount_Presets__c
-define('ORG_DONATION_MIN_AMOUNT', 1);                // optional, default 1;  keep = Min_Amount__c
-define('ORG_DONATION_MAX_AMOUNT', 40);               // optional, default 40; keep = Max_Amount__c. An old 50 here overrides the default!
+define('ORG_DONATION_PRESETS', '1,2,3,5,10');        // FALLBACK only (N123): the buttons come from Salesforce, Cardcom_Setting__mdt.Amount_Presets__c
+define('ORG_DONATION_MIN_AMOUNT', 1);                // FALLBACK only, default 1 (Salesforce: Min_Amount__c)
+define('ORG_DONATION_MAX_AMOUNT', 40);               // FALLBACK only, default 40 (Salesforce: Max_Amount__c)
 define('ORG_DONATION_FRAME_HEIGHT', 880);            // optional (ATA-6): Cardcom frame height in px on desktop (default 880)
 define('ORG_DONATION_FRAME_HEIGHT_MOBILE', 1150);    // optional: on phones (default 1150); the frame never scrolls there
 define('ORG_DONATION_PARENT_ORIGIN', 'https://www.<site>'); // optional: origin of a page that embeds the form in an iframe (Elementor); default '*'
@@ -105,3 +105,20 @@ To embed the form page (for example in the CRM), list the embedding sites in `OR
 They are added to `frame-ancestors` of the form/donor pages and of `/cardcom-return/` (the browser checks every ancestor, so the
 return page needs them too). `frame-src` doesn't change. If the server or a security plugin sends `X-Frame-Options: SAMEORIGIN`,
 exclude the form page from it, otherwise the browser still blocks it. Test one signup from inside the embedding site.
+
+## Amount buttons and min/max come from Salesforce (N123, plugin 1.6.0)
+
+The amount buttons and the minimum/maximum per charge are set in Salesforce only. Today the form had 1, 2, 3, 5, 10 written in the
+plugin while the donor page took `Amount_Presets__c` (`presets` of `/donor/context`); now one list serves both pages, for Shacharit and Mincha.
+- Buttons: in the **"Apply charge schedule"** screen (flow `Apply_Charge_Schedule`, the same screen as the charge times; `Donations_Admin`,
+  custom permission `Manage_Charge_Schedule`): shows the list, edit, "שמור והחל". Rules: whole numbers within min..max, no duplicates,
+  1–8 values. It saves `Cardcom_Setting__mdt.Default.Amount_Presets__c` with a metadata deployment (about a minute; staff get an email if it fails).
+- Min/max: Setup → Custom Metadata Types → Cardcom Setting → Default → `Min_Amount__c`, `Max_Amount__c`.
+The plugin reads them from `GET /services/apexrest/donations/settings` (integration user) and keeps them for 10 minutes.
+After a change in Salesforce: Settings → Org Donations → **"רענון הגדרות מסיילספורס"**; the page shows the values in use and where they came from.
+
+- Buttons outside min..max are not shown. The same min/max is used by the form (browser) and by the plugin's server check;
+  Salesforce checks the amounts again on submit.
+- If Salesforce can't be reached, the last values received are used (kept with no expiry); Salesforce is asked again after a minute.
+- Only if the plugin never received values: `ORG_DONATION_PRESETS` / `ORG_DONATION_MIN_AMOUNT` / `ORG_DONATION_MAX_AMOUNT`, else the defaults
+  (1,2,3,5,10 / 1 / 40). These constants are a backup only; there's no need to keep them in sync any more.

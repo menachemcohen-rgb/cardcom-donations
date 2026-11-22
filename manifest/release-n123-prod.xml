@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Release N123 (production): GET /donations/settings for the WordPress form's amount buttons and min/max (plugin 1.6.0).
+  Deploy the Apex first; plugin 1.6.0 falls back to wp-config/defaults until the endpoint exists.
+  Not in this manifest, by design: Cardcom_Setting.Default (edit Amount_Presets__c / Min / Max in Setup, never redeploy the record).
+  Donations_Integration is deployed whole: it adds class access to DonationSettingsResource for the integration user.
+  sf project deploy validate --target-org prod -x manifest/release-n123-prod.xml --test-level RunSpecifiedTests --tests DonationSettingsResourceTest AmountPresetsActionTest StaffAlertServiceTest StaffFailureAlertsTest PledgeRollupServiceTest DonationSetupTest
+  then: sf project deploy quick --job-id <JOB_ID> --target-org prod
+  Before: retrieve Donations_Integration from prod and compare with the repo (it replaces the org copy).
+  Also: the amount buttons are edited in the "Apply charge schedule" screen (flow Apply_Charge_Schedule, Donations_Admin / Manage_Charge_Schedule).
+  StaffAlertService is redeployed (new amountPresetsFailed); stop the Donations jobs first (UNSCHEDULE_ALL) and schedule again after.
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>AmountPresetsAction</members>
+        <members>AmountPresetsActionTest</members>
+        <members>DonationSettingsResource</members>
+        <members>DonationSettingsResourceTest</members>
+        <members>StaffAlertService</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Apply_Charge_Schedule</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Donations_Admin</members>
+        <members>Donations_Integration</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>62.0</version>
+</Package>
