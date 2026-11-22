@@ -4,7 +4,7 @@
   Deploy the Apex first; plugin 1.6.0 falls back to wp-config/defaults until the endpoint exists.
   Not in this manifest, by design: Cardcom_Setting.Default (edit Amount_Presets__c / Min / Max in Setup, never redeploy the record).
   Donations_Integration is deployed whole: it adds class access to DonationSettingsResource for the integration user.
-  sf project deploy validate --target-org prod -x manifest/release-n123-prod.xml --test-level RunSpecifiedTests --tests DonationSettingsResourceTest AmountPresetsActionTest StaffAlertServiceTest
+  sf project deploy validate --target-org prod -x manifest/release-n123-prod.xml --test-level RunSpecifiedTests --tests DonationSettingsResourceTest AmountPresetsActionTest StaffAlertServiceTest StaffFailureAlertsTest PledgeRollupServiceTest DonationSetupTest
   then: sf project deploy quick --job-id <JOB_ID> --target-org prod
   Before: retrieve Donations_Integration from prod and compare with the repo (it replaces the org copy).
   Also: the amount buttons are edited in the "Apply charge schedule" screen (flow Apply_Charge_Schedule, Donations_Admin / Manage_Charge_Schedule).
