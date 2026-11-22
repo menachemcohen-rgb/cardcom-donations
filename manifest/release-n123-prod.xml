@@ -4,18 +4,31 @@
   Deploy the Apex first; plugin 1.6.0 falls back to wp-config/defaults until the endpoint exists.
   Not in this manifest, by design: Cardcom_Setting.Default (edit Amount_Presets__c / Min / Max in Setup, never redeploy the record).
   Donations_Integration is deployed whole: it adds class access to DonationSettingsResource for the integration user.
-  sf project deploy validate --target-org prod -x manifest/release-n123-prod.xml --test-level RunSpecifiedTests --tests DonationSettingsResourceTest
+  sf project deploy validate --target-org prod -x manifest/release-n123-prod.xml --test-level RunSpecifiedTests --tests DonationSettingsResourceTest AmountPresetsActionTest StaffAlertServiceTest
   then: sf project deploy quick --job-id <JOB_ID> --target-org prod
   Before: retrieve Donations_Integration from prod and compare with the repo (it replaces the org copy).
-  No scheduled job uses these classes, so the Donations jobs don't need to be stopped.
+  Also: the "Amount buttons" screen (flow Edit_Amount_Presets, permission set Donations_Amount_Presets) that saves Amount_Presets__c.
+  StaffAlertService is redeployed (new amountPresetsFailed); stop the Donations jobs first (UNSCHEDULE_ALL) and schedule again after.
 -->
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>AmountPresetsAction</members>
+        <members>AmountPresetsActionTest</members>
         <members>DonationSettingsResource</members>
         <members>DonationSettingsResourceTest</members>
+        <members>StaffAlertService</members>
         <name>ApexClass</name>
     </types>
     <types>
+        <members>Manage_Amount_Presets</members>
+        <name>CustomPermission</name>
+    </types>
+    <types>
+        <members>Edit_Amount_Presets</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Donations_Amount_Presets</members>
         <members>Donations_Integration</members>
         <name>PermissionSet</name>
     </types>

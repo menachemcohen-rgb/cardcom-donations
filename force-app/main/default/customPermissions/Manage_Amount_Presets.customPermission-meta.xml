@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Edit the amount buttons of the donation form and the donor page (Cardcom_Setting__mdt.Default.Amount_Presets__c, N123).</description>
+    <isLicensed>false</isLicensed>
+    <label>Edit Amount Buttons</label>
+</CustomPermission>

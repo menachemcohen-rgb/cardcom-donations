@@ -108,8 +108,13 @@ exclude the form page from it, otherwise the browser still blocks it. Test one s
 
 ## Amount buttons and min/max come from Salesforce (N123, plugin 1.6.0)
 
-The amount buttons and the minimum/maximum per charge are set in Salesforce only: Setup → Custom Metadata Types →
-Cardcom Setting → Default → `Amount_Presets__c` (e.g. `1,2,3,5,10`), `Min_Amount__c`, `Max_Amount__c`.
+The amount buttons and the minimum/maximum per charge are set in Salesforce only. Today the form had 1, 2, 3, 5, 10 written in the
+plugin while the donor page took `Amount_Presets__c` (`presets` of `/donor/context`); now one list serves both pages, for Shacharit and Mincha.
+- Buttons: the **"Edit Amount Buttons"** screen (flow `Edit_Amount_Presets`, permission set `Donations_Amount_Presets`): shows the list,
+  edit, save. Rules: whole numbers within min..max, no duplicates, 1–8 values. It saves `Cardcom_Setting__mdt.Default.Amount_Presets__c`
+  with a metadata deployment (about a minute; staff get an email if it fails). Add the flow to the admins' app utility bar
+  (App Manager → app → Utility Items → Flow → `Edit_Amount_Presets`).
+- Min/max: Setup → Custom Metadata Types → Cardcom Setting → Default → `Min_Amount__c`, `Max_Amount__c`.
 The plugin reads them from `GET /services/apexrest/donations/settings` (integration user) and keeps them for 10 minutes.
 After a change in Salesforce: Settings → Org Donations → **"רענון הגדרות מסיילספורס"**; the page shows the values in use and where they came from.
 
