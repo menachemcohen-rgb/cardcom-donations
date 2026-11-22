@@ -71,18 +71,29 @@ final class Org_SF_Client {
 
     /** @return array{code:int, body:array} */
     public static function post(string $path, array $payload): array {
+        return self::send('POST', $path, $payload);
+    }
+
+    /** Read-only call (N123: GET /donations/settings). @return array{code:int, body:array} */
+    public static function get(string $path): array {
+        return self::send('GET', $path, null);
+    }
+
+    /** @return array{code:int, body:array} */
+    private static function send(string $method, string $path, ?array $payload): array {
         for ($i = 0; $i < 2; $i++) {
             // Token first: it caches instance_url (ORG_SF_LOGIN_URL is login/test.salesforce.com, not the org's domain).
             $token = self::token($i === 1);
             $base = get_transient('orgdon_sf_instance') ?: ORG_SF_LOGIN_URL;
-            $res = wp_remote_post($base . '/services/apexrest' . $path, [
-                'timeout' => 15,
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
-                    'Content-Type'  => 'application/json; charset=utf-8',
-                ],
-                'body' => wp_json_encode($payload, JSON_UNESCAPED_UNICODE),
-            ]);
+            $args = ['timeout' => 15, 'headers' => ['Authorization' => 'Bearer ' . $token]];
+            if ($method === 'POST') {
+                $args['headers']['Content-Type'] = 'application/json; charset=utf-8';
+                $args['body'] = wp_json_encode($payload, JSON_UNESCAPED_UNICODE);
+                $res = wp_remote_post($base . '/services/apexrest' . $path, $args);
+            } else {
+                $args['timeout'] = 5;      // shown on page load: don't hold the page for long
+                $res = wp_remote_get($base . '/services/apexrest' . $path, $args);
+            }
             if (is_wp_error($res)) { error_log('[orgdon] SF ' . $path . ' WP_Error ' . $res->get_error_message()); throw new RuntimeException('SF_NETWORK'); }
             $code = wp_remote_retrieve_response_code($res);
             if ($code === 401 && $i === 0) continue;
