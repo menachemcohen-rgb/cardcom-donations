@@ -72,15 +72,12 @@
   function perWeek(f) { const inc = prayers(f); return 7 * ((inc.shacharit ? 1 : 0) + (inc.mincha ? 1 : 0)); }
   /** Any phone number, 7–15 digits. Same rules as the PHP validator and Salesforce (N124). */
   function normPhone(v) {
-    const t = String(v || '').trim();
-    let d = t.replace(/\D/g, '');
-    const intl = t.startsWith('+') || d.startsWith('00');
+    let d = String(v || '').replace(/\D/g, '');
     if (d.startsWith('00')) d = d.slice(2);
-    const ok = (x) => x.length >= 7 && x.length <= 15;
     if (d.startsWith('972') && d.length >= 11) d = '0' + d.slice(3);
-    else if (intl) return ok(d) ? '+' + d : null;
     else if (/^5\d{8}$/.test(d)) d = '0' + d;
-    return ok(d) ? d : null;
+    if (d.length < 7 || d.length > 15) return null;
+    return d[0] === '0' ? d : '+' + d;
   }
   /** Same rule as the PHP validator: min..max, at most 2 decimals. */
   function validAmount(v, min, max) {

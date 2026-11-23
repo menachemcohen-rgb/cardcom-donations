@@ -38,6 +38,7 @@ test('normPhone: same rules as PHP and Salesforce', () => {
   assert.equal(normPhone('03-1234567'), '031234567');
   assert.equal(normPhone('+1 (470) 228-0495'), '+14702280495');
   assert.equal(normPhone('0044 7911 123456'), '+447911123456');
+  assert.equal(normPhone('14702280495'), '+14702280495');
   assert.equal(normPhone('12345'), null);
   assert.equal(normPhone('+1234567890123456'), null);
   assert.equal(normPhone(''), null);

@@ -4,15 +4,12 @@ if (!defined('ABSPATH')) exit;
 final class Org_Validator {
     /** Any phone number, 7–15 digits (N124). Same rules as Salesforce ContactMatcher.normPhone. */
     public static function phone(string $raw): ?string {
-        $t = trim($raw);
-        $d = preg_replace('/\D+/', '', $t);
-        $intl = str_starts_with($t, '+') || str_starts_with($d, '00');
+        $d = preg_replace('/\D+/', '', $raw);
         if (str_starts_with($d, '00')) $d = substr($d, 2);
-        $ok = fn(string $x): bool => strlen($x) >= 7 && strlen($x) <= 15;
         if (str_starts_with($d, '972') && strlen($d) >= 11) $d = '0' . substr($d, 3);
-        elseif ($intl) return $ok($d) ? '+' . $d : null;
         elseif (preg_match('/^5\d{8}$/', $d)) $d = '0' . $d;
-        return $ok($d) ? $d : null;
+        if (strlen($d) < 7 || strlen($d) > 15) return null;
+        return $d[0] === '0' ? $d : '+' . $d;
     }
     public static function il_id(string $raw): ?string {
         $id = preg_replace('/\D+/', '', $raw);

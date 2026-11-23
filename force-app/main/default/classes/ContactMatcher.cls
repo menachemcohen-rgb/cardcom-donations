@@ -29,24 +29,23 @@ public without sharing class ContactMatcher {
 
   /**
    * N124: any phone number, Israeli or not, 7–15 digits. Israeli numbers keep the local form (+972 52… → 052…,
-   * 52… → 052…) so donors still match existing contacts; a number given with + or 00 is kept as +digits.
+   * 52… → 052…) so donors still match existing contacts; every other number is +digits, with or without the + / 00
+   * the donor typed (+1 470…, 001 470…, 1 470… → +1470…), so the same number always matches.
    * Same rules as Org_Validator::phone (PHP) and normPhone in donation-form.js.
    */
   public static String normPhone(String p) {
     if (String.isBlank(p))
       return null;
-    String t = p.trim();
-    String d = t.replaceAll('[^0-9]', '');
-    Boolean intl = t.startsWith('+') || d.startsWith('00');
+    String d = p.replaceAll('[^0-9]', '');
     if (d.startsWith('00'))
       d = d.substring(2);
     if (d.startsWith('972') && d.length() >= 11)
       d = '0' + d.substring(3);
-    else if (intl)
-      return d.length() >= 7 && d.length() <= 15 ? '+' + d : null;
     else if (Pattern.matches('5\\d{8}', d))
       d = '0' + d;
-    return d.length() >= 7 && d.length() <= 15 ? d : null;
+    if (d.length() < 7 || d.length() > 15)
+      return null;
+    return d.startsWith('0') ? d : '+' + d;
   }
 
   /** Israeli mobile in local form (05XXXXXXXX) — the only form sent to Cardcom as Mobile. */

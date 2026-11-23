@@ -23,13 +23,13 @@ private class ContactNormalizationTest {
   }
 
   @IsTest
-  static void foreignMobileIsNormalizedButLandlineFallbackIsNot() {
+  static void anyNumberIsNormalizedFromMobileOrPhone() {
     Contact a = new Contact(LastName = 'Abroad', MobilePhone = '+1 470 228 0495');
     Contact b = new Contact(LastName = 'Office', Phone = '03-1234567');
     insert new List<Contact>{ a, b };
     Map<Id, Contact> got = new Map<Id, Contact>([SELECT Phone_Normalized__c FROM Contact WHERE Id IN :new List<Id>{ a.Id, b.Id }]);
     Assert.areEqual('+14702280495', got.get(a.Id).Phone_Normalized__c);
-    Assert.isNull(got.get(b.Id).Phone_Normalized__c, 'landlines in Phone are not used for matching');
+    Assert.areEqual('031234567', got.get(b.Id).Phone_Normalized__c, 'Phone is used when MobilePhone is blank');
   }
 
   @IsTest

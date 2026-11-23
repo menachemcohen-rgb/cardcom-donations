@@ -22,13 +22,10 @@ public without sharing class ContactNormalization {
     Boolean legacy = hasLegacyIdField();
     for (Contact c : contacts) {
       c.Email_Normalized__c = ContactMatcher.normEmail(c.Email);
-      // N124: MobilePhone in any format; the Phone fallback stays Israeli-mobile only (as before), so office and
-      // home landlines already in the org don't start matching donors.
+      // N124: any number, from MobilePhone or (if blank) Phone.
       String ph = ContactMatcher.normPhone(c.MobilePhone);
-      if (ph == null) {
-        String other = ContactMatcher.normPhone(c.Phone);
-        ph = ContactMatcher.isIsraeliMobile(other) ? other : null;
-      }
+      if (ph == null)
+        ph = ContactMatcher.normPhone(c.Phone);
       c.Phone_Normalized__c = ph != null && ph.length() <= PHONE_MAX ? ph : null;
       String id = c.Donor_Tax_Id__c;
       if (String.isBlank(id) && legacy) {
