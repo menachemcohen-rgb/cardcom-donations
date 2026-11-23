@@ -48,11 +48,6 @@ public without sharing class ContactMatcher {
     return d.startsWith('0') ? d : '+' + d;
   }
 
-  /** Israeli mobile in local form (05XXXXXXXX) — the only form sent to Cardcom as Mobile. */
-  public static Boolean isIsraeliMobile(String p) {
-    return p != null && Pattern.matches('05\\d{8}', p);
-  }
-
   public static String taxIdHash(String id) {
     if (String.isBlank(id))
       return null;

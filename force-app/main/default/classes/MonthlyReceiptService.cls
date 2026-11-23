@@ -123,9 +123,8 @@ public without sharing class MonthlyReceiptService {
         }
       }
     };
-    String mobile = ContactMatcher.normPhone(c.MobilePhone);
-    if (ContactMatcher.isIsraeliMobile(mobile))
-      doc.put('Mobile', mobile); // N124: foreign numbers are kept in Salesforce but not sent to Cardcom
+    if (String.isNotBlank(c.MobilePhone))
+      doc.put('Mobile', c.MobilePhone); // N124: any number, Israeli or not
     if (String.isNotBlank(taxId))
       doc.put('TaxId', taxId);
     r.Email_Sent_To__c = email;

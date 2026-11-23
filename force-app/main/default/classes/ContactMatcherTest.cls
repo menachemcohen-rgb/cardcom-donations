@@ -32,8 +32,6 @@ private class ContactMatcherTest {
     Assert.areEqual('+14702280495', ContactMatcher.normPhone('001-470-228-0495'));
     Assert.isNull(ContactMatcher.normPhone('12345'), 'too short');
     Assert.isNull(ContactMatcher.normPhone('+1234567890123456'), 'too long');
-    Assert.isTrue(ContactMatcher.isIsraeliMobile('0521234567'));
-    Assert.isFalse(ContactMatcher.isIsraeliMobile('+14702280495'));
     Assert.isNull(ContactMatcher.normPhone(' '));
     Assert.areEqual('a@b.co', ContactMatcher.normEmail(' A@B.co '));
     Assert.isTrue(ContactMatcher.validIsraeliId(VALID_ID));
