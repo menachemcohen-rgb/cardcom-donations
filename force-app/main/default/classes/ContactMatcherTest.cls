@@ -25,7 +25,13 @@ private class ContactMatcherTest {
     Assert.areEqual('0521234567', ContactMatcher.normPhone('+972-52-123-4567'));
     Assert.areEqual('0521234567', ContactMatcher.normPhone('00972521234567'));
     Assert.areEqual('0521234567', ContactMatcher.normPhone('521234567'));
-    Assert.isNull(ContactMatcher.normPhone('03-1234567'), 'landlines are not matched');
+    Assert.areEqual('031234567', ContactMatcher.normPhone('03-1234567'), 'any number is accepted (N124)');
+    Assert.areEqual('+14702280495', ContactMatcher.normPhone('+1 (470) 228-0495'), 'foreign numbers keep +');
+    Assert.areEqual('+447911123456', ContactMatcher.normPhone('0044 7911 123456'));
+    Assert.isNull(ContactMatcher.normPhone('12345'), 'too short');
+    Assert.isNull(ContactMatcher.normPhone('+1234567890123456'), 'too long');
+    Assert.isTrue(ContactMatcher.isIsraeliMobile('0521234567'));
+    Assert.isFalse(ContactMatcher.isIsraeliMobile('+14702280495'));
     Assert.isNull(ContactMatcher.normPhone(' '));
     Assert.areEqual('a@b.co', ContactMatcher.normEmail(' A@B.co '));
     Assert.isTrue(ContactMatcher.validIsraeliId(VALID_ID));

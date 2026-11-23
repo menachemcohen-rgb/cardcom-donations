@@ -23,6 +23,16 @@ private class ContactNormalizationTest {
   }
 
   @IsTest
+  static void foreignMobileIsNormalizedButLandlineFallbackIsNot() {
+    Contact a = new Contact(LastName = 'Abroad', MobilePhone = '+1 470 228 0495');
+    Contact b = new Contact(LastName = 'Office', Phone = '03-1234567');
+    insert new List<Contact>{ a, b };
+    Map<Id, Contact> got = new Map<Id, Contact>([SELECT Phone_Normalized__c FROM Contact WHERE Id IN :new List<Id>{ a.Id, b.Id }]);
+    Assert.areEqual('+14702280495', got.get(a.Id).Phone_Normalized__c);
+    Assert.isNull(got.get(b.Id).Phone_Normalized__c, 'landlines in Phone are not used for matching');
+  }
+
+  @IsTest
   static void legacyIsraeliIdIsUsedWhenDonorTaxIdIsBlank() {
     if (!ContactNormalization.hasLegacyIdField()) {
       return; // org without Contact.Israeli_Id__c (decision D-1 only applies where it exists)

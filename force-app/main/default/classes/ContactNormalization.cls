@@ -16,12 +16,20 @@ public without sharing class ContactNormalization {
     return legacyIdExists;
   }
 
+  static final Integer PHONE_MAX = Contact.Phone_Normalized__c.getDescribe().getLength();
+
   public static void apply(List<Contact> contacts) {
     Boolean legacy = hasLegacyIdField();
     for (Contact c : contacts) {
       c.Email_Normalized__c = ContactMatcher.normEmail(c.Email);
+      // N124: MobilePhone in any format; the Phone fallback stays Israeli-mobile only (as before), so office and
+      // home landlines already in the org don't start matching donors.
       String ph = ContactMatcher.normPhone(c.MobilePhone);
-      c.Phone_Normalized__c = ph != null ? ph : ContactMatcher.normPhone(c.Phone);
+      if (ph == null) {
+        String other = ContactMatcher.normPhone(c.Phone);
+        ph = ContactMatcher.isIsraeliMobile(other) ? other : null;
+      }
+      c.Phone_Normalized__c = ph != null && ph.length() <= PHONE_MAX ? ph : null;
       String id = c.Donor_Tax_Id__c;
       if (String.isBlank(id) && legacy) {
         Object v = c.get(LEGACY_ID_FIELD);

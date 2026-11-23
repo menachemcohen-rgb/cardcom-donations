@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Release N124 (sandbox): any phone number on the form (plugin 1.6.1). Deploy the Salesforce side before installing the plugin:
+  with the old Apex, a foreign number passes the form and is refused by /donations/pledge.
+  Contact.Phone_Normalized__c grows from 10 to 16. If the deploy refuses it because the matching rule Donor_Contact_Match is active,
+  deactivate the rule (Setup > Matching Rules), deploy, and activate it again.
+  The scheduled jobs reach these classes (receipts, LP sweeper): stop them first (UNSCHEDULE_ALL) and SCHEDULE_ALL after.
+  sf project deploy start --target-org atosandbox -x manifest/release-n124-sandbox.xml --test-level RunSpecifiedTests --tests ContactMatcherTest ContactNormalizationTest DonationPledgeResourceTest MonthlyReceiptTest PledgeActivationServiceTest
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ContactMatcher</members>
+        <members>ContactMatcherTest</members>
+        <members>ContactNormalization</members>
+        <members>ContactNormalizationTest</members>
+        <members>DonationPledgeResource</members>
+        <members>MonthlyReceiptService</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Contact.Phone_Normalized__c</members>
+        <name>CustomField</name>
+    </types>
+    <version>62.0</version>
+</Package>

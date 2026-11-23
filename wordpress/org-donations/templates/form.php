@@ -21,7 +21,7 @@
     </div>
     <div class="orgdon-row">
       <label for="od-phone">טלפון נייד *</label>
-      <input id="od-phone" name="phone" type="tel" dir="ltr" inputmode="tel" autocomplete="tel" placeholder="05X-XXXXXXX" required>
+      <input id="od-phone" name="phone" type="tel" dir="ltr" inputmode="tel" autocomplete="tel" required>
       <span class="orgdon-err" data-for="phone" role="alert"></span>
     </div>
     <div class="orgdon-row">

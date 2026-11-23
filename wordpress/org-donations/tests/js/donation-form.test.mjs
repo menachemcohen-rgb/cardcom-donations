@@ -35,7 +35,11 @@ test('perWeek and prayers: 7 charges a week per prayer', () => {
 
 test('normPhone: same rules as PHP and Salesforce', () => {
   for (const p of ['0521234567', '052-123-4567', '+972 52 123 4567', '00972521234567', '521234567']) assert.equal(normPhone(p), '0521234567', p);
-  assert.equal(normPhone('03-1234567'), null);
+  assert.equal(normPhone('03-1234567'), '031234567');
+  assert.equal(normPhone('+1 (470) 228-0495'), '+14702280495');
+  assert.equal(normPhone('0044 7911 123456'), '+447911123456');
+  assert.equal(normPhone('12345'), null);
+  assert.equal(normPhone('+1234567890123456'), null);
   assert.equal(normPhone(''), null);
 });
 

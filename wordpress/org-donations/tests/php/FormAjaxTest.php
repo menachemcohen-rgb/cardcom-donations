@@ -57,7 +57,7 @@ final class FormAjaxTest extends TestCase
         $r = $this->call('ajax_lp', $this->form(['shacharit_amount' => '41']));
         $this->assertSame(422, $r->status);
         $this->assertSame('הסכום המקסימלי הוא 40 ₪ ליום', $r->data['fields']['shacharit_amount'], 'ATA-6: above the maximum');
-        $r = $this->call('ajax_lp', $this->form(['email' => 'nope', 'phone' => '03-1234567', 'first_name' => '']));
+        $r = $this->call('ajax_lp', $this->form(['email' => 'nope', 'phone' => '12345', 'first_name' => '']));
         $this->assertSame(422, $r->status);
         $this->assertEqualsCanonicalizing(['email', 'phone', 'first_name'], array_keys($r->data['fields']));
         $this->assertSame(0, $this->sfCalls('/donations/lowprofile'), 'Cardcom session never created');

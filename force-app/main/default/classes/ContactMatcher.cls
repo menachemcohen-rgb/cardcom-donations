@@ -27,17 +27,31 @@ public without sharing class ContactMatcher {
     return String.isBlank(e) ? null : e.trim().toLowerCase();
   }
 
+  /**
+   * N124: any phone number, Israeli or not, 7–15 digits. Israeli numbers keep the local form (+972 52… → 052…,
+   * 52… → 052…) so donors still match existing contacts; a number given with + or 00 is kept as +digits.
+   * Same rules as Org_Validator::phone (PHP) and normPhone in donation-form.js.
+   */
   public static String normPhone(String p) {
     if (String.isBlank(p))
       return null;
-    String d = p.replaceAll('[^0-9]', '');
-    if (d.startsWith('00972'))
-      d = d.substring(5);
-    else if (d.startsWith('972'))
-      d = d.substring(3);
-    if (!d.startsWith('0'))
+    String t = p.trim();
+    String d = t.replaceAll('[^0-9]', '');
+    Boolean intl = t.startsWith('+') || d.startsWith('00');
+    if (d.startsWith('00'))
+      d = d.substring(2);
+    if (d.startsWith('972') && d.length() >= 11)
+      d = '0' + d.substring(3);
+    else if (intl)
+      return d.length() >= 7 && d.length() <= 15 ? '+' + d : null;
+    else if (Pattern.matches('5\\d{8}', d))
       d = '0' + d;
-    return Pattern.matches('05\\d{8}', d) ? d : null; // mobile only
+    return d.length() >= 7 && d.length() <= 15 ? d : null;
+  }
+
+  /** Israeli mobile in local form (05XXXXXXXX) — the only form sent to Cardcom as Mobile. */
+  public static Boolean isIsraeliMobile(String p) {
+    return p != null && Pattern.matches('05\\d{8}', p);
   }
 
   public static String taxIdHash(String id) {
