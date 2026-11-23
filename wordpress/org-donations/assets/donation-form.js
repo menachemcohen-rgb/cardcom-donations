@@ -70,12 +70,14 @@
   }
   /** 7 charges a week per included prayer. */
   function perWeek(f) { const inc = prayers(f); return 7 * ((inc.shacharit ? 1 : 0) + (inc.mincha ? 1 : 0)); }
-  /** Same rules as the PHP validator and Salesforce (N61). */
+  /** Any phone number, 7–15 digits. Same rules as the PHP validator and Salesforce (N124). */
   function normPhone(v) {
     let d = String(v || '').replace(/\D/g, '');
-    if (d.startsWith('00972')) d = d.slice(5); else if (d.startsWith('972')) d = d.slice(3);
-    if (d && d[0] !== '0') d = '0' + d;
-    return /^05\d{8}$/.test(d) ? d : null;
+    if (d.startsWith('00')) d = d.slice(2);
+    if (d.startsWith('972') && d.length >= 11) d = '0' + d.slice(3);
+    else if (/^5\d{8}$/.test(d)) d = '0' + d;
+    if (d.length < 7 || d.length > 15) return null;
+    return d[0] === '0' ? d : '+' + d;
   }
   /** Same rule as the PHP validator: min..max, at most 2 decimals. */
   function validAmount(v, min, max) {
@@ -159,7 +161,7 @@
     req('first_name', 'נא להזין שם פרטי', (v) => v.length > 0);
     req('last_name', 'נא להזין שם משפחה', (v) => v.length > 0);
     req('email', 'נא להזין כתובת אימייל תקינה', (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v));
-    req('phone', 'נא להזין מספר נייד ישראלי תקין', (v) => normPhone(v) !== null);
+    req('phone', 'נא להזין מספר טלפון תקין', (v) => normPhone(v) !== null);
     const id = $('tax_id').value.trim();
     if (id && !validId(id)) { setErr('tax_id', 'מספר תעודת הזהות אינו תקין'); ok = false; }
     const inc = prayers(freq()); const a = amounts();

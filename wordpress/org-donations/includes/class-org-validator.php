@@ -2,13 +2,14 @@
 if (!defined('ABSPATH')) exit;
 
 final class Org_Validator {
+    /** Any phone number, 7–15 digits (N124). Same rules as Salesforce ContactMatcher.normPhone. */
     public static function phone(string $raw): ?string {
-        // Same rules as Salesforce ContactMatcher.normPhone: +972 / 972 / 00972 prefixes, missing leading 0 (spec-consistency N61).
         $d = preg_replace('/\D+/', '', $raw);
-        if (str_starts_with($d, '00972')) $d = substr($d, 5);
-        elseif (str_starts_with($d, '972')) $d = substr($d, 3);
-        if ($d !== '' && $d[0] !== '0') $d = '0' . $d;
-        return preg_match('/^05\d{8}$/', $d) ? $d : null;
+        if (str_starts_with($d, '00')) $d = substr($d, 2);
+        if (str_starts_with($d, '972') && strlen($d) >= 11) $d = '0' . substr($d, 3);
+        elseif (preg_match('/^5\d{8}$/', $d)) $d = '0' . $d;
+        if (strlen($d) < 7 || strlen($d) > 15) return null;
+        return $d[0] === '0' ? $d : '+' . $d;
     }
     public static function il_id(string $raw): ?string {
         $id = preg_replace('/\D+/', '', $raw);
@@ -71,7 +72,7 @@ final class Org_Validator {
         if ($d['firstName'] === '' || mb_strlen($d['firstName']) > 40) $e['first_name'] = 'נא להזין שם פרטי';
         if ($d['lastName'] === ''  || mb_strlen($d['lastName']) > 80)  $e['last_name']  = 'נא להזין שם משפחה';
         if (!is_email($d['email']) || strlen($d['email']) > 80)       $e['email']      = 'נא להזין כתובת אימייל תקינה';
-        if (!$d['phone'])                                              $e['phone']      = 'נא להזין מספר נייד ישראלי תקין';
+        if (!$d['phone'])                                              $e['phone']      = 'נא להזין מספר טלפון תקין';
         if ($tax !== '' && !$d['taxId'])                               $e['tax_id']     = 'מספר תעודת הזהות אינו תקין';
         if (!$d['frequency'])                                          $e['frequency']  = 'נא לבחור תדירות';
         if (!$d['termsAccepted'])                                      $e['terms']      = 'יש לאשר את תנאי ההוראה';

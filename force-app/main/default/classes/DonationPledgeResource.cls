@@ -128,7 +128,7 @@ global without sharing class DonationPledgeResource {
     if (String.isBlank(em) || em.length() > 80 || !Pattern.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$', em))
       bad.add('email');
     String np = ContactMatcher.normPhone(ph);
-    if (np == null || !Pattern.matches('^05\\d{8}$', np))
+    if (np == null)
       bad.add('phone');
     if (String.isNotBlank(id) && !ContactMatcher.validIsraeliId(id))
       bad.add('taxId');

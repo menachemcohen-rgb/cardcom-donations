@@ -17,8 +17,13 @@ final class ValidatorTest extends TestCase
         foreach (['0521234567', '052-123-4567', '+972 52 123 4567', '972521234567', '00972521234567', '521234567'] as $p) {
             $this->assertSame('0521234567', Org_Validator::phone($p), $p);
         }
-        $this->assertNull(Org_Validator::phone('03-1234567'), 'landline');
-        $this->assertNull(Org_Validator::phone('05212345'), 'too short');
+        $this->assertSame('031234567', Org_Validator::phone('03-1234567'), 'any number (N124)');
+        $this->assertSame('+14702280495', Org_Validator::phone('+14702280495'), 'foreign mobile');
+        $this->assertSame('+447911123456', Org_Validator::phone('0044 7911 123456'));
+        $this->assertSame('+14702280495', Org_Validator::phone('14702280495'), 'same number without +');
+        $this->assertSame('+14702280495', Org_Validator::phone('001-470-228-0495'));
+        $this->assertNull(Org_Validator::phone('123456'), 'too short');
+        $this->assertNull(Org_Validator::phone('+1234567890123456'), 'too long');
         $this->assertNull(Org_Validator::phone(''));
     }
 

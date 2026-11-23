@@ -27,17 +27,25 @@ public without sharing class ContactMatcher {
     return String.isBlank(e) ? null : e.trim().toLowerCase();
   }
 
+  /**
+   * N124: any phone number, Israeli or not, 7–15 digits. Israeli numbers keep the local form (+972 52… → 052…,
+   * 52… → 052…) so donors still match existing contacts; every other number is +digits, with or without the + / 00
+   * the donor typed (+1 470…, 001 470…, 1 470… → +1470…), so the same number always matches.
+   * Same rules as Org_Validator::phone (PHP) and normPhone in donation-form.js.
+   */
   public static String normPhone(String p) {
     if (String.isBlank(p))
       return null;
     String d = p.replaceAll('[^0-9]', '');
-    if (d.startsWith('00972'))
-      d = d.substring(5);
-    else if (d.startsWith('972'))
-      d = d.substring(3);
-    if (!d.startsWith('0'))
+    if (d.startsWith('00'))
+      d = d.substring(2);
+    if (d.startsWith('972') && d.length() >= 11)
+      d = '0' + d.substring(3);
+    else if (Pattern.matches('5\\d{8}', d))
       d = '0' + d;
-    return Pattern.matches('05\\d{8}', d) ? d : null; // mobile only
+    if (d.length() < 7 || d.length() > 15)
+      return null;
+    return d.startsWith('0') ? d : '+' + d;
   }
 
   public static String taxIdHash(String id) {

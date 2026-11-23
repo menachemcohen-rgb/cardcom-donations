@@ -124,7 +124,7 @@ public without sharing class MonthlyReceiptService {
       }
     };
     if (String.isNotBlank(c.MobilePhone))
-      doc.put('Mobile', c.MobilePhone);
+      doc.put('Mobile', c.MobilePhone); // N124: any number, Israeli or not
     if (String.isNotBlank(taxId))
       doc.put('TaxId', taxId);
     r.Email_Sent_To__c = email;
