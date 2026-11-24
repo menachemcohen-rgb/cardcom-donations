@@ -41,13 +41,19 @@ private class ChargeSettingsTest {
     s.AM_Time__c = '21:00'; // after PM
     s.Eve_AM_Time__c = '12:00'; // after Eve PM
     s.Eve_PM_Time__c = '11:30';
-    s.Friday_Cutoff_Hour__c = 11; // Eve PM after cutoff
     s.Runs_Per_Day__c = 3;
     s.Retry_Minute__c = 60;
     s.Max_Retries__c = 0;
     s.Receipt_Day_Of_Month__c = 29;
     errs = ChargeSettings.validate(s);
-    Assert.areEqual(7, errs.size(), String.join(errs, ' | '));
+    Assert.areEqual(6, errs.size(), String.join(errs, ' | '));
+  }
+
+  @IsTest
+  static void evePmAfterCutoffIsAllowed() {
+    Charge_Settings__c s = ChargeSettings.defaults();
+    s.Eve_PM_Time__c = '15:30'; // after Friday_Cutoff_Hour__c (14)
+    Assert.isTrue(ChargeSettings.validate(s).isEmpty(), String.join(ChargeSettings.validate(s), ' | '));
   }
 
   @IsTest

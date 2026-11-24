@@ -45,6 +45,41 @@ private class ChargeRetryTest {
   }
 
   @IsTest
+  static void afterEveCutoffOnlyFirstAttemptsAreSent() {
+    Datetime fri1515 = Datetime.newInstance(2026, 11, 6, 15, 15, 0); // Friday, after cutoff 14
+    TestDataFactory.chargeEngine(fri1515);
+    Assert.areEqual(14, ChargeCalendar.fridayCutoffHour());
+    Opportunity p = TestDataFactory.activePledges(1, 'TwiceDaily')[0];
+    Date fri = fri1515.date();
+    Charge__c a2 = TestDataFactory.charge(p, fri, 'AM');
+    a2.Attempt_Number__c = 2;
+    a2.Attempt_Key__c = a2.ExternalUniqTranId__c + '-A2';
+    a2.Not_Before__c = Datetime.newInstance(2026, 11, 6, 12, 0, 0);
+    insert a2;
+    ChargeDispatcher.start();
+    Assert.isNull(ChargeDispatcher.lastBatch, 'retry after the eve cutoff is not sent');
+    Assert.isFalse(ChargeRunLock.isChainActive(), 'nothing sent → lock released');
+
+    Charge__c a1 = TestDataFactory.charge(p, fri, 'PM');
+    insert a1;
+    ChargeDispatcher.start();
+    Assert.areEqual(new List<Id>{ a1.Id }, ChargeDispatcher.lastBatch, 'only the first attempt of the scheduled run is sent');
+    Assert.isTrue(ChargeRunLock.isChainActive());
+  }
+
+  @IsTest
+  static void nothingIsSentOnShabbat() {
+    Datetime sat = Datetime.newInstance(2026, 11, 7, 10, 0, 0);
+    TestDataFactory.chargeEngine(sat);
+    Opportunity p = TestDataFactory.activePledges(1, 'OnceDaily')[0];
+    insert TestDataFactory.charge(p, sat.date(), 'AM');
+    ChargeRunLock.acquire();
+    ChargeDispatcher.start();
+    Assert.isNull(ChargeDispatcher.lastBatch, 'first attempt on Shabbat is not sent');
+    Assert.isFalse(ChargeRunLock.isChainActive());
+  }
+
+  @IsTest
   static void scheduledRetryRuns() {
     TestDataFactory.chargeEngine(TestDataFactory.WED_0800);
     Test.startTest();

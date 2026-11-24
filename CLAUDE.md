@@ -759,7 +759,7 @@ public static Boolean isRetryWindowOpen(Datetime t) {
 ```
 > `ChargeRetryPolicy.nextWindow` ו-`ChargeDispatcher.start` — ראו B6.5.1 (לא לשכפל כאן).
 > קריאה ל-`ChargeDispatcher.start()` מתוך `ChargeQueueable` (שרשור) מאריכה את המנעול; קריאה מ-`ChargePlanner`/`ChargeRetryScheduler` בודקת קודם `isChainActive()` (ב-Planner: אם השרשרת פעילה — הרשומות החדשות ייאספו בחוליה הבאה, ללא enqueue נוסף).
-> שישי: ריצות החיוב 06:00 ו-11:00 נמצאות לפני ה-cutoff (14:00), כך שניסיון ראשון שנכשל ב-11:00 מקבל ניסיון ב-12:30/13:30; ניסיונות שלא הספיקו נדחים ליום א'.
+> שישי: ריצות החיוב 06:00 ו-11:00 נמצאות לפני ה-cutoff (14:00), כך שניסיון ראשון שנכשל ב-11:00 מקבל ניסיון ב-12:30/13:30; ניסיונות שלא הספיקו נדחים ליום א'. (N125) ריצת המנחה בערב יכולה להיות גם אחרי ה-cutoff: הניסיון הראשון נשלח, וניסיון חוזר נדחה ליום העבודה הבא.
 
 ```apex
 public without sharing class PendingVerificationSweeper implements Schedulable {
@@ -1059,7 +1059,7 @@ public without sharing class EmailUtil {
 | D5 | תדירות | פעם (AM) / פעמיים (AM+PM) ביום | B6.5 |
 | D6 | שבת/חג | אין חיוב; שישי/ערב חג מחייבים ×N לימי המנוחה שאחריהם; **זיהוי חגים אוטומטי** (חישוב לוח עברי ב-Apex) + override ידני ב-Custom Metadata | B6.6 |
 | D7 | תיעוד | כל ניסיון = `Charge__c`; `ExternalUniqTranId` ייחודי לחיוב לוגי; 608 = כפול | B6.5 |
-| D8 | ניסיונות חוזרים | עד 3 ניסיונות (+1ש', +4ש'); לא בשבת/חג/אחרי 14:00 בערב | B6.7 |
+| D8 | ניסיונות חוזרים | עד 3 ניסיונות (+1ש', +4ש'); לא בשבת/חג/אחרי 14:00 בערב. ניסיון ראשון של ריצה מתוזמנת נשלח גם אחרי ה-cutoff בערב (N125) | B6.7 |
 | D9 | השעיה | **אין השעיה אוטומטית.** עצירה/חידוש ידני (כפתור + שדה + Custom Permission) | B6.8 |
 | D10 | כישלונות רצופים | אחרי X (ברירת מחדל 3) — התראה פנימית **אחת** לרצף; החיובים ממשיכים | B6.7 |
 | D11 | כרטיס פג תוקף | **ממשיכים לחייב**; כישלון נספר ככישלון רגיל (אין Skipped, אין סטטוס "כרטיס פג תוקף") | B6.5 |
@@ -1279,10 +1279,10 @@ Name: Auto Number `RCP-{000000}`.
 | `AM_Time__c` | Text 5 `HH:mm` | `08:00` | ריצת בוקר ביום רגיל | אחרי "החלת זמנים" (B9.2) |
 | `PM_Time__c` | Text 5 | `20:00` | ריצת ערב ביום רגיל (רק TwiceDaily) | אחרי "החלת זמנים" |
 | `Eve_AM_Time__c` | Text 5 | `06:00` | ריצה 1 בשישי/ערב חג | אחרי "החלת זמנים" |
-| `Eve_PM_Time__c` | Text 5 | `11:00` | ריצה 2 בשישי/ערב חג | אחרי "החלת זמנים" |
+| `Eve_PM_Time__c` | Text 5 | `11:00` | ריצה 2 בשישי/ערב חג (מותר גם אחרי `Friday_Cutoff_Hour__c`, N125) | אחרי "החלת זמנים" |
 | `Runs_Per_Day__c` | Number 1,0 | 2 | 1 = רק ריצת בוקר (גם TwiceDaily מחויב פעם אחת); 2 = בוקר+ערב | מיידי (נקרא בכל ריצה) |
 | `Retry_Minute__c` | Number 2,0 | 30 | דקה בכל שעה לסורק ה-retries | אחרי "החלת זמנים" |
-| `Friday_Cutoff_Hour__c` | Number 2,0 | 14 | אין retries אחרי שעה זו בשישי/ערב חג | מיידי |
+| `Friday_Cutoff_Hour__c` | Number 2,0 | 14 | אין retries (ניסיון 2+) אחרי שעה זו בשישי/ערב חג; ניסיון ראשון של ריצה מתוזמנת נשלח גם אחריה (N125) | מיידי |
 | `Max_Retries__c` | Number 1,0 | 3 | ניסיונות לחיוב לוגי (כולל הראשון) | מיידי |
 | `Retry_Delays_Minutes__c` | Text 50 | `60,240` | המתנה לפני ניסיון 2, 3 | מיידי (לניסיונות חדשים) |
 | `Max_Consecutive_Failures__c` | Number 2,0 | 3 | X — סף התראה לצוות | מיידי |
@@ -1293,7 +1293,7 @@ Name: Auto Number `RCP-{000000}`.
 | `Charging_Enabled__c` | Checkbox | true | מתג חירום: false → ה-Scheduler לא מתכנן חיובים | מיידי |
 | `Schedule_Applied_At__c` | DateTime | — | נכתב ע"י `DonationSetup.reschedule()` (קריאה בלבד ל-Admin) | — |
 
-ולידציה: `ChargeSettings.validate()` (B9.2) — `HH:mm` תקין; `Eve_PM_Time__c < Friday_Cutoff_Hour__c`; `AM < PM`; `Runs_Per_Day__c ∈ {1,2}`. Custom Settings לא תומכים ב-Validation Rules → הבדיקה ב-Apex לפני reschedule; ערכים לא תקינים → ברירת המחדל + התראה לצוות.
+ולידציה: `ChargeSettings.validate()` (B9.2) — `HH:mm` תקין; `Eve_AM < Eve_PM`; `AM < PM`; `Runs_Per_Day__c ∈ {1,2}`. Custom Settings לא תומכים ב-Validation Rules → הבדיקה ב-Apex לפני reschedule; ערכים לא תקינים → ברירת המחדל + התראה לצוות.
 
 `Donor_Link_Setting__mdt` (**Protected**, ב-managed? לא — לכן גישה רק ל-Admin; הסוד גם ניתן ב-Named Credential custom header חלופי): `Secret__c` Text 255 (64 hex אקראי), `Previous_Secret__c` Text 255 (לסיבוב).
 
@@ -1951,12 +1951,14 @@ sequenceDiagram
 public without sharing class ChargeDispatcher {
     /** Picks the next ripe batch and enqueues one ChargeQueueable. Safe to call from Planner, RetryScheduler, and the chain. */
     public static void start() {
-        if (!ChargeCalendar.isRetryWindowOpen(Datetime.now())) { ChargeRunLock.release(); return; }
+        if (ChargeCalendar.isRestDay(Date.today())) { ChargeRunLock.release(); return; }   // N125: rest day → nothing
+        Integer maxAttempt = ChargeCalendar.isRetryWindowOpen(Datetime.now()) ? 99 : 1;   // N125: eve after cutoff → first attempts only
         Integer size = Integer.valueOf(CardcomService.settings().Batch_Size__c);
         List<Id> ids = new List<Id>();
         for (Charge__c c : [SELECT Id FROM Charge__c
                             WHERE Status__c = 'Pending' AND Pledge__r.Status__c = 'Active'
                             AND (Not_Before__c = null OR Not_Before__c <= :Datetime.now())
+                            AND Attempt_Number__c <= :maxAttempt
                             ORDER BY Scheduled_Date__c, Attempt_Number__c, CreatedDate LIMIT :size]) ids.add(c.Id);
         if (ids.isEmpty()) { ChargeRunLock.release(); return; }   // chain finished
         ChargeRunLock.acquire();                                   // extended on every link
@@ -4092,7 +4094,6 @@ public with sharing class ChargeSettings {
         if (!errs.isEmpty()) return errs;
         if (mins(s.AM_Time__c) >= mins(s.PM_Time__c)) errs.add('AM_Time__c חייב להיות לפני PM_Time__c');
         if (mins(s.Eve_AM_Time__c) >= mins(s.Eve_PM_Time__c)) errs.add('Eve_AM_Time__c חייב להיות לפני Eve_PM_Time__c');
-        if (mins(s.Eve_PM_Time__c) >= s.Friday_Cutoff_Hour__c.intValue() * 60) errs.add('Eve_PM_Time__c חייב להיות לפני Friday_Cutoff_Hour__c');
         if (s.Runs_Per_Day__c != 1 && s.Runs_Per_Day__c != 2) errs.add('Runs_Per_Day__c חייב להיות 1 או 2');
         if (s.Retry_Minute__c == null || s.Retry_Minute__c < 0 || s.Retry_Minute__c > 59) errs.add('Retry_Minute__c 0–59');
         if (s.Max_Retries__c == null || s.Max_Retries__c < 1 || s.Max_Retries__c > 5) errs.add('Max_Retries__c 1–5');
@@ -4163,7 +4164,7 @@ public with sharing class DonationSetup {
 }
 ```
 - `DonationChargeScheduler.execute`: בתחילה `if (!ChargeSettings.get().Charging_Enabled__c) return;` ו-`if (slot == 'PM' && ChargeSettings.get().Runs_Per_Day__c == 1) return;` (גם ל-`EvePM`, ואז ריצת EveAM מחייבת את כל ה-slots? **לא** — ב-`Runs_Per_Day__c=1` כל ההוראות מחויבות פעם אחת ביום, כולל TwiceDaily).
-- `ChargeSettingsTest`: validate (זמן שגוי, AM≥PM, EvePM≥cutoff); cron('08:05','SUN-FRI')=`0 5 8 ? * SUN-FRI`; reschedule מבטל ומתזמן 7 jobs; chain פעיל → שגיאה; בלי Custom Permission → ok=false; `Runs_Per_Day__c=1` → PM no-op.
+- `ChargeSettingsTest`: validate (זמן שגוי, AM≥PM, EveAM≥EvePM; EvePM אחרי ה-cutoff תקין — N125); cron('08:05','SUN-FRI')=`0 5 8 ? * SUN-FRI`; reschedule מבטל ומתזמן 7 jobs; chain פעיל → שגיאה; בלי Custom Permission → ok=false; `Runs_Per_Day__c=1` → PM no-op.
 - Custom Permission חדש: `Manage_Charge_Schedule` (ב-`Donations_Admin`). Flow `Apply_Charge_Schedule` (Screen: הצגת הערכים הנוכחיים מ-`$Setup.Charge_Settings__c`, כפתור "החל", הצגת `message`).
 
 ---
@@ -4462,4 +4463,5 @@ Full list with reasons: `docs/spec-consistency.md` (N1–N84, all closed). The o
 | D38 | **Failure documentation and staff alerts** (client, 2026-11-10). The pledge shows the last failed attempt (`Last_Failure_At__c`, `Last_Failure_Error__c`, set by `PledgeRollupService`); the attempt keeps its own error fields. `StaffAlertService.runFailures` (called when a charge chain ends) emails `Failure_Notify_Emails__c` — ATO's admin and the developers — when in the last 3 hours ≥3 attempts were sent and half or more failed, at most every 4 hours (`Alert_State__c.Run_Failure_Sent_At__c`). Every Sunday after the donor reminders, `StaffAlertService.weeklyFailedDigest` lists the open payment issues with what to do. Report "Unpaid Charges": logical charges whose attempts all failed. |
 | D37 | **Donor emails** (client, 2026-11-10), replacing D14's email after every charge (`Send_Donor_Charge_Email__c` now false). `DonorEmailService`: (1) welcome email when a pledge becomes Active (`Welcome_Email_Sent_At__c`); (2) monthly summary per pledge with the receipts run from the 2nd (`DonorMonthlySummaryBatch`, `Last_Summary_Month__c`), saying the section 46 receipt comes separately; (3) on the first final failure an immediate email (`Payment_Issue_Since__c`, set/cleared by `PledgeRollupService`, cleared by a new card), then every Sunday 10:00 (`DonorFailureReminderJob`, job "Donations Donor Reminders") until resolved or staff tick `Failure_Reminders_Stopped__c`. Every email has the permanent card/amount links and the phone for stopping. "Revoke Donor Links" removed from the pledge page (links are permanent, D15). |
 | D36 | **Shacharit/Mincha model** (client, 2026-11-10). Slots AM/PM are now Shacharit ("שחרית") and Mincha ("מנחה"). `Frequency__c`: `TwiceDaily` = Shacharit and Mincha, `OnceDaily` = Shacharit only, new `MinchaOnly`. Amounts per prayer: `Charge_Amount__c` = Shacharit, new `Mincha_Amount__c` = Mincha (planner falls back to the other when one is empty). On an eve the Shacharit run charges only today's Shacharit; the Mincha run charges today's Mincha **and both prayers of every rest day that follows** (replaces B6.6's "eve runs ×N per slot"). With `Runs_Per_Day__c = 1` the morning run plans every slot. Donors can't stop a pledge from the donor page (phone only). ATO edits the four charge times in the "Apply charge schedule" screen (`ChargeTimesAction`). |
+| N125 | **Eve Mincha after the cutoff** (client, 2026-11-24): `ChargeSettings.validate()` no longer requires `Eve_PM_Time__c < Friday_Cutoff_Hour__c`. `ChargeDispatcher.start()`: on a rest day nothing is sent; on Friday / Erev Chag after the cutoff only first attempts (`Attempt_Number__c = 1`) are sent; retries keep the cutoff (`ChargeRetryPolicy`, `ChargeRetryScheduler` unchanged). |
 | D32 | **WP form E2E fixes** (2026-11-03): the Cardcom card session is created only for a form that passes client and server validation (`org_donation_lp`; no token for an invalid form); "סיום" is disabled until the card is saved; one LowProfileId gives at most one pledge (WP lock + done marker, Apex answers a concurrent duplicate insert with `LP_ALREADY_USED`); rate limits are fixed-window, count only valid card sessions/submissions, and are configurable (`ORG_DONATION_RL_*`); optional constants have defaults. `Donations_Integration` gets Read on `UserExternalCredential` (needed for the Named Credential callout). The "מוסד" field and the iframe title come from the Cardcom terminal's page settings, not from the request. |

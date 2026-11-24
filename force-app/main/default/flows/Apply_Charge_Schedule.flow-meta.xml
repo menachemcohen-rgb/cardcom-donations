@@ -106,11 +106,6 @@
         <expression>{!$Setup.Charge_Settings__c.AM_Time__c}</expression>
     </formulas>
     <formulas>
-        <name>fCutoff</name>
-        <dataType>String</dataType>
-        <expression>TEXT({!$Setup.Charge_Settings__c.Friday_Cutoff_Hour__c})</expression>
-    </formulas>
-    <formulas>
         <name>fEveAmTime</name>
         <dataType>String</dataType>
         <expression>{!$Setup.Charge_Settings__c.Eve_AM_Time__c}</expression>
@@ -185,7 +180,7 @@
         </connector>
         <fields>
             <name>Intro_Text</name>
-            <fieldText>&lt;p&gt;&lt;b&gt;שעות החיוב (שעון ישראל, HH:mm)&lt;/b&gt;&lt;/p&gt;&lt;p&gt;ביום רגיל יש ריצת שחרית וריצת מנחה. בערב שבת וערב חג הריצות מוקדמות, ושבת או החג מחויבים יחד עם המנחה. ריצת המנחה בערב שבת חייבת להיות לפני {!fCutoff}:00.&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;&lt;b&gt;שעות החיוב (שעון ישראל, HH:mm)&lt;/b&gt;&lt;/p&gt;&lt;p&gt;ביום רגיל יש ריצת שחרית וריצת מנחה. בערב שבת וערב חג הריצות מוקדמות, ושבת או החג מחויבים יחד עם המנחה.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <fields>
