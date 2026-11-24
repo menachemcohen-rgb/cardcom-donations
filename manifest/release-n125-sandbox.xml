@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Release N125 (sandbox): the Erev Shabbat / Erev Chag Mincha run (Eve_PM_Time__c) may be after Friday_Cutoff_Hour__c.
+  ChargeSettings.validate no longer requires it; ChargeDispatcher still sends first attempts after the cutoff on an eve
+  (retries keep the cutoff, nothing on a rest day); the Apply_Charge_Schedule screen no longer shows the cutoff sentence.
+  The scheduled jobs reach these classes (charge runs, retries): stop them first (UNSCHEDULE_ALL) and SCHEDULE_ALL after.
+  After the deploy, if Eve_PM_Time__c is changed, press "Apply charge schedule".
+  sf project deploy start --target-org atosandbox -x manifest/release-n125-sandbox.xml --test-level RunSpecifiedTests --tests ChargeSettingsTest ChargeRetryTest ChargeCalendarTest
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ChargeDispatcher</members>
+        <members>ChargeRetryTest</members>
+        <members>ChargeSettings</members>
+        <members>ChargeSettingsTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Apply_Charge_Schedule</members>
+        <name>Flow</name>
+    </types>
+    <version>62.0</version>
+</Package>

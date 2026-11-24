@@ -54,8 +54,6 @@ public with sharing class ChargeSettings {
       errs.add('AM_Time__c חייב להיות לפני PM_Time__c');
     if (mins(s.Eve_AM_Time__c) >= mins(s.Eve_PM_Time__c))
       errs.add('Eve_AM_Time__c חייב להיות לפני Eve_PM_Time__c');
-    if (s.Friday_Cutoff_Hour__c == null || mins(s.Eve_PM_Time__c) >= s.Friday_Cutoff_Hour__c.intValue() * 60)
-      errs.add('Eve_PM_Time__c חייב להיות לפני Friday_Cutoff_Hour__c');
     if (s.Runs_Per_Day__c != 1 && s.Runs_Per_Day__c != 2)
       errs.add('Runs_Per_Day__c חייב להיות 1 או 2');
     if (s.Retry_Minute__c == null || s.Retry_Minute__c < 0 || s.Retry_Minute__c > 59)
