@@ -54,7 +54,7 @@ public without sharing class ContactMatcher {
   public static String normName(String n) {
     if (String.isBlank(n))
       return null;
-    String d = n.toLowerCase().replaceAll('[\\s\\-\\.\'"`\u05F3\u05F4\u2019]', '');
+    String d = n.toLowerCase().replaceAll('[\\s\\-\\.\'"`׳״’]', '');
     return d == '' ? null : d;
   }
 

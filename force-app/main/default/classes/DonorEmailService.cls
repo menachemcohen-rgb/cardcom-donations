@@ -7,7 +7,7 @@
  *             10:00 (DonorFailureReminderJob) until a charge succeeds, the card is replaced, or staff tick
  *             Failure_Reminders_Stopped__c.
  * Every email carries the two permanent links and the phone for stopping the pledge (donors can't stop it on the web).
- * Recipient: the donor Contact's email, else the email typed in the form. Sender: Cardcom_Setting__mdt.Org_Wide_Email_Address__c.
+ * Recipient: the email typed in the form, else the donor Contact's (N126). Sender: Cardcom_Setting__mdt.Org_Wide_Email_Address__c.
  * One Messaging.sendEmail call per batch of messages; a send never throws back into the charge or activation transaction.
  * Text: Classic Email Templates Donor_Welcome, Donor_Monthly_Summary, Donor_Payment_Failed, Donor_Payment_Failed_Reminder in the
  * folder "Donations", editable by admins (EmailTemplates; placeholders in docs/email-templates-he.md). The defaults below are used
@@ -206,7 +206,8 @@ public without sharing class DonorEmailService {
 
   /**
    * Plain-text values every donor template can use (the HTML body gets them escaped). Name, email and phone come from what the
-   * donor typed in the form, else from the donor Contact (N126: a Contact may be shared by family members with another name). Docs: docs/email-templates-he.md. The Israeli ID is never offered.
+   * donor typed in the form, else from the donor Contact (N126: a Contact may be shared by family members with another name).
+   * Docs: docs/email-templates-he.md. The Israeli ID is never offered.
    */
   public static Map<String, String> common(Opportunity p, String email) {
     Contact c = p.Donor_Contact__r;
