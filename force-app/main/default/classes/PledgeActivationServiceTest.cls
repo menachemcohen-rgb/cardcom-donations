@@ -18,7 +18,7 @@ private class PledgeActivationServiceTest {
   static void activationLinksExistingDonorAndAddsContactRole() {
     TestDataFactory.settings();
     ContactMatcher.skipDuplicateRules = true;
-    Contact existing = TestDataFactory.contact('Avi', 'Cohen', 'avi@example.com', '0521111111');
+    Contact existing = TestDataFactory.contact('ישראל', 'Cohen', 'avi@example.com', '0521111111'); // same first name as the form (N126)
     Opportunity p = TestDataFactory.withToken(TestDataFactory.submittedPledge('lp-0000000001', 'avi@example.com', '0529999999'));
     insert p;
     Assert.isTrue(PledgeActivationService.activate(p.Id));

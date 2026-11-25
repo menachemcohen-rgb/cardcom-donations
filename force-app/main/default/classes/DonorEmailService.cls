@@ -199,15 +199,20 @@ public without sharing class DonorEmailService {
     return d == null ? '0.00' : d.setScale(2).toPlainString();
   }
 
+  /** N126: the address the donor typed in the form, else the donor Contact's. */
+  public static String donorEmail(Opportunity p) {
+    return String.isNotBlank(p.Donor_Email__c) ? p.Donor_Email__c : p.Donor_Contact__r?.Email;
+  }
+
   /**
-   * Plain-text values every donor template can use (the HTML body gets them escaped). Name, email and phone come from the donor
-   * Contact, else from what the donor typed in the form. Docs: docs/email-templates-he.md. The Israeli ID is never offered.
+   * Plain-text values every donor template can use (the HTML body gets them escaped). Name, email and phone come from what the
+   * donor typed in the form, else from the donor Contact (N126: a Contact may be shared by family members with another name). Docs: docs/email-templates-he.md. The Israeli ID is never offered.
    */
   public static Map<String, String> common(Opportunity p, String email) {
     Contact c = p.Donor_Contact__r;
-    String first = c != null && String.isNotBlank(c.FirstName) ? c.FirstName : p.Donor_First_Name__c;
-    String last = c != null && String.isNotBlank(c.LastName) ? c.LastName : p.Donor_Last_Name__c;
-    String phone = c != null && String.isNotBlank(c.MobilePhone) ? c.MobilePhone : p.Donor_Phone__c;
+    String first = String.isNotBlank(p.Donor_First_Name__c) ? p.Donor_First_Name__c : c?.FirstName;
+    String last = String.isNotBlank(p.Donor_Last_Name__c) ? p.Donor_Last_Name__c : c?.LastName;
+    String phone = String.isNotBlank(p.Donor_Phone__c) ? p.Donor_Phone__c : c?.MobilePhone;
     String exp = p.CardExpirationMMYY__c;
     return new Map<String, String>{
       'FirstName' => first == null ? '' : first,
@@ -252,7 +257,7 @@ public without sharing class DonorEmailService {
     String defaultHtml,
     Map<String, String> extra
   ) {
-    String email = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.Email) ? p.Donor_Contact__r.Email : p.Donor_Email__c;
+    String email = donorEmail(p);
     if (String.isBlank(email))
       return null;
     Cardcom_Setting__mdt s = CardcomService.settings();

@@ -24,7 +24,7 @@ private class DonorPortalResourceTest {
     Map<String, Object> r = call('context', new Map<String, Object>{ 'token' => link('card'), 'clientIp' => '1.2.3.4' });
     Assert.areEqual(200, RestContext.response.statusCode);
     Assert.areEqual('card', r.get('action'));
-    Assert.areEqual('Avi', r.get('firstName'));
+    Assert.areEqual('ישראל', r.get('firstName'), 'N126: the name the donor typed, not the Contact name');
     Assert.areEqual('TwiceDaily', r.get('frequency'));
     Assert.areEqual('Active', r.get('status'));
     Assert.areEqual(4, ((List<Object>) r.get('presets')).size());
@@ -130,7 +130,7 @@ private class DonorPortalResourceTest {
     Map<String, Object> ui = (Map<String, Object>) m.lastBody('LowProfile/Create').get('UIDefinition');
     Assert.areEqual(true, ui.get('IsHideCardOwnerIdentityNumber'), 'N121: the ID field is always hidden');
     Assert.isFalse(ui.containsKey('CardOwnerIdentityNumberValue'), 'contact without an ID: nothing to pre-fill');
-    Assert.areEqual('Avi Cohen', ui.get('CardOwnerNameValue'), 'the contact name');
+    Assert.areEqual('ישראל ישראלי', ui.get('CardOwnerNameValue'), 'N126: the name from the form');
     Assert.areEqual(true, ui.get('IsHideCardOwnerName'));
   }
 

@@ -1,6 +1,8 @@
 /**
  * Match an existing donor Contact or create one (CLAUDE.md Part A 7.4א, B6.4, Part C E4/E16).
  * Keys: Email > Phone > Israeli ID (hash only — the encrypted ID is never filtered on). Fill blanks only; conflicts → Needs_Review.
+ * N126: an email or phone match counts only when the first name matches too (or the Contact has no first name);
+ * the Israeli ID matches on its own. Same email/phone with another first name → a new Contact, both flagged for review.
  */
 public without sharing class ContactMatcher {
   public class DonorInput {
@@ -46,6 +48,21 @@ public without sharing class ContactMatcher {
     if (d.length() < 7 || d.length() > 15)
       return null;
     return d.startsWith('0') ? d : '+' + d;
+  }
+
+  /** N126: first name for comparison — lower case, without spaces, hyphens, dots, quotes or geresh/gershayim. */
+  public static String normName(String n) {
+    if (String.isBlank(n))
+      return null;
+    String d = n.toLowerCase().replaceAll('[\\s\\-\\.\'"`\u05F3\u05F4\u2019]', '');
+    return d == '' ? null : d;
+  }
+
+  /** N126: an email/phone match is the same donor only if the first names agree (a Contact without a first name agrees). */
+  @TestVisible
+  static Boolean sameFirstName(Contact c, String formFirst) {
+    String a = normName(c.FirstName), b = normName(formFirst);
+    return a == null || b == null || a == b;
   }
 
   public static String taxIdHash(String id) {
@@ -134,6 +151,14 @@ public without sharing class ContactMatcher {
       return 3;
     return 9;
   }
+
+  /** N126: the rank when the first name differs — only the Israeli ID still counts; 0 = not this donor. */
+  @TestVisible
+  static Integer rank(Contact c, String em, String ph, String tx, String formFirst) {
+    if (sameFirstName(c, formFirst))
+      return rank(c, em, ph, tx);
+    return tx != null && c.Tax_Id_Hash__c == tx ? 3 : 0;
+  }
   static final Map<Integer, String> METHOD = new Map<Integer, String>{ 1 => 'Email', 2 => 'Phone', 3 => 'TaxId', 9 => 'DuplicateRule' };
 
   // ---------- main ----------
@@ -156,6 +181,17 @@ public without sharing class ContactMatcher {
     o.DuplicateRuleHeader.allowSave = true; // alert-only rule must never block integration
     o.DuplicateRuleHeader.runAsCurrentUser = true;
 
+    // N126: email/phone hits with another first name are other people (family members sharing an address or number)
+    List<Contact> sameName = new List<Contact>();
+    List<Contact> otherName = new List<Contact>();
+    for (Contact c : cands) {
+      if (rank(c, em, ph, tx, donor.firstName) > 0)
+        sameName.add(c);
+      else
+        otherName.add(c);
+    }
+    cands = sameName;
+
     Result r = new Result();
     if (cands.isEmpty()) {
       Contact c = new Contact(
@@ -166,9 +202,17 @@ public without sharing class ContactMatcher {
         Donor_Tax_Id__c = donor.taxId,
         Donor_Source__c = 'WP_Micro'
       );
+      if (!otherName.isEmpty()) {
+        List<Id> ids = new List<Id>();
+        for (Contact x : otherName)
+          ids.add(x.Id);
+        c.Needs_Review__c = true;
+        c.Review_Reason__c = appendReason(null, 'אימייל/טלפון זהה לתורם עם שם פרטי אחר: ' + String.join(ids, ','));
+      }
       Database.SaveResult sr = Database.insert(c, o);
       if (!sr.isSuccess())
         throw new CardcomService.CardcomException('Contact insert failed: ' + sr.getErrors()[0].getMessage());
+      flagOthers(otherName, c.Id);
       r.contactId = c.Id;
       r.method = 'New';
       r.created = true;
@@ -179,7 +223,7 @@ public without sharing class ContactMatcher {
     Contact best = null;
     Integer bestRank = 99;
     for (Contact c : cands) {
-      Integer k = rank(c, em, ph, tx);
+      Integer k = rank(c, em, ph, tx, donor.firstName);
       if (k < bestRank) {
         best = c;
         bestRank = k;
@@ -203,6 +247,28 @@ public without sharing class ContactMatcher {
     r.contactId = best.Id;
     r.method = METHOD.get(bestRank);
     return r;
+  }
+
+  /** N126: the existing Contacts that share the email/phone but not the first name get a review note pointing to the new one. */
+  static void flagOthers(List<Contact> others, Id newId) {
+    if (others.isEmpty())
+      return;
+    List<Contact> upd = new List<Contact>();
+    for (Contact x : others) {
+      if (upd.size() == 10)
+        break;
+      upd.add(
+        new Contact(
+          Id = x.Id,
+          Needs_Review__c = true,
+          Review_Reason__c = appendReason(x.Review_Reason__c, 'תורם חדש עם אותו אימייל/טלפון ושם פרטי אחר: ' + newId)
+        )
+      );
+    }
+    Database.DMLOptions soft = new Database.DMLOptions();
+    soft.DuplicateRuleHeader.allowSave = true;
+    soft.OptAllOrNone = false;
+    Database.update(upd, soft); // review flag only — a failure here must not fail the activation
   }
 
   // Fill-blanks only; conflicts → review flag, never overwrite non-empty values (B6.4 table)

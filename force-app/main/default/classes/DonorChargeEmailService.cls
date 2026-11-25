@@ -2,7 +2,7 @@
  * Thank-you email after successful charges (B6.9.2, B6.9.3, B6.9.5; D14, D20). Triggered by Charge_Success__e.
  * - Only Success charges with no Donor_Email_Status__c (never sent twice).
  * - Charges of the same pledge in one call are grouped into one email (Friday ×2 → one email).
- * - Donor data comes from the pledge Opportunity: Donor_Contact__r (fallback: the form fields), Last4__c, Link_Version__c.
+ * - Donor data comes from the pledge Opportunity: the form fields (fallback: Donor_Contact__r, N126), Last4__c, Link_Version__c.
  * - Daily single-email budget guard: fewer than 200 left → Failed and one staff alert a day.
  */
 public without sharing class DonorChargeEmailService {
@@ -86,9 +86,7 @@ public without sharing class DonorChargeEmailService {
     List<List<Charge__c>> msgCharges = new List<List<Charge__c>>();
     for (List<Charge__c> grp : byPledge.values()) {
       Opportunity p = grp[0].Pledge__r;
-      String email = p.Donor_Contact__r != null && String.isNotBlank(p.Donor_Contact__r.Email)
-        ? p.Donor_Contact__r.Email
-        : p.Donor_Email__c;
+      String email = DonorEmailService.donorEmail(p); // N126: form first
       if (String.isBlank(email)) {
         noEmail.addAll(grp);
         continue;

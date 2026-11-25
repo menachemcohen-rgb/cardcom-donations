@@ -79,7 +79,7 @@ global without sharing class DonorPortalResource {
       presets.add(Integer.valueOf(x.trim()));
     return new Map<String, Object>{
       'action' => DonorLinkToken.parse(token).action,
-      'firstName' => String.isNotBlank(p.Donor_Contact__r.FirstName) ? p.Donor_Contact__r.FirstName : p.Donor_First_Name__c,
+      'firstName' => String.isNotBlank(p.Donor_First_Name__c) ? p.Donor_First_Name__c : p.Donor_Contact__r?.FirstName, // N126
       'amount' => MicroPledges.amountFor(p, MicroPledges.SLOT_SHACHARIT),
       'shacharitAmount' => p.Charge_Amount__c,
       'minchaAmount' => p.Mincha_Amount__c,
@@ -182,7 +182,8 @@ global without sharing class DonorPortalResource {
     if (today >= 5)
       throw err(429, 'TOO_MANY');
     String key = 'CARD-' + UUID.randomUUID().toString();
-    // N121: the donor's ID and name are pre-filled on the Cardcom page, whose ID and name fields are hidden. Contact first, else the form.
+    // N121: the donor's ID and name are pre-filled on the Cardcom page, whose ID and name fields are hidden.
+    // N126: name from the form first, else the Contact; the ID stays Contact first.
     String pledgeType = MicroPledges.TYPE;
     Opportunity d = [
       SELECT
@@ -196,12 +197,9 @@ global without sharing class DonorPortalResource {
     ];
     Contact c = d.Donor_Contact__r;
     String taxId = c?.Donor_Tax_Id__c;
-    String ownerName = c != null && String.isNotBlank(c.LastName)
-      ? ((c.FirstName == null ? '' : c.FirstName) + ' ' + c.LastName).trim()
-      : ((d.Donor_First_Name__c == null ? '' : d.Donor_First_Name__c) +
-          ' ' +
-          (d.Donor_Last_Name__c == null ? '' : d.Donor_Last_Name__c))
-          .trim();
+    String ownerName = String.isNotBlank(d.Donor_Last_Name__c)
+      ? ((d.Donor_First_Name__c == null ? '' : d.Donor_First_Name__c) + ' ' + d.Donor_Last_Name__c).trim()
+      : (c != null && String.isNotBlank(c.LastName) ? ((c.FirstName == null ? '' : c.FirstName) + ' ' + c.LastName).trim() : '');
     Map<String, Object> lp = CardcomService.createTokenLowProfile(
       terminal,
       key,

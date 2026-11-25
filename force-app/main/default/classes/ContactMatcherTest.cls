@@ -9,7 +9,11 @@ private class ContactMatcherTest {
   }
 
   static ContactMatcher.DonorInput input(String email, String phone, String taxId) {
-    return new ContactMatcher.DonorInput('Form', 'Donor', email, phone, taxId);
+    return input('Avi', email, phone, taxId);
+  }
+
+  static ContactMatcher.DonorInput input(String firstName, String email, String phone, String taxId) {
+    return new ContactMatcher.DonorInput(firstName, 'Donor', email, phone, taxId);
   }
 
   static Contact byEmail(String email) {
@@ -83,7 +87,8 @@ private class ContactMatcherTest {
   @IsTest
   static void conflictingKeysPickEmailAndFlagReview() {
     ContactMatcher.skipDuplicateRules = true;
-    // email → Avi, phone → Ben (TC04)
+    // email → Avi, phone → Ben (TC04); both named Avi, so both are candidates (N126)
+    update new Contact(Id = byEmail('ben@example.com').Id, FirstName = 'Avi');
     ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('avi@example.com', '0522222222', null));
     Contact avi = byEmail('avi@example.com');
     Contact ben = byEmail('ben@example.com');
@@ -123,6 +128,62 @@ private class ContactMatcherTest {
     // Real FindDuplicates path: must never throw, whatever rules the org has.
     ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('ben@example.com', null, null));
     Assert.isNotNull(r.contactId);
+  }
+
+  @IsTest
+  static void sameEmailOtherFirstNameIsANewDonor() {
+    // N126: a family member using the same email gets their own Contact; both are flagged for review
+    ContactMatcher.skipDuplicateRules = true;
+    Contact avi = byEmail('avi@example.com');
+    ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('Sara', 'avi@example.com', '0521111111', null));
+    Assert.isTrue(r.created);
+    Assert.areEqual('New', r.method);
+    Contact sara = [SELECT FirstName, Email, Needs_Review__c, Review_Reason__c FROM Contact WHERE Id = :r.contactId];
+    Assert.areEqual('Sara', sara.FirstName);
+    Assert.isTrue(sara.Needs_Review__c);
+    Assert.isTrue(sara.Review_Reason__c.contains(avi.Id), sara.Review_Reason__c);
+    avi = [SELECT FirstName, Needs_Review__c, Review_Reason__c FROM Contact WHERE Id = :avi.Id];
+    Assert.areEqual('Avi', avi.FirstName, 'the existing donor is not changed');
+    Assert.isTrue(avi.Needs_Review__c);
+    Assert.isTrue(avi.Review_Reason__c.contains(sara.Id), avi.Review_Reason__c);
+
+    // Sara again: now she matches her own Contact, not Avi's
+    ContactMatcher.Result again = ContactMatcher.matchOrCreate(input(' sara ', 'avi@example.com', null, null));
+    Assert.areEqual(sara.Id, again.contactId);
+    Assert.areEqual('Email', again.method);
+  }
+
+  @IsTest
+  static void samePhoneOtherFirstNameIsANewDonor() {
+    ContactMatcher.skipDuplicateRules = true;
+    ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('Dan', 'dan@example.com', '052-111-1111', null));
+    Assert.isTrue(r.created);
+  }
+
+  @IsTest
+  static void firstNameSpellingNoiseStillMatches() {
+    ContactMatcher.skipDuplicateRules = true;
+    Contact c = TestDataFactory.contact('בן-ציון', 'Katz', 'bz@example.com', null);
+    Assert.areEqual(c.Id, ContactMatcher.matchOrCreate(input('בן ציון', 'BZ@example.com', null, null)).contactId);
+    Contact noFirst = new Contact(LastName = 'Gold', Email = 'gold@example.com');
+    insert noFirst;
+    ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('Moshe', 'gold@example.com', null, null));
+    Assert.areEqual(noFirst.Id, r.contactId, 'a Contact without a first name still matches');
+    Assert.areEqual('Moshe', [SELECT FirstName FROM Contact WHERE Id = :noFirst.Id].FirstName, 'blank first name is filled');
+    Assert.areEqual('benzion', ContactMatcher.normName(' Ben-Zi\'on. '));
+    Assert.areEqual('יצחק', ContactMatcher.normName('יצ״חק'));
+    Assert.isNull(ContactMatcher.normName(' - '));
+  }
+
+  @IsTest
+  static void israeliIdMatchesEvenWithAnotherFirstName() {
+    ContactMatcher.skipDuplicateRules = true;
+    Contact withId = new Contact(FirstName = 'Yossi', LastName = 'Mizrahi', Donor_Tax_Id__c = VALID_ID);
+    insert withId;
+    ContactMatcher.Result r = ContactMatcher.matchOrCreate(input('Yosef', 'yosef@example.com', null, VALID_ID));
+    Assert.areEqual(withId.Id, r.contactId);
+    Assert.areEqual('TaxId', r.method);
+    Assert.areEqual(0, ContactMatcher.rank(new Contact(FirstName = 'X', Email_Normalized__c = 'a'), 'a', null, null, 'Y'));
   }
 
   @IsTest

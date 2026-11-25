@@ -135,6 +135,23 @@ private class DonorEmailServiceTest {
   }
 
   @IsTest
+  static void usesTheNameAndEmailTheDonorTyped() {
+    // N126: the pledge was matched to a Contact of a family member with another name and email
+    Opportunity p = setup('TwiceDaily');
+    Id cid = [SELECT Donor_Contact__c FROM Opportunity WHERE Id = :p.Id].Donor_Contact__c;
+    update new Contact(Id = cid, FirstName = 'Other', LastName = 'Person', Email = 'other@example.com');
+    update new Opportunity(Id = p.Id, Donor_First_Name__c = 'Sara', Donor_Last_Name__c = 'Levi', Donor_Email__c = 'sara@example.com');
+    EmailTemplates.byName = new Map<String, EmailTemplate>{
+      'Donor_Welcome' => new EmailTemplate(Subject = '{{FullName}}', HtmlValue = '<p>{{FirstName}}</p>')
+    };
+    DonorEmailService.sendWelcome(new Set<Id>{ p.Id });
+    Messaging.SingleEmailMessage m = DonorEmailService.lastSent[0];
+    Assert.areEqual('Sara Levi', m.getSubject());
+    Assert.isTrue(m.getHtmlBody().contains('Sara') && !m.getHtmlBody().contains('Other'), m.getHtmlBody());
+    Assert.areEqual(new List<String>{ 'sara@example.com' }, m.getToAddresses());
+  }
+
+  @IsTest
   static void signatureNamesTheOrgOnce() {
     String sig = DonorEmailService.signature();
     Assert.isTrue(sig.contains(System.Label.Donation_Org_Name));
@@ -144,9 +161,14 @@ private class DonorEmailServiceTest {
   @IsTest
   static void templateCanUseEveryCommonDonorField() {
     Opportunity p = setup('TwiceDaily');
-    Id cid = [SELECT Donor_Contact__c FROM Opportunity WHERE Id = :p.Id].Donor_Contact__c;
-    update new Contact(Id = cid, FirstName = 'ישראל', LastName = 'כהן & בניו');
-    update new Opportunity(Id = p.Id, Last4__c = '1234', CardExpirationMMYY__c = '0928', Start_Date__c = Date.newInstance(2026, 11, 3));
+    update new Opportunity(
+      Id = p.Id,
+      Donor_First_Name__c = 'ישראל',
+      Donor_Last_Name__c = 'כהן & בניו',
+      Last4__c = '1234',
+      CardExpirationMMYY__c = '0928',
+      Start_Date__c = Date.newInstance(2026, 11, 3)
+    );
     List<String> keys = new List<String>{
       'FirstName',
       'LastName',

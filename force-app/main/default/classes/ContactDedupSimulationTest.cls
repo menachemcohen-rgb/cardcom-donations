@@ -31,6 +31,8 @@ private class ContactDedupSimulationTest {
     return new Map<String, Id>{ 'A' => cs[0].Id, 'B' => cs[1].Id, 'C' => cs[2].Id, 'D' => cs[3].Id };
   }
 
+  static final Map<String, String> FIRST = new Map<String, String>{ 'A' => 'Avi', 'B' => ' ben ', 'C' => 'Anyone', 'D' => 'Dana' };
+
   static List<Scenario> scenarios() {
     return new List<Scenario>{
       new Scenario('email case + spaces', '  AVI@example.com ', null, null, 'A'),
@@ -55,7 +57,9 @@ private class ContactDedupSimulationTest {
     Integer before = [SELECT COUNT() FROM Contact];
     List<String> failures = new List<String>();
     for (Scenario s : scenarios()) {
-      ContactMatcher.Result r = ContactMatcher.matchOrCreate(new ContactMatcher.DonorInput('Form', 'Donor', s.email, s.phone, s.taxId));
+      // N126: an email/phone match needs the same first name, so each scenario uses the first name of the donor it expects
+      String first = FIRST.containsKey(s.expectKey) ? FIRST.get(s.expectKey) : 'Form';
+      ContactMatcher.Result r = ContactMatcher.matchOrCreate(new ContactMatcher.DonorInput(first, 'Donor', s.email, s.phone, s.taxId));
       if (s.expectKey == 'NEW' && !ids.containsKey('NEW')) {
         if (!r.created)
           failures.add(s.name + ': expected a new Contact');
